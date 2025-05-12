@@ -1,0 +1,47 @@
+﻿@{
+    ViewData["Title"] = "Patient Profile Preview";
+}
+
+<h2 class="mb-4">Patient Profile Preview (Modal Demo)</h2>
+
+<!-- Trigger Button -->
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileModal">
+    View John Doe’s Profile
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header">
+                <h5 class="modal-title" id="profileModalLabel">Patient Profile: John Doe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Name:</dt>
+                    <dd class="col-sm-9">John Doe</dd>
+
+                    <dt class="col-sm-3">DOB:</dt>
+                    <dd class="col-sm-9">01-Jan-1990</dd>
+
+                    <dt class="col-sm-3">Gender:</dt>
+                    <dd class="col-sm-9">Male</dd>
+
+                    <dt class="col-sm-3">Contact:</dt>
+                    <dd class="col-sm-9">1234567890</dd>
+
+                    <dt class="col-sm-3">Address:</dt>
+                    <dd class="col-sm-9">123 Main St, Springfield</dd>
+
+                    <dt class="col-sm-3">Medical History:</dt>
+                    <dd class="col-sm-9">Diabetes, Hypertension</dd>
+                </dl>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-primary">Download PDF</button>
+            </div>
+        </div>
+    </div>
+</div>

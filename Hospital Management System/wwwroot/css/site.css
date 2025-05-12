@@ -1,0 +1,74 @@
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-size: 1.5rem;
+    color: #007bff !important;
+    font-weight: bold;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+    padding: 10px 15px;
+}
+
+    .navbar-nav .nav-link:hover {
+        color: #0056b3 !important;
+    }
+
+/* Dropdowns */
+.navbar-nav .dropdown-menu {
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 0.5rem;
+}
+
+    .navbar-nav .dropdown-menu .dropdown-item {
+        padding: 8px 16px;
+        font-weight: 500;
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+        .navbar-nav .dropdown-menu .dropdown-item:hover {
+            background-color: #f0f0f0;
+            color: #007bff;
+        }
+
+/* Login Button */
+.navbar-nav .btn-login {
+    margin-top: 6px;
+    padding: 5px 12px;
+    font-size: 0.875rem;
+}
+
+/* Main Container */
+main.container {
+    min-height: 75vh;
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+/* Footer */
+footer {
+    background-color: #f1f3f5;
+    font-size: 0.9rem;
+    color: #666;
+    padding: 15px 0;
+    text-align: center;
+    border-top: 1px solid #ddd;
+}
+
+/* Buttons */
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 0.875rem;
+    border-radius: 5px;
+}

@@ -1,0 +1,43 @@
+﻿@model HospitalManagementSystem.Models.Appointment
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form asp-action="Create" method="post" class="mt-4">
+    <div class="mb-3">
+        <label asp-for="DoctorName" class="form-label"></label>
+        <input asp-for="DoctorName" class="form-control" />
+        <span asp-validation-for="DoctorName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PatientName" class="form-label"></label>
+        <input asp-for="PatientName" class="form-control" />
+        <span asp-validation-for="PatientName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Date" class="form-label"></label>
+        <input asp-for="Date" class="form-control" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Time" class="form-label"></label>
+        <input asp-for="Time" class="form-control" />
+        <span asp-validation-for="Time" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Book Appointment</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
