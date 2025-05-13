@@ -1,0 +1,29 @@
+﻿@model HospitalManagementSystem.Models.Appointment
+@{
+    ViewData["Title"] = "Appointment Confirmed";
+}
+
+<h2>Appointment Confirmed</h2>
+
+<p>Your appointment has been booked successfully!</p>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Doctor</th>
+        <td>@Model.DoctorName</td>
+    </tr>
+    <tr>
+        <th>Patient</th>
+        <td>@Model.PatientName</td>
+    </tr>
+    <tr>
+        <th>Date</th>
+        <td>@Model.Date.ToShortDateString()</td>
+    </tr>
+    <tr>
+        <th>Time</th>
+        <td>@Model.Time</td>
+    </tr>
+</table>
+
+<a href="/Appointment/Create" class="btn btn-primary">Book Another</a>

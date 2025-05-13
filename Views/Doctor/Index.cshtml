@@ -1,0 +1,46 @@
+﻿@model List<HospitalManagementSystem.Models.Doctor>
+@{
+    ViewData["Title"] = "Doctor Directory";
+    var specs = ViewBag.Specializations as List<string>;
+    string selectedSpec = ViewBag.SelectedSpecialization;
+}
+
+<h2 class="mb-4">Select Specialization</h2>
+
+<form method="get" asp-controller="Doctor" asp-action="Index" class="row mb-4">
+    <div class="col-md-6">
+        <select name="specialization" class="form-select">
+            <option value="">-- All Specializations --</option>
+            @foreach (var spec in specs)
+            {
+                <option value="@spec" selected="@(spec == selectedSpec)">
+                    @spec
+                </option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+</form>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-warning">No doctors found for the selected specialization.</div>
+}
+else
+{
+    foreach (var doctor in Model)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5>@doctor.Name (@doctor.Specialization)</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Description:</strong> @doctor.Description</p>
+                <p><strong>Contact:</strong> @doctor.Contact</p>
+                <p><strong>Location:</strong> @doctor.Location</p>
+            </div>
+        </div>
+    }
+}

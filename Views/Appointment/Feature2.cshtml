@@ -1,0 +1,37 @@
+﻿@{
+    ViewData["Title"] = "Available Slots";
+}
+
+<h2>Check Available Time Slots</h2>
+
+<form method="post" asp-action="Feature2">
+    <div>
+        <label>Doctor</label>
+        <select name="doctor" class="form-control">
+            <option value="">-- Select Doctor --</option>
+            @foreach (var doc in ViewBag.Doctors)
+            {
+                <option value="@doc">@doc</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label>Date</label>
+        <input type="date" name="date" class="form-control" value="@ViewBag.SelectedDate" />
+    </div>
+
+    <br />
+    <button type="submit" class="btn btn-success">Check Slots</button>
+</form>
+
+@if (ViewBag.AvailableSlots != null)
+{
+    <h4>Available Slots for @ViewBag.SelectedDoctor on @ViewBag.SelectedDate</h4>
+    <ul>
+        @foreach (var slot in ViewBag.AvailableSlots)
+        {
+            <li>@slot</li>
+        }
+    </ul>
+}

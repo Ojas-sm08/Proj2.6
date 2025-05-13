@@ -1,0 +1,33 @@
+﻿@model HospitalManagementSystem.Models.Appointment
+@{
+    ViewData["Title"] = "Book Appointment";
+}
+
+<h2>Book Appointment</h2>
+
+<form asp-action="Create" method="post">
+    <div>
+        <label>Doctor</label>
+        <select asp-for="DoctorName" class="form-control" asp-items="new SelectList(ViewBag.Doctors)">
+            <option value="">-- Select Doctor --</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Patient Name</label>
+        <input asp-for="PatientName" class="form-control" />
+    </div>
+
+    <div>
+        <label>Date</label>
+        <input asp-for="Date" type="date" class="form-control" />
+    </div>
+
+    <div>
+        <label>Time</label>
+        <input asp-for="Time" type="time" class="form-control" />
+    </div>
+
+    <br />
+    <button type="submit" class="btn btn-primary">Book Appointment</button>
+</form>
