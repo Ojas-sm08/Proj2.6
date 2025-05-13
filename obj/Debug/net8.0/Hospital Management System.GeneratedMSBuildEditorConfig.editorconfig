@@ -28,6 +28,50 @@ build_property._RazorSourceGeneratorDebug =
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Appointment/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcQXBwb2ludG1lbnRcQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Appointment/Feature2.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcQXBwb2ludG1lbnRcRmVhdHVyZTIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Home/Privacy.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Patient/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcUGF0aWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Patient/Notifications.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcUGF0aWVudFxOb3RpZmljYXRpb25zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Patient/ProfilePreview.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcUGF0aWVudFxQcm9maWxlUHJldmlldy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Views/Appointment/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -79,6 +123,10 @@ build_metadata.AdditionalFiles.CssScope =
 [C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Hospital Management System/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = SG9zcGl0YWwgTWFuYWdlbWVudCBTeXN0ZW1cVmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-csatvf8htz
 
 [C:/Users/OJAS/source/repos/Hospital Management System/Hospital Management System/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s

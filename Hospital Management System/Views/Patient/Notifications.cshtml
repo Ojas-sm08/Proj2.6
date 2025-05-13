@@ -1,0 +1,40 @@
+﻿@{
+    ViewData["Title"] = "Patient Notifications";
+}
+
+<h2 class="mb-4">Patient Notifications</h2>
+
+<div class="row g-3">
+    <!-- Unpaid Bills -->
+    <div class="col-md-4">
+        <div class="card border-danger shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-danger">Unpaid Bills</h5>
+                <p class="card-text">5 patients have pending payments.</p>
+                <a href="#" class="btn btn-sm btn-danger">View Details</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Missed Appointments -->
+    <div class="col-md-4">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Missed Appointments</h5>
+                <p class="card-text">2 patients missed their last appointment.</p>
+                <a href="#" class="btn btn-sm btn-warning">View List</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upcoming Birthdays -->
+    <div class="col-md-4">
+        <div class="card border-primary shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Upcoming Birthdays</h5>
+                <p class="card-text">3 birthdays in the next 7 days.</p>
+                <a href="#" class="btn btn-sm btn-primary">See Names</a>
+            </div>
+        </div>
+    </div>
+</div>
