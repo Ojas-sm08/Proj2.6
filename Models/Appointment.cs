@@ -19,5 +19,12 @@ namespace HospitalManagementSystem.Models
 
         [Required]
         public TimeSpan Time { get; set; }
+
+        // ✅ Add this if your view expects a TimeSlot field (optional alias)
+        public string TimeSlot => $"{Time:hh\\:mm}";
+
+        // ✅ Add this if your view expects a Location field
+        [Required]
+        public string Location { get; set; }
     }
 }

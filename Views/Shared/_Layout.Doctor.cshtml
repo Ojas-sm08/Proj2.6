@@ -1,0 +1,73 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Doctor Portal</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" asp-controller="Doctor" asp-action="Index">👨‍⚕️ Doctor Panel</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#doctorNav"
+                    aria-controls="doctorNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="doctorNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+
+                    <!-- Schedule -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Doctor" asp-action="Schedule">My Schedule</a>
+                    </li>
+
+                    <!-- Patients -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Doctor" asp-action="Patients">My Patients</a>
+                    </li>
+
+                    <!-- Billing -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Doctor" asp-action="Billing">Billing</a>
+                    </li>
+
+                    <!-- Logout -->
+                    <li class="nav-item">
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-danger btn-sm ms-3">Logout (@username)</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <main class="container py-4">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-top text-center text-muted py-3 mt-auto">
+        <div class="container">
+            &copy; @DateTime.Now.Year - Hospital Management System (Doctor)
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

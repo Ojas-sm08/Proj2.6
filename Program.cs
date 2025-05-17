@@ -1,18 +1,30 @@
-using HospitalManagementSystem.Data; // Add this for DbContext
-using Microsoft.EntityFrameworkCore;  // Add this for EF Core
+﻿using HospitalManagementSystem.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// -------------------------
+// Add services to the container
+// -------------------------
+
 builder.Services.AddControllersWithViews();
 
-// Register HospitalDbContext with SQL Server
+// ✅ Register HospitalDbContext with SQL Server
 builder.Services.AddDbContext<HospitalDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// ✅ Add session support
+builder.Services.AddSession();
+
+// ✅ Register IHttpContextAccessor for session access in views
+builder.Services.AddHttpContextAccessor();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// -------------------------
+// Configure HTTP pipeline
+// -------------------------
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -24,11 +36,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+// ✅ Enable session before authorization
+app.UseSession();
+
 app.UseAuthorization();
 
-// Default route
+// ✅ Set default route (starts at login)
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.Run();

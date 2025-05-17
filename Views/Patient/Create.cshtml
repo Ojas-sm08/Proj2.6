@@ -1,0 +1,55 @@
+﻿@model HospitalManagementSystem.Models.Appointment
+
+@{
+    ViewData["Title"] = "Book Appointment";
+    Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+}
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Message"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<h2 class="mb-4">Book an Appointment</h2>
+
+<form method="post" asp-action="Create" asp-controller="Patient">
+    <div class="mb-3">
+        <label asp-for="DoctorName" class="form-label">Doctor Name</label>
+        <input asp-for="DoctorName" class="form-control" placeholder="Enter Doctor Name" />
+        <span asp-validation-for="DoctorName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PatientName" class="form-label">Your Name</label>
+        <input asp-for="PatientName" class="form-control" placeholder="Enter Your Name" />
+        <span asp-validation-for="PatientName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Date" class="form-label">Date</label>
+        <input asp-for="Date" type="date" class="form-control" />
+        <span asp-validation-for="Date" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Time" class="form-label">Time</label>
+        <input asp-for="Time" type="time" class="form-control" />
+        <span asp-validation-for="Time" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Location" class="form-label">Location</label>
+        <input asp-for="Location" class="form-control" placeholder="Enter Location" />
+        <span asp-validation-for="Location" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Book Appointment</button>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary ms-2">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

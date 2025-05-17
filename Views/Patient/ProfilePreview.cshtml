@@ -1,4 +1,10 @@
-﻿@{
+﻿@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var role = HttpContextAccessor.HttpContext.Session.GetString("Role");
+    Layout = role == "Admin" ? "~/Views/Shared/_Layout.cshtml"
+           : role == "Doctor" ? "~/Views/Shared/_Layout.Doctor.cshtml"
+           : "~/Views/Shared/_Layout.Patient.cshtml";
+
     ViewData["Title"] = "Patient Profile Preview";
 }
 

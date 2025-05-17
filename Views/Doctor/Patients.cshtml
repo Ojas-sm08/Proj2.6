@@ -1,0 +1,36 @@
+﻿@model List<HospitalManagementSystem.Models.Patient>
+@{
+    Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
+    ViewData["Title"] = "My Patients";
+}
+
+<h2 class="mb-4">👩‍⚕️ Patients Assigned</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">You currently have no assigned patients.</div>
+}
+else
+{
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>DOB</th>
+                <th>Gender</th>
+                <th>Contact</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var patient in Model)
+            {
+                <tr>
+                    <td>@patient.Name</td>
+                    <td>@patient.DateOfBirth.ToShortDateString()</td>
+                    <td>@patient.Gender</td>
+                    <td>@patient.ContactNumber</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

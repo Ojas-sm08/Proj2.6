@@ -1,0 +1,52 @@
+﻿@model HospitalManagementSystem.Models.Doctor
+@{
+    ViewData["Title"] = "Add Doctor";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Admin layout
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Add New Doctor</h2>
+
+    @if (TempData["Message"] != null)
+    {
+            <div class="alert alert-success">@TempData["Message"]</div>
+    }
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Doctor Name</label>
+            <input asp-for="Name" class="form-control" placeholder="Enter doctor's full name" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Specialization" class="form-label">Specialization</label>
+            <input asp-for="Specialization" class="form-control" placeholder="e.g., Cardiologist" />
+            <span asp-validation-for="Specialization" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label">Description</label>
+            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Experience or qualifications"></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Contact" class="form-label">Contact Email/Phone</label>
+            <input asp-for="Contact" class="form-control" placeholder="Email or phone number" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Location" class="form-label">Location</label>
+            <input asp-for="Location" class="form-control" placeholder="e.g., Building A, Room 101" />
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Add Doctor</button>
+            <a asp-action="Index" class="btn btn-secondary">Back to Doctor List</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+        <partial name="_ValidationScriptsPartial" />
+}

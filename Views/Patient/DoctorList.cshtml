@@ -1,0 +1,20 @@
+﻿@model List<HospitalManagementSystem.Models.Doctor>
+
+@{
+    ViewData["Title"] = "Available Doctors";
+}
+
+<h2 class="mb-4">Our Doctors</h2>
+
+@foreach (var doctor in Model)
+{
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-primary text-white fw-semibold">
+            @doctor.Name (@doctor.Specialization)
+        </div>
+        <div class="card-body">
+            <p><strong>Contact:</strong> @doctor.Contact</p>
+            <p><strong>Location:</strong> @doctor.Location</p>
+        </div>
+    </div>
+}

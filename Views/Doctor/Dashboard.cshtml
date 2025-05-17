@@ -1,0 +1,9 @@
+﻿@{
+    ViewData["Title"] = "Welcome Doctor";
+    var username = Context.Session.GetString("Username");
+}
+
+<div class="text-center mt-5">
+    <h2>👋 Welcome, Dr. @username!</h2>
+    <p class="lead">You can now view your schedule, billing, and patient list using the navigation bar.</p>
+</div>

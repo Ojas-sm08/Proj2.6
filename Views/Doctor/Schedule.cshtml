@@ -1,0 +1,36 @@
+﻿@model List<HospitalManagementSystem.Models.DoctorSchedule>
+@{
+    ViewData["Title"] = "Doctor Schedule";
+    Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
+}
+
+<h2 class="mb-4">Doctor Schedule</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">No schedules found.</div>
+}
+else
+{
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Location</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var schedule in Model)
+            {
+                <tr>
+                    <td>@schedule.Date.ToShortDateString()</td>
+                    <td>@schedule.StartTime</td>
+                    <td>@schedule.EndTime</td>
+                    <td>@schedule.Location</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

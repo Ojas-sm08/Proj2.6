@@ -1,0 +1,15 @@
+﻿@model HospitalManagementSystem.Models.Patient
+@{
+    Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    ViewData["Title"] = "My Info";
+}
+
+<h2 class="mb-4">My Information</h2>
+
+<table class="table table-bordered">
+    <tr><th>Patient ID</th><td>@Model.PatientId</td></tr>
+    <tr><th>Name</th><td>@Model.Name</td></tr>
+    <tr><th>Gender</th><td>@Model.Gender</td></tr>
+    <tr><th>Date of Birth</th><td>@Model.DateOfBirth.ToShortDateString()</td></tr>
+    <tr><th>Contact</th><td>@Model.ContactNumber</td></tr>
+</table>

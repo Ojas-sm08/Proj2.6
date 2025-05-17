@@ -1,0 +1,36 @@
+﻿@model List<HospitalManagementSystem.Models.Appointment>
+@{
+    ViewData["Title"] = "My Appointments";
+    Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+}
+
+<h2 class="mb-4">📅 Your Appointments</h2>
+
+@if (!Model.Any())
+{
+        <div class="alert alert-info">You have no upcoming appointments.</div>
+}
+else
+{
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Doctor</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var appt in Model)
+            {
+                        <tr>
+                            <td>@appt.DoctorName</td>
+                            <td>@appt.Date.ToShortDateString()</td>
+                            <td>@appt.Time</td>
+                            <td>@appt.Location</td>
+                        </tr>
+            }
+            </tbody>
+        </table>
+}

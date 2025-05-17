@@ -1,5 +1,13 @@
 ﻿@model List<HospitalManagementSystem.Models.Doctor>
+
+@inject IHttpContextAccessor HttpContextAccessor
+
 @{
+    var role = HttpContextAccessor.HttpContext.Session.GetString("Role");
+    Layout = role == "Doctor"
+        ? "~/Views/Shared/_Layout.Doctor.cshtml"
+        : "~/Views/Shared/_Layout.cshtml";
+
     ViewData["Title"] = "Doctor Directory";
     var specs = ViewBag.Specializations as List<string>;
     string selectedSpec = ViewBag.SelectedSpecialization;
