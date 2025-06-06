@@ -6,28 +6,116 @@
 <h2>Book Appointment</h2>
 
 <form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div> @* Added validation summary *@
+
+    <input type="hidden" asp-for="PatientId" value="@ViewBag.CurrentPatientId" /> @* Hidden field for PatientId *@
+
     <div>
-        <label>Doctor</label>
-        <select asp-for="DoctorName" class="form-control" asp-items="new SelectList(ViewBag.Doctors)">
+        <label asp-for="DoctorId" class="form-label">Doctor</label> @* Changed to DoctorId *@
+        <select asp-for="DoctorId" class="form-control" id="doctorSelect">
+            @* Changed to DoctorId and added ID *@
             <option value="">-- Select Doctor --</option>
+            @foreach (var doctor in ViewBag.Doctors)
+            {
+                <option value="@doctor.Id">@doctor.Name (@doctor.Specialization)</option> @* Use doctor.Id and doctor.Name *@
+            }
         </select>
+        <span asp-validation-for="DoctorId" class="text-danger"></span> @* Validation for DoctorId *@
+    </div>
+
+    @* Remove Patient Name input if PatientId is handled by session for logged-in patient *
+    @* If an Admin is creating for a patient, you might need a PatientId dropdown/input *
+    @* For now, assuming patient logs in and PatientId is from session. *@
+    @*
+    <div>
+        <label asp-for="PatientId" class="form-label">Patient</label>
+        <select asp-for="PatientId" class="form-control">
+            <option value="">-- Select Patient --</option>
+            // You would need to populate ViewBag.Patients in the controller
+            // @foreach (var patient in ViewBag.Patients)
+            // {
+            //     <option value="@patient.Id">@patient.Name</option>
+            // }
+        </select>
+        <span asp-validation-for="PatientId" class="text-danger"></span>
+    </div>
+    *@
+
+    <div>
+        <label asp-for="Date" class="form-label"></label>
+        <input asp-for="Date" type="date" class="form-control" id="appointmentDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" /> @* Added ID and min date *@
+        <span asp-validation-for="Date" class="text-danger"></span>
     </div>
 
     <div>
-        <label>Patient Name</label>
-        <input asp-for="PatientName" class="form-control" />
+        <label asp-for="Time" class="form-label">Available Time Slots</label> @* Changed label for clarity *@
+        <select asp-for="Time" class="form-control" id="timeSlotSelect">
+            @* Added ID *@
+            <option value="">-- Select a Doctor and Date --</option>
+        </select>
+        <span asp-validation-for="Time" class="text-danger"></span>
     </div>
 
     <div>
-        <label>Date</label>
-        <input asp-for="Date" type="date" class="form-control" />
+        <label asp-for="Location" class="form-label"></label>
+        <input asp-for="Location" class="form-control" />
+        <span asp-validation-for="Location" class="text-danger"></span>
     </div>
 
     <div>
-        <label>Time</label>
-        <input asp-for="Time" type="time" class="form-control" />
+        <label asp-for="Reason" class="form-label"></label>
+        <textarea asp-for="Reason" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Reason" class="text-danger"></span>
     </div>
 
     <br />
     <button type="submit" class="btn btn-primary">Book Appointment</button>
 </form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script type="text/javascript">
+        $(document).ready(function () {
+            function loadAvailableSlots() {
+                var doctorId = $('#doctorSelect').val();
+                var appointmentDate = $('#appointmentDate').val();
+                var timeSlotSelect = $('#timeSlotSelect');
+
+                timeSlotSelect.empty();
+                timeSlotSelect.append($('<option>', { value: '', text: '-- Loading Slots --' }));
+
+                if (doctorId && appointmentDate) {
+                    $.ajax({
+                        url: '@Url.Action("CheckAvailability", "Appointment")',
+                        type: 'GET',
+                        data: { doctorId: doctorId, date: appointmentDate },
+                        success: function (response) {
+                            timeSlotSelect.empty();
+                            if (response.success && response.slots.length > 0) {
+                                timeSlotSelect.append($('<option>', { value: '', text: '-- Select Time Slot --' }));
+                                $.each(response.slots, function (i, slot) {
+                                    timeSlotSelect.append($('<option>', {
+                                        value: slot,
+                                        text: slot
+                                    }));
+                                });
+                            } else {
+                                timeSlotSelect.append($('<option>', { value: '', text: '-- No Slots Available --' }));
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("AJAX Error: ", status, error);
+                            timeSlotSelect.empty();
+                            timeSlotSelect.append($('<option>', { value: '', text: '-- Error Loading Slots --' }));
+                        }
+                    });
+                } else {
+                    timeSlotSelect.empty();
+                    timeSlotSelect.append($('<option>', { value: '', text: '-- Select a Doctor and Date --' }));
+                }
+            }
+
+            $('#doctorSelect, #appointmentDate').change(loadAvailableSlots);
+        });
+    </script>
+}

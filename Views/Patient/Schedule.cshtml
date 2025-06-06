@@ -4,32 +4,41 @@
     ViewData["Title"] = "My Appointment Schedule";
 }
 
-<h3>📅 Upcoming Appointments</h3>
+<h3 class="mb-4">📅 Upcoming Appointments</h3> @* Added mb-4 for spacing * @
+
 @if (!Model.Any())
 {
-        <div class="alert alert-info mt-3">No scheduled appointments.</div>
+    <div class="alert alert-info mt-3">No scheduled appointments.</div>
 }
 else
 {
-        <table class="table table-bordered mt-3">
-            <thead class="table-light">
-                <tr>
-                    <th>Doctor</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Location</th>
-                </tr>
-            </thead>
-            <tbody>
-            @foreach (var a in Model)
-            {
-                        <tr>
-                            <td>@a.DoctorName</td>
-                            <td>@a.Date.ToShortDateString()</td>
-                            <td>@a.TimeSlot</td>
-                            <td>@a.Location</td>
-                        </tr>
-            }
-            </tbody>
-        </table>
+    <table class="table table-bordered mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Location</th>
+                <th>Reason</th> @* Added Reason column for completeness *@
+            </tr>
+        </thead>
+<tbody>
+    @foreach (var a in Model)
+    {
+        <tr>
+            <td>@a.Doctor?.Name</td> @* FIX: Access Doctor's Name through navigation property *@
+            <td>@a.Date.ToShortDateString()</td>
+            <td>@a.Time.ToString(@"hh\:mm")</td> @* FIX: Format TimeSpan for display *@
+            <td>@a.Location</td>
+            <td>@a.Reason</td> @* Display Reason property *@
+        </tr>
+    }
+</tbody>
+    </table>
 }
+
+<div class="mt-4">
+    @* Added div for spacing and buttons *@
+    <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary">Book New Appointment</a>
+    <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-secondary ms-2">Back to Dashboard</a>
+</div>

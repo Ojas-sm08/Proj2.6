@@ -1,53 +1,59 @@
-﻿@model HospitalManagementSystem.Models.Appointment
+﻿@model HospitalManagementSystem.Models.Patient
 
 @{
-    ViewData["Title"] = "Book Appointment";
-    Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    ViewData["Title"] = "Add New Patient";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-@if (TempData["Message"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["Message"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
+<h2 class="mb-4">Add New Patient</h2>
 
-<h2 class="mb-4">Book an Appointment</h2>
+<form method="post" asp-action="Create">
+     @* Make sure this is "Create" *@
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-<form method="post" asp-action="Create" asp-controller="Patient">
     <div class="mb-3">
-        <label asp-for="DoctorName" class="form-label">Doctor Name</label>
-        <input asp-for="DoctorName" class="form-control" placeholder="Enter Doctor Name" />
-        <span asp-validation-for="DoctorName" class="text-danger"></span>
+        <label asp-for="Name" class="form-label"></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="PatientName" class="form-label">Your Name</label>
-        <input asp-for="PatientName" class="form-control" placeholder="Enter Your Name" />
-        <span asp-validation-for="PatientName" class="text-danger"></span>
+        <label asp-for="DateOfBirth" class="form-label"></label>
+        <input asp-for="DateOfBirth" class="form-control" type="date" />
+        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="Date" class="form-label">Date</label>
-        <input asp-for="Date" type="date" class="form-control" />
-        <span asp-validation-for="Date" class="text-danger"></span>
+        <label asp-for="Gender" class="form-label"></label>
+        <select asp-for="Gender" class="form-select">
+            <option value="">-- Select Gender --</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="Time" class="form-label">Time</label>
-        <input asp-for="Time" type="time" class="form-control" />
-        <span asp-validation-for="Time" class="text-danger"></span>
+        <label asp-for="ContactNumber" class="form-label"></label>
+        <input asp-for="ContactNumber" class="form-control" />
+        <span asp-validation-for="ContactNumber" class="text-danger"></span>
     </div>
 
     <div class="mb-3">
-        <label asp-for="Location" class="form-label">Location</label>
-        <input asp-for="Location" class="form-control" placeholder="Enter Location" />
-        <span asp-validation-for="Location" class="text-danger"></span>
+        <label asp-for="Address" class="form-label"></label>
+        <textarea asp-for="Address" class="form-control" rows="1"></textarea>
+        <span asp-validation-for="Address" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-success">Book Appointment</button>
-    <a asp-action="Dashboard" class="btn btn-outline-secondary ms-2">Cancel</a>
+    <div class="mb-3">
+        <label asp-for="MedicalHistory" class="form-label"></label>
+        <textarea asp-for="MedicalHistory" class="form-control" rows="2"></textarea>
+        <span asp-validation-for="MedicalHistory" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success">Add Patient</button>
+    <a asp-action="Manage" class="btn btn-outline-secondary ms-2">Back to List</a>
 </form>
 
 @section Scripts {

@@ -1,57 +1,124 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using HospitalManagementSystem.Models;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http; // Required for HttpContext.Session
+using Microsoft.EntityFrameworkCore; // Required for FirstOrDefaultAsync, ToListAsync etc.
+using HospitalManagementSystem.Data; // Required for HospitalDbContext
+// Removed: using System.Diagnostics; // Debugging statements removed
 
 namespace HospitalManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
-        // Dummy user data for authentication (replace with DB later)
-        private static List<User> users = new List<User>
+        private readonly HospitalDbContext _context; // Use the injected DbContext
+
+        public AccountController(HospitalDbContext context)
         {
-            new User { Id = 1, Username = "admin", Password = "admin123", Role = "Admin" },
-            new User { Id = 2, Username = "doctor1", Password = "doc123", Role = "Doctor" },
-            new User { Id = 3, Username = "patient1", Password = "pat123", Role = "Patient" }
-        };
+            _context = context; // Initialize DbContext
+        }
 
         // GET: /Account/Login
         [HttpGet]
         public IActionResult Login()
         {
+            // Clear any existing session data on accessing the login page to ensure a fresh state
+            HttpContext.Session.Clear();
+
+            ViewData["Title"] = "User Login";
             return View();
         }
 
         // POST: /Account/Login
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Login(LoginViewModel model)
+        [ValidateAntiForgeryToken] // Protects against Cross-Site Request Forgery (CSRF)
+        public async Task<IActionResult> Login(string username, string password)
         {
-            if (ModelState.IsValid)
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                var user = users.FirstOrDefault(u =>
-                    u.Username == model.Username && u.Password == model.Password);
-
-                if (user != null)
-                {
-                    HttpContext.Session.SetString("Username", user.Username);
-                    HttpContext.Session.SetString("Role", user.Role);
-
-                    // Redirect based on role
-                    return user.Role switch
-                    {
-                        "Admin" => RedirectToAction("Index", "Admin"),
-                        "Doctor" => RedirectToAction("Dashboard", "Doctor"),
-                        "Patient" => RedirectToAction("Dashboard", "Patient"),
-                        _ => RedirectToAction("Login", "Account")
-                    };
-                }
-
-                ViewBag.Error = "Invalid username or password.";
+                TempData["ErrorMessage"] = "Please enter both username and password.";
+                return View();
             }
 
-            return View(model);
+            var user = await _context.Users
+                                    .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "Invalid username or password.";
+                return View();
+            }
+
+            // IMPORTANT SECURITY WARNING: In a real application, you MUST hash passwords
+            // and compare the hash, not plain text passwords.
+            // This implementation is for demonstration purposes only.
+            if (user.PasswordHash != password) // Comparing plain text password (INSECURE for production)
+            {
+                TempData["ErrorMessage"] = "Invalid username or password.";
+                return View();
+            }
+
+            // Set session variables upon successful login
+            HttpContext.Session.SetString("Username", user.Username);
+            HttpContext.Session.SetString("Role", user.Role);
+
+
+            // Set specific IDs in session based on role
+            if (user.Role == "Patient")
+            {
+                string normalizedPatientUsername = user.Username.ToLower();
+                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Name.ToLower() == normalizedPatientUsername);
+                if (patient != null)
+                {
+                    HttpContext.Session.SetInt32("PatientId", patient.PatientId); // Using SetInt32
+                }
+                else
+                {
+                    HttpContext.Session.Clear();
+                    TempData["ErrorMessage"] = "Patient profile not found for this user. Please contact support.";
+                    return View();
+                }
+            }
+            else if (user.Role == "Doctor")
+            {
+                string normalizedUserIdentifier = user.Username.Replace("dr.", "").Replace(".", "").ToLower();
+
+                var doctor = await _context.Doctors
+                                           .FirstOrDefaultAsync(d => d.Name.Replace(" ", "").ToLower() == normalizedUserIdentifier);
+
+                if (doctor != null)
+                {
+                    // Storing DoctorId as a string in session to avoid byte corruption issues
+                    HttpContext.Session.SetString("DoctorId", doctor.Id.ToString());
+                }
+                else
+                {
+                    HttpContext.Session.Clear();
+                    TempData["ErrorMessage"] = "Doctor profile not found for this user. Please contact support. Ensure doctor's name matches user's name in the database.";
+                    return View();
+                }
+            }
+
+            TempData["SuccessMessage"] = $"Welcome, {user.Username}!";
+
+            // Redirect based on user role
+            if (user.Role == "Admin")
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+            else if (user.Role == "Patient")
+            {
+                return RedirectToAction("Dashboard", "Patient");
+            }
+            else if (user.Role == "Doctor")
+            {
+                // Final redirect target for Doctor role
+                return RedirectToAction("Dashboard", "Doctor");
+            }
+            else
+            {
+                return RedirectToAction("Index", "Home");
+            }
         }
 
         // POST: /Account/Logout
@@ -60,8 +127,17 @@ namespace HospitalManagementSystem.Controllers
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            TempData["LogoutMessage"] = "You have successfully logged out!";
+            TempData["LogoutMessage"] = "You have been successfully logged out.";
             return RedirectToAction("Login", "Account");
+        }
+
+        // GET: /Account/AccessDenied
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            ViewBag.ErrorMessage = "You do not have permission to view this page.";
+            ViewData["Title"] = "Access Denied";
+            return View();
         }
     }
 }

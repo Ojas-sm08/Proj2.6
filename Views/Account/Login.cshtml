@@ -1,7 +1,7 @@
 ﻿@model HospitalManagementSystem.Models.LoginViewModel
 @{
     ViewData["Title"] = "Login";
-    Layout = null;
+    Layout = null; // No shared layout for this page
 }
 
 <!DOCTYPE html>
@@ -14,11 +14,16 @@
     <style>
         body {
             background-color: #f5f8fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            margin: 0;
         }
 
         .login-container {
             max-width: 400px;
-            margin: 80px auto;
+            width: 90%; /* Make it responsive on smaller screens */
             padding: 30px;
             background-color: white;
             border-radius: 12px;
@@ -29,24 +34,40 @@
             text-align: center;
             margin-bottom: 25px;
             font-weight: bold;
+            color: #343a40; /* Darker color for title */
         }
     </style>
 </head>
 <body>
     <div class="login-container">
 
-        <!-- ✅ Success Message After Logout -->
-        @if (TempData["LogoutMessage"] != null)
+        <!-- Display TempData messages for Error, Success, or Logout -->
+        @if (TempData["SuccessMessage"] != null)
         {
             <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
-                <strong>✔</strong> @TempData["LogoutMessage"]
+                <strong>✔</strong> @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+                <strong>✖</strong> @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["LogoutMessage"] != null)
+        {
+            <div class="alert alert-info alert-dismissible fade show text-center" role="alert">
+                <strong>ℹ</strong> @TempData["LogoutMessage"]
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         }
 
         <h3 class="form-title">Login</h3>
 
-        <form method="post">
+        <form asp-controller="Account" asp-action="Login" method="post">
+            @* Explicitly set controller and action *@
             <div class="mb-3">
                 <label asp-for="Username" class="form-label">Username</label>
                 <input asp-for="Username" class="form-control" placeholder="Enter username" />
@@ -61,10 +82,7 @@
 
             <button type="submit" class="btn btn-primary w-100">Login</button>
 
-            @if (ViewBag.Error != null)
-            {
-                <div class="alert alert-danger mt-3">@ViewBag.Error</div>
-            }
+            @* REMOVED: ViewBag.Error as controller now uses TempData["ErrorMessage"] *@
         </form>
     </div>
 

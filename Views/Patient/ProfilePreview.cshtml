@@ -1,53 +1,72 @@
-﻿@inject IHttpContextAccessor HttpContextAccessor
+﻿@model HospitalManagementSystem.Models.Patient // This view expects a Patient model, can be null for admin message
 @{
-    var role = HttpContextAccessor.HttpContext.Session.GetString("Role");
-    Layout = role == "Admin" ? "~/Views/Shared/_Layout.cshtml"
-           : role == "Doctor" ? "~/Views/Shared/_Layout.Doctor.cshtml"
-           : "~/Views/Shared/_Layout.Patient.cshtml";
-
     ViewData["Title"] = "Patient Profile Preview";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure it uses your main layout
 }
 
-<h2 class="mb-4">Patient Profile Preview (Modal Demo)</h2>
+<h2 class="mb-4">👤 Patient Profile Preview</h2>
 
-<!-- Trigger Button -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#profileModal">
-    View John Doe’s Profile
-</button>
+@if (Model != null)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Patient Details</h5>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title text-primary">@Model.Name</h5>
+            <dl class="row">
+                <dt class="col-sm-4">Patient ID:</dt>
+                <dd class="col-sm-8">@Model.PatientId</dd>
 
-<!-- Modal -->
-<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content shadow">
-            <div class="modal-header">
-                <h5 class="modal-title" id="profileModalLabel">Patient Profile: John Doe</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <dl class="row">
-                    <dt class="col-sm-3">Name:</dt>
-                    <dd class="col-sm-9">John Doe</dd>
+                <dt class="col-sm-4">Date of Birth:</dt>
+                <dd class="col-sm-8">@Model.DateOfBirth.ToShortDateString()</dd>
 
-                    <dt class="col-sm-3">DOB:</dt>
-                    <dd class="col-sm-9">01-Jan-1990</dd>
+                <dt class="col-sm-4">Gender:</dt>
+                <dd class="col-sm-8">@Model.Gender</dd>
 
-                    <dt class="col-sm-3">Gender:</dt>
-                    <dd class="col-sm-9">Male</dd>
+                <dt class="col-sm-4">Contact Number:</dt>
+                <dd class="col-sm-8">@Model.ContactNumber</dd>
 
-                    <dt class="col-sm-3">Contact:</dt>
-                    <dd class="col-sm-9">1234567890</dd>
+                <dt class="col-sm-4">Address:</dt>
+                <dd class="col-sm-8">@Model.Address</dd>
 
-                    <dt class="col-sm-3">Address:</dt>
-                    <dd class="col-sm-9">123 Main St, Springfield</dd>
-
-                    <dt class="col-sm-3">Medical History:</dt>
-                    <dd class="col-sm-9">Diabetes, Hypertension</dd>
-                </dl>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-outline-primary">Download PDF</button>
-            </div>
+                <dt class="col-sm-4">Medical History:</dt>
+                <dd class="col-sm-8">@Model.MedicalHistory</dd>
+            </dl>
         </div>
     </div>
-</div>
+    <div class="mt-3">
+        <a asp-action="Edit" asp-route-id="@Model.PatientId" class="btn btn-primary">Edit Profile</a>
+        <a asp-action="Manage" class="btn btn-secondary ms-2">Back to Patient List</a>
+
+        @* This is the "Download PDF" button *@
+        <a asp-controller="Patient" asp-action="DownloadProfilePdf" asp-route-id="@Model.PatientId" class="btn btn-info ms-2">
+            <i class="bi bi-file-earmark-pdf"></i> Download PDF
+        </a>
+    </div>
+}
+else if (ViewBag.Message != null)
+{
+    <div class="alert alert-info">
+        @ViewBag.Message
+    </div>
+    <div class="mt-3">
+        <a asp-action="Manage" class="btn btn-primary">Go to Patient List</a>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        No patient profile found to preview. Please select a patient or ensure you are logged in as a patient.
+    </div>
+    <div class="mt-3">
+        <a asp-action="Manage" class="btn btn-primary">Go to Patient List</a>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Optional: Add some client-side script for PDF generation if using a client-side library,
+        // but typically PDF generation is server-side.
+    </script>
+}

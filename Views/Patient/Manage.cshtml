@@ -1,52 +1,45 @@
-﻿@model IEnumerable<HospitalManagementSystem.Models.Patient>
-@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
+﻿@model List<HospitalManagementSystem.Models.Patient>
 
 @{
-    var role = HttpContextAccessor.HttpContext.Session.GetString("Role");
-    Layout = role == "Admin" ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_Layout.Patient.cshtml";
     ViewData["Title"] = "Patient Management";
-
-    var query = Context.Request.Query;
-    var searchTerm = query["searchTerm"].ToString();
-    var gender = query["gender"].ToString();
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <h2 class="mb-4">Patient Management</h2>
 
-<form method="get" class="row g-2 align-items-center mb-4">
+<form asp-action="Manage" method="get" class="row g-3 align-items-center mb-4">
     <div class="col-md-4">
-        <input type="text" name="searchTerm" class="form-control" placeholder="Search by name or contact" value="@searchTerm" />
+        <input type="text" name="searchString" class="form-control" placeholder="Search by name or contact" value="@ViewBag.CurrentSearchString" />
     </div>
     <div class="col-md-3">
-        <select class="form-select" name="gender">
-            <option value="All" selected="@(gender == "All" ? "selected" : null)">All Genders</option>
-            <option value="Male" selected="@(gender == "Male" ? "selected" : null)">Male</option>
-            <option value="Female" selected="@(gender == "Female" ? "selected" : null)">Female</option>
+        <select name="gender" class="form-select">
+            @foreach (var g in ViewBag.Genders)
+            {
+                <option value="@g" selected="@(g == ViewBag.CurrentGender ? "selected" : null)">@g</option>
+            }
         </select>
     </div>
     <div class="col-md-auto">
-        <button type="submit" class="btn btn-outline-primary">Search</button>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+    <div class="col-md-auto ms-auto">
+        <a asp-action="Create" class="btn btn-success">Add New Patient</a>
     </div>
 </form>
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">No patients found with the given filters.</div>
-}
-else
-{
-    <table class="table table-bordered table-hover">
-        <thead class="table-light">
-            <tr>
-                <th>Name</th>
-                <th>DOB</th>
-                <th>Gender</th>
-                <th>Contact</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
+<table class="table table-bordered mt-3">
+    <thead class="table-light">
+        <tr>
+            <th>Name</th>
+            <th>Date Of Birth</th>
+            <th>Gender</th>
+            <th>Contact Number</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
             @foreach (var patient in Model)
             {
                 <tr>
@@ -55,12 +48,17 @@ else
                     <td>@patient.Gender</td>
                     <td>@patient.ContactNumber</td>
                     <td>
-                        <a class="btn btn-sm btn-info" asp-action="Details" asp-route-id="@patient.PatientId">View</a>
-                        <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@patient.PatientId">Edit</a>
-                        <a class="btn btn-sm btn-danger" asp-action="Delete" asp-route-id="@patient.PatientId">Delete</a>
+                        @* This is the "View" button that connects to ProfilePreview *@
+                        <a asp-action="ProfilePreview" asp-route-id="@patient.PatientId" class="btn btn-info btn-sm">View</a> |
+                        <a asp-action="Edit" asp-route-id="@patient.PatientId" class="btn btn-primary btn-sm">Edit</a> |
+                        <a asp-action="Delete" asp-route-id="@patient.PatientId" class="btn btn-danger btn-sm">Delete</a>
                     </td>
                 </tr>
             }
-        </tbody>
-    </table>
-}
+        }
+        else
+        {
+            <tr><td colspan="5" class="text-center">No patients found.</td></tr>
+        }
+    </tbody>
+</table>

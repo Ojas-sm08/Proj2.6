@@ -8,29 +8,31 @@
 
 @if (!Model.Any())
 {
-        <div class="alert alert-info">You have no upcoming appointments.</div>
+    <div class="alert alert-info">You have no upcoming appointments.</div>
 }
 else
 {
-        <table class="table table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th>Doctor</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Location</th>
-                </tr>
-            </thead>
-            <tbody>
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Location</th>
+                <th>Reason</th> @* Added Reason column based on Appointment model *@
+            </tr>
+        </thead>
+        <tbody>
             @foreach (var appt in Model)
             {
-                        <tr>
-                            <td>@appt.DoctorName</td>
-                            <td>@appt.Date.ToShortDateString()</td>
-                            <td>@appt.Time</td>
-                            <td>@appt.Location</td>
-                        </tr>
+                <tr>
+                    <td>@appt.Doctor?.Name</td> @* FIX: Access Doctor's Name through navigation property *@
+                    <td>@appt.Date.ToShortDateString()</td>
+                    <td>@appt.Time.ToString(@"hh\:mm")</td> @* FIX: Formatted TimeSpan for better display *@
+                    <td>@appt.Location</td>
+                    <td>@appt.Reason</td> @* Display Reason property *@
+                </tr>
             }
-            </tbody>
-        </table>
+        </tbody>
+    </table>
 }

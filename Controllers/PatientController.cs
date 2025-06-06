@@ -1,152 +1,398 @@
-﻿using HospitalManagementSystem.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using HospitalManagementSystem.Models;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using HospitalManagementSystem.Data;
+using System.Collections.Generic;
+// using Rotativa.AspNetCore; // Removed Rotativa using directive
+
+// Added QuestPDF using directives
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using QuestPDF.Drawing; // Added this using directive
+using System.IO; // Required for MemoryStream
+
 
 namespace HospitalManagementSystem.Controllers
 {
     public class PatientController : Controller
     {
-        private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
+        private readonly HospitalDbContext _context;
 
-        public IActionResult Index()
+        public PatientController(HospitalDbContext context)
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-
-            string role = HttpContext.Session.GetString("Role");
-            return role == "Patient" ? RedirectToAction("Dashboard") : RedirectToAction("Manage");
+            _context = context;
         }
 
+        private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
+        private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
+        private bool IsPatient() => HttpContext.Session.GetString("Role") == "Patient";
+
+
+        // GET: /Patient/Manage (Your primary patient listing/management page)
+        public async Task<IActionResult> Manage(string searchString, string gender)
+        {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Only Admins can access this management page.
+            if (!IsAdmin())
+            {
+                return RedirectToAction("Dashboard", "Patient"); // Redirect non-admins
+            }
+
+            IQueryable<Patient> patients = _context.Patients;
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                patients = patients.Where(p => p.Name.Contains(searchString) || p.ContactNumber.Contains(searchString));
+            }
+
+            if (!string.IsNullOrEmpty(gender) && gender != "All")
+            {
+                patients = patients.Where(p => p.Gender == gender);
+            }
+
+            ViewBag.CurrentSearchString = searchString;
+            ViewBag.CurrentGender = gender;
+
+            ViewBag.Genders = new List<string> { "All", "Male", "Female", "Other" };
+
+            return View(await patients.ToListAsync());
+        }
+
+        // GET: /Patient/Notifications (New Action)
+        public IActionResult Notifications()
+        {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+            ViewData["Title"] = "Patient Notifications";
+            return View(); // Renders Views/Patient/Notifications.cshtml
+        }
+
+        // GET: /Patient/ProfilePreview/{id?} (Modified Action to accept ID)
+        public async Task<IActionResult> ProfilePreview(int? id)
+        {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            string? role = HttpContext.Session.GetString("Role");
+            Patient? patient = null;
+
+            if (role == "Patient")
+            {
+                if (int.TryParse(HttpContext.Session.GetString("PatientId"), out int loggedInPatientId))
+                {
+                    patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == loggedInPatientId);
+                }
+            }
+            else if (role == "Admin")
+            {
+                if (id.HasValue)
+                {
+                    patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id.Value);
+                }
+                else
+                {
+                    ViewBag.Message = "As an Admin, please select a patient from the 'Manage & Search Patients' list to view their profile.";
+                }
+            }
+
+            ViewData["Title"] = "Patient Profile Preview";
+            return View(patient);
+        }
+
+        // MODIFIED ACTION: GET: Patient/DownloadProfilePdf/{id} - Now generates a real PDF using QuestPDF
+        [HttpGet]
+        public async Task<IActionResult> DownloadProfilePdf(int id)
+        {
+            if (!IsLoggedIn())
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            string? role = HttpContext.Session.GetString("Role");
+            bool authorized = false;
+
+            if (role == "Admin")
+            {
+                authorized = true;
+            }
+            else if (role == "Patient")
+            {
+                if (int.TryParse(HttpContext.Session.GetString("PatientId"), out int loggedInPatientId))
+                {
+                    if (loggedInPatientId == id)
+                    {
+                        authorized = true;
+                    }
+                }
+            }
+
+            if (!authorized)
+            {
+                TempData["ErrorMessage"] = "You are not authorized to download this profile.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id);
+
+            if (patient == null)
+            {
+                return NotFound();
+            }
+
+            // --- REAL PDF GENERATION USING QUESTPDF ---
+            // Set the QuestPDF license type. This is mandatory for commercial use but good practice for community.
+            QuestPDF.Settings.License = LicenseType.Community;
+            // Register a font for broader compatibility if needed (e.g., Arial).
+            // FontManager.RegisterSystemFonts(); // Uncomment this line if you need system fonts
+            // For simple cases, default fonts are often sufficient.
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.A4);
+                    page.Margin(30);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(12));
+
+                    page.Header()
+                        .Text("Patient Profile")
+                        .FontSize(24)
+                        .Bold()
+                        .FontColor(Colors.Blue.Darken2)
+                        .AlignLeft();
+
+                    page.Content()
+                        .PaddingVertical(10)
+                        .Column(column =>
+                        {
+                            column.Spacing(10);
+
+                            column.Item().Text(text =>
+                            {
+                                text.Span("Generated On: ").SemiBold();
+                                text.Span(DateTime.Now.ToShortDateString());
+                            });
+
+                            // CORRECTED: Moved PaddingVertical outside the Height and Background definition.
+                            // This ensures the padding applies around the 1-unit high line.
+                            column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
+
+                            column.Item().Text("Personal Information").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
+                            column.Item().PaddingLeft(10).Column(col =>
+                            {
+                                col.Spacing(5);
+                                col.Item().Text(text => { text.Span("Name: ").SemiBold(); text.Span(patient.Name); });
+                                col.Item().Text(text => { text.Span("Patient ID: ").SemiBold(); text.Span(patient.PatientId.ToString()); });
+                                col.Item().Text(text => { text.Span("Date of Birth: ").SemiBold(); text.Span(patient.DateOfBirth.ToShortDateString()); });
+                                col.Item().Text(text => { text.Span("Gender: ").SemiBold(); text.Span(patient.Gender); });
+                            });
+
+                            // CORRECTED: Moved PaddingVertical outside the Height and Background definition.
+                            column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
+
+                            column.Item().Text("Contact Information").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
+                            column.Item().PaddingLeft(10).Column(col =>
+                            {
+                                col.Spacing(5);
+                                col.Item().Text(text => { text.Span("Contact Number: ").SemiBold(); text.Span(patient.ContactNumber); });
+                                col.Item().Text(text => { text.Span("Address: ").SemiBold(); text.Span(patient.Address); });
+                            });
+
+                            // CORRECTED: Moved PaddingVertical outside the Height and Background definition.
+                            column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
+
+                            column.Item().Text("Medical History").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
+                            column.Item().PaddingLeft(10).Text(text => text.Span(patient.MedicalHistory ?? "N/A"));
+                        });
+
+                    page.Footer()
+                        .AlignCenter()
+                        .Text(x =>
+                        {
+                            // Using static placeholder for page numbers as discussed
+                            x.Span("Page X of Y").FontSize(10);
+                        });
+                });
+            });
+
+            // Generate the PDF into a MemoryStream
+            using var stream = new MemoryStream();
+            document.GeneratePdf(stream);
+            stream.Position = 0; // Reset stream position to the beginning
+
+            // Return the PDF file
+            return File(stream.ToArray(), "application/pdf", $"PatientProfile_{patient.Name.Replace(" ", "_")}.pdf");
+        }
+
+
+        // Example of a Patient Dashboard (for a logged-in patient)
         public IActionResult Dashboard()
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-            ViewBag.Username = HttpContext.Session.GetString("Username");
-            return View(); // Views/Patient/Dashboard.cshtml
-        }
-
-        public IActionResult Info()
-        {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-
-            var patient = new Patient
+            if (!IsLoggedIn() || !IsPatient())
             {
-                PatientId = 1,
-                Name = "John Doe",
-                Gender = "Male",
-                DateOfBirth = new DateTime(1990, 1, 1),
-                ContactNumber = "1234567890"
-            };
-
-            return View(patient); // Views/Patient/Info.cshtml
+                return RedirectToAction("Login", "Account");
+            }
+            ViewData["Title"] = "Patient Dashboard";
+            return View(); // Renders Views/Patient/Dashboard.cshtml
         }
 
-        public IActionResult Billing()
+        // Example of a Patient's Appointments list
+        public async Task<IActionResult> Appointments()
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-            return View(); // Views/Patient/Billing.cshtml
-        }
-
-        public IActionResult Schedule()
-        {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-
-            var appointments = new List<Appointment>
+            if (!IsLoggedIn() || !IsPatient())
             {
-                new Appointment { Id = 1, DoctorName = "Dr. Aditi Sharma", PatientName = "John Doe", Date = DateTime.Today, Time = new TimeSpan(10, 30, 0), Location = "Room 201" },
-                new Appointment { Id = 2, DoctorName = "Dr. Sneha Kapoor", PatientName = "John Doe", Date = DateTime.Today.AddDays(1), Time = new TimeSpan(14, 0, 0), Location = "Room 202" }
-            };
+                return RedirectToAction("Login", "Account");
+            }
 
-            return View("Schedule", appointments); // Views/Patient/Schedule.cshtml
+            var patientIdString = HttpContext.Session.GetString("PatientId");
+            if (!int.TryParse(patientIdString, out int loggedInPatientId))
+            {
+                TempData["ErrorMessage"] = "Could not retrieve patient ID from session. Please log in again.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var appointments = await _context.Appointments
+                                     .Include(a => a.Doctor) // Include Doctor details
+                                     .Where(a => a.PatientId == loggedInPatientId)
+                                     .OrderBy(a => a.Date)
+                                     .ThenBy(a => a.Time)
+                                     .ToListAsync();
+
+            ViewData["Title"] = "My Appointments";
+            return View("Appointments", appointments); // Renders Views/Patient/Appointments.cshtml
         }
 
+        // GET for creating a new patient:
         [HttpGet]
         public IActionResult Create()
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-            return View(); // Views/Patient/Create.cshtml
+            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+            return View();
         }
 
+        // POST for creating a new patient:
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Appointment appointment)
+        public async Task<IActionResult> Create([Bind("Name,DateOfBirth,Gender,ContactNumber,Address,MedicalHistory")] Patient patient)
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
 
             if (ModelState.IsValid)
             {
-                TempData["Message"] = "Appointment booked successfully!";
-                return RedirectToAction("Create");
+                _context.Add(patient);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Patient added successfully!";
+                return RedirectToAction(nameof(Manage));
             }
-
-            return View(appointment);
+            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+            return View(patient);
         }
 
-        public IActionResult DoctorList()
+        // GET: Patient/Details/5
+        [HttpGet]
+        public async Task<IActionResult> Details(int? id)
         {
             if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
 
-            var doctors = new List<Doctor>
-            {
-                new Doctor { Id = 1, Name = "Dr. Aditi Sharma", Specialization = "Cardiologist", Contact = "aditi@hospital.com", Location = "Cardio Wing A101" },
-                new Doctor { Id = 2, Name = "Dr. Kavya Nair", Specialization = "Dermatologist", Contact = "kavya@hospital.com", Location = "Skin Dept B202" },
-                new Doctor { Id = 3, Name = "Dr. Ananya Rao", Specialization = "Pediatrician", Contact = "ananya@hospital.com", Location = "Pediatric Ward C303" },
-                new Doctor { Id = 4, Name = "Dr. Rajan Pillai", Specialization = "Neurologist", Contact = "rajan@hospital.com", Location = "Neuro Center D405" }
-            };
+            if (id == null) return NotFound();
 
-            return View("DoctorList", doctors); // Views/Patient/DoctorList.cshtml
+            var patient = await _context.Patients
+                                        .FirstOrDefaultAsync(m => m.PatientId == id);
+            if (patient == null) return NotFound();
+
+            return View(patient);
         }
 
-        public IActionResult Appointments()
+        // GET: Patient/Edit/5
+        [HttpGet]
+        public async Task<IActionResult> Edit(int? id)
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
 
-            var appointments = new List<Appointment>
-            {
-                new Appointment { Id = 1, DoctorName = "Dr. Aditi Sharma", PatientName = "John Doe", Date = DateTime.Today, Time = new TimeSpan(10, 30, 0), Location = "Room 201" },
-                new Appointment { Id = 2, DoctorName = "Dr. Sneha Kapoor", PatientName = "John Doe", Date = DateTime.Today.AddDays(1), Time = new TimeSpan(14, 0, 0), Location = "Room 202" }
-            };
+            if (id == null) return NotFound();
 
-            return View("Appointments", appointments); // Views/Patient/Appointments.cshtml
+            var patient = await _context.Patients.FindAsync(id);
+            if (patient == null) return NotFound();
+            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+            return View(patient);
         }
 
-        public IActionResult Manage(string searchTerm, string gender)
+        // POST: Patient/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, [Bind("PatientId,Name,DateOfBirth,Gender,ContactNumber,Address,MedicalHistory")] Patient patient)
         {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
 
-            var patients = new List<Patient>
-            {
-                new Patient { PatientId = 1, Name = "John Doe", DateOfBirth = new DateTime(1990, 1, 1), Gender = "Male", ContactNumber = "1234567890" },
-                new Patient { PatientId = 2, Name = "Jane Smith", DateOfBirth = new DateTime(1985, 5, 5), Gender = "Female", ContactNumber = "9876543210" },
-                new Patient { PatientId = 3, Name = "Rahul Mehta", DateOfBirth = new DateTime(2000, 8, 15), Gender = "Male", ContactNumber = "9988776655" }
-            };
+            if (id != patient.PatientId) return NotFound();
 
-            if (!string.IsNullOrWhiteSpace(searchTerm))
+            if (ModelState.IsValid)
             {
-                patients = patients.Where(p =>
-                    p.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    p.ContactNumber.Contains(searchTerm)).ToList();
+                try
+                {
+                    _context.Update(patient);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Patient updated successfully!";
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!PatientExists(patient.PatientId)) return NotFound();
+                    else throw;
+                }
+                return RedirectToAction(nameof(Manage));
             }
+            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+            return View(patient);
+        }
 
-            if (!string.IsNullOrWhiteSpace(gender) && gender != "All")
+        private bool PatientExists(int id)
+        {
+            return _context.Patients.Any(e => e.PatientId == id);
+        }
+
+        // GET: Patient/Delete/5
+        [HttpGet]
+        public async Task<IActionResult> Delete(int? id)
+        {
+            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+
+            if (id == null) return NotFound();
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(m => m.PatientId == id);
+            if (patient == null) return NotFound();
+
+            return View(patient);
+        }
+
+        // POST: Patient/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+
+            var patient = await _context.Patients.FindAsync(id);
+            if (patient != null)
             {
-                patients = patients.Where(p => p.Gender.Equals(gender, StringComparison.OrdinalIgnoreCase)).ToList();
+                _context.Patients.Remove(patient);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Patient deleted successfully!";
             }
-
-            return View("Manage", patients); // Views/Patient/Manage.cshtml
-        }
-
-        public IActionResult Notifications()
-        {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-            return View(); // Views/Patient/Notifications.cshtml
-        }
-
-        public IActionResult ProfilePreview()
-        {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-            return View(); // Views/Patient/ProfilePreview.cshtml
+            return RedirectToAction(nameof(Manage));
         }
     }
 }

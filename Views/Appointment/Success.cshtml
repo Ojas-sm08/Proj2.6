@@ -10,11 +10,11 @@
 <table class="table table-bordered">
     <tr>
         <th>Doctor</th>
-        <td>@Model.DoctorName</td>
+        <td>@Model.Doctor?.Name</td> @* FIX: Access Doctor's Name through navigation property *@
     </tr>
     <tr>
         <th>Patient</th>
-        <td>@Model.PatientName</td>
+        <td>@Model.Patient?.Name</td> @* FIX: Access Patient's Name through navigation property *@
     </tr>
     <tr>
         <th>Date</th>
@@ -22,8 +22,17 @@
     </tr>
     <tr>
         <th>Time</th>
-        <td>@Model.Time</td>
+        <td>@Model.Time.ToString(@"hh\:mm")</td> @* FIX: Formatted TimeSpan for better display *@
+    </tr>
+    <tr>
+        <th>Location</th>
+        <td>@Model.Location</td> @* Display Location property *@
+    </tr>
+    <tr>
+        <th>Reason</th>
+        <td>@Model.Reason</td> @* Display Reason property *@
     </tr>
 </table>
 
 <a href="/Appointment/Create" class="btn btn-primary">Book Another</a>
+<a asp-action="Appointments" asp-controller="Patient" class="btn btn-outline-secondary ms-2">View My Appointments</a> @* Added link to view patient's appointments *@

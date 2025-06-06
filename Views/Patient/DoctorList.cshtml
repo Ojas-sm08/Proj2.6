@@ -1,20 +1,139 @@
-﻿@model List<HospitalManagementSystem.Models.Doctor>
+﻿@model IEnumerable<HospitalManagementSystem.Models.Doctor>
 
 @{
-    ViewData["Title"] = "Available Doctors";
+    ViewData["Title"] = "Manage Doctors"; // Keep the title as "Manage Doctors" or change as preferred
+    Layout = "~/Views/Shared/_Layout.cshtml"; // EXPLICITLY SET TO MAIN LAYOUT
 }
 
-<h2 class="mb-4">Our Doctors</h2>
-
-@foreach (var doctor in Model)
-{
-    <div class="card mb-3 shadow-sm">
-        <div class="card-header bg-primary text-white fw-semibold">
-            @doctor.Name (@doctor.Specialization)
-        </div>
-        <div class="card-body">
-            <p><strong>Contact:</strong> @doctor.Contact</p>
-            <p><strong>Location:</strong> @doctor.Location</p>
-        </div>
+<div class="card border mt-5 mb-4">
+    @* Simplified card styling: removed shadow, rounded-lg for a simpler look *@
+    <div class="card-header bg-secondary text-white p-3">
+        @* Changed header color to secondary, simplified padding, removed rounded-top-lg *@
+        <h1 class="fw-normal mb-0 text-center">@ViewData["Title"]</h1> @* Changed bold to normal, simplified font weight *@
     </div>
-}
+    <div class="card-body p-3">
+        @* Simplified padding in the card body *@
+
+        @* NEW: Display New Doctor Login Info if available in TempData *@
+        @if (TempData["NewDoctorLoginInfo"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>Success!</strong> @TempData["NewDoctorLoginInfo"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="mb-3 d-flex justify-content-end">
+            @* Aligned "Add New Doctor" button to the right *@
+            <a asp-action="Create" class="btn btn-info">
+                @* Changed to btn-info, simplified classes *@
+                <i class="bi bi-person-plus-fill me-2"></i> Add New Doctor @* Added icon and padding *@
+            </a>
+        </div>
+
+        <form asp-action="Manage" method="get" class="mb-4 p-2 border-bottom">
+            @* Simplified form styling: removed background, shadows, rounded corners, kept bottom border *@
+            <div class="row g-2 align-items-center">
+                @* Reduced gap (g-2) for simpler layout *@
+                <div class="col-md-4">
+                    <input type="text" name="searchString" class="form-control" placeholder="Search by name or contact" value="@ViewBag.CurrentSearchString" /> @* Simplified input *@
+                </div>
+                <div class="col-md-4">
+                    <select name="specialization" class="form-select">
+                        @* Simplified select *@
+                        <option value="">-- All Specializations --</option>
+                        @* Ensure ViewBag.Specializations is not null before iterating *@
+                        @foreach (var spec in (ViewBag.Specializations as List<string> ?? new List<string>()))
+                        {
+                            <option value="@spec" selected="@(spec == ViewBag.CurrentSpecialization)">@spec</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end">
+                    @* Aligned buttons to the right *@
+                    <button type="submit" class="btn btn-primary me-2">
+                        @* Simplified button styling, changed color to primary *@
+                        <i class="bi bi-search me-2"></i> Search / Filter @* Added icon *@
+                    </button>
+                    <a asp-action="Manage" class="btn btn-outline-secondary">
+                        @* Simplified button styling, changed color to outline-secondary *@
+                        <i class="bi bi-x-circle-fill me-2"></i> Clear @* Added icon *@
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive border">
+            @* Simplified table container: removed shadow, rounded, kept border *@
+            <table class="table table-hover table-striped">
+                @* Simplified table: removed table-bordered, align-middle *@
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="text-white">
+                            @Html.DisplayNameFor(model => model.Name)
+                        </th>
+                        <th scope="col" class="text-white">
+                            @Html.DisplayNameFor(model => model.Specialization)
+                        </th>
+                        <th scope="col" class="text-white">
+                            @Html.DisplayNameFor(model => model.Description) @* Corrected from ContactNumber *@
+                        </th>
+                        <th scope="col" class="text-white">
+                            @Html.DisplayNameFor(model => model.Contact) @* Corrected from Email *@
+                        </th>
+                        <th scope="col" class="text-white">
+                            @Html.DisplayNameFor(model => model.Location) @* Corrected from JoiningDate *@
+                        </th>
+                        <th scope="col" class="text-white">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">No doctors found.</td> @* Reduced padding slightly *@
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Name)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Specialization)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Description) @* Corrected property *@
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Contact) @* Corrected property *@
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Location) @* Corrected property *@
+                                </td>
+                                <td class="text-center">
+                                    @* Centered the action buttons, removed flex for simpler layout *@
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-1">Edit</a> @* Simplified buttons *@
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1">Details</a> @* Simplified buttons *@
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a> @* Simplified buttons *@
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any() && string.IsNullOrEmpty(ViewBag.CurrentSearchString) && string.IsNullOrEmpty(ViewBag.CurrentSpecialization))
+        {
+            <p class="text-muted text-center mt-4">No doctors found. Please add new doctors to the system.</p>
+        }
+        else if (!Model.Any() && (!string.IsNullOrEmpty(ViewBag.CurrentSearchString) || !string.IsNullOrEmpty(ViewBag.CurrentSpecialization)))
+        {
+            <p class="text-muted text-center mt-4">No doctors found matching your search/filter criteria.</p>
+        }
+    </div>
+</div>

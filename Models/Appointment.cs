@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Models/Appointment.cs
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace HospitalManagementSystem.Models
@@ -6,25 +7,26 @@ namespace HospitalManagementSystem.Models
     public class Appointment
     {
         public int Id { get; set; }
+        public int PatientId { get; set; }
+        public Patient? Patient { get; set; } // Navigation property to Patient
 
-        [Required]
-        public string DoctorName { get; set; }
-
-        [Required]
-        public string PatientName { get; set; }
+        public int DoctorId { get; set; }
+        public Doctor? Doctor { get; set; } // Navigation property to Doctor
 
         [Required]
         [DataType(DataType.Date)]
         public DateTime Date { get; set; }
 
         [Required]
+        [DataType(DataType.Time)]
         public TimeSpan Time { get; set; }
 
-        // ✅ Add this if your view expects a TimeSlot field (optional alias)
-        public string TimeSlot => $"{Time:hh\\:mm}";
+        [StringLength(200)]
+        public string? Location { get; set; }
 
-        // ✅ Add this if your view expects a Location field
-        [Required]
-        public string Location { get; set; }
+        [StringLength(500)]
+        public string? Reason { get; set; }
+
+        public string? Status { get; set; } // e.g., "Scheduled", "Completed", "Cancelled"
     }
 }
