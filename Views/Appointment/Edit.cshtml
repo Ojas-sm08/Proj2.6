@@ -1,0 +1,68 @@
+﻿@model HospitalManagementSystem.Models.Appointment
+
+@{
+    ViewData["Title"] = "Edit Appointment";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="mb-4 text-center">✏️ Edit Appointment</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm p-4">
+            <div class="card-body">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="PatientId" /> 
+
+                    <div class="form-group mb-3">
+                        <label class="control-label">Patient Name</label>
+                       
+                        <input type="text" value="@(((IEnumerable<dynamic>)ViewBag.Patients).FirstOrDefault(p => p.Value.ToString() == Model.PatientId.ToString())?.Text ?? "N/A")" class="form-control" readonly />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="DoctorId" class="control-label">Doctor</label>
+                        
+                        <select asp-for="DoctorId" class="form-control" asp-items="@(new SelectList(ViewBag.Doctors, "Value", "Text"))"></select>
+                        <span asp-validation-for="DoctorId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="AppointmentDateTime" class="control-label">Appointment Date & Time</label>
+                        <input asp-for="AppointmentDateTime" type="datetime-local" class="form-control" />
+                        <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Reason" class="control-label">Reason for Appointment</label>
+                        <textarea asp-for="Reason" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Reason" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Status" class="control-label">Status</label>
+                        <select asp-for="Status" class="form-control">
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="No Show">No Show</option> 
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+}

@@ -21,6 +21,35 @@ namespace HospitalManagementSystem.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // --- Configure Relationships (Fluent API) ---
+            // Assuming Doctor has properties: Schedules, Reviews, Appointments as List<T>
+            modelBuilder.Entity<Doctor>()
+                .HasMany(d => d.Schedules)
+                .WithOne(ds => ds.Doctor)
+                .HasForeignKey(ds => ds.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Doctor>()
+                .HasMany(d => d.Reviews)
+                .WithOne(dr => dr.Doctor)
+                .HasForeignKey(dr => dr.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Doctor>()
+                .HasMany(d => d.Appointments)
+                .WithOne(a => a.Doctor)
+                .HasForeignKey(a => a.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting doctor if they have appointments
+
+            modelBuilder.Entity<Patient>()
+                .HasMany(p => p.Appointments)
+                .WithOne(a => a.Patient)
+                .HasForeignKey(a => a.PatientId) // FIX: Corrected to 'a.PatientId'
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            // --- Seed Data ---
+
             // Seed data for Users
             modelBuilder.Entity<User>().HasData(
                 new User { Id = 1, Username = "admin", PasswordHash = "admin123", Role = "Admin" }, // Use actual hash!
@@ -29,14 +58,14 @@ namespace HospitalManagementSystem.Data
                 new User { Id = 4, Username = "patient2", PasswordHash = "pat234", Role = "Patient" } // Use actual hash!
             );
 
-            // Seed data for Patients
+            // Seed data for Patients - UPDATED with descriptive names
             modelBuilder.Entity<Patient>().HasData(
                 new Patient
                 {
                     PatientId = 1,
-                    Name = "patient1",
+                    Name = "Alice Wonderland", // Changed from "patient1"
                     DateOfBirth = new DateTime(1990, 5, 15),
-                    Gender = "Male",
+                    Gender = "Female",
                     ContactNumber = "9876543210",
                     Address = "101 Maple St, City",
                     MedicalHistory = "No significant history."
@@ -44,9 +73,9 @@ namespace HospitalManagementSystem.Data
                 new Patient
                 {
                     PatientId = 2,
-                    Name = "patient2",
+                    Name = "Bob The Builder", // Changed from "patient2"
                     DateOfBirth = new DateTime(1985, 8, 20),
-                    Gender = "Female",
+                    Gender = "Male",
                     ContactNumber = "0123456789",
                     Address = "202 Oak Ave, Town",
                     MedicalHistory = "Seasonal allergies."
@@ -54,7 +83,7 @@ namespace HospitalManagementSystem.Data
                 new Patient
                 {
                     PatientId = 3,
-                    Name = "John Doe",
+                    Name = "Charlie Chaplin", // Changed from "John Doe"
                     DateOfBirth = new DateTime(1975, 1, 1),
                     Gender = "Male",
                     ContactNumber = "555-1234",
@@ -67,21 +96,21 @@ namespace HospitalManagementSystem.Data
             modelBuilder.Entity<Doctor>().HasData(
                 new Doctor
                 {
-                    Id = 1, // Primary Key for Doctor
+                    Id = 1, // Primary Key for Doctor, corrected from DoctorId
                     Name = "Dr. Smith",
                     Specialization = "Cardiology",
-                    Description = "Expert in heart conditions.", // Corrected property
-                    Contact = "smith@example.com",            // Corrected property
-                    Location = "Cardio Wing A101"             // Corrected property
+                    Description = "Expert in heart conditions.", // Corrected property from old ContactNumber
+                    Contact = "smith@example.com",            // Corrected property from old Email
+                    Location = "Cardio Wing A101"             // Corrected property from old JoiningDate
                 },
                 new Doctor
                 {
-                    Id = 2,
+                    Id = 2, // Primary Key for Doctor, corrected from DoctorId
                     Name = "Dr. Jones",
                     Specialization = "Pediatrics",
-                    Description = "Specializes in child health.", // Corrected property
-                    Contact = "jones@example.com",             // Corrected property
-                    Location = "Pediatric Ward C303"          // Corrected property
+                    Description = "Specializes in child health.", // Corrected property from old ContactNumber
+                    Contact = "jones@example.com",             // Corrected property from old Email
+                    Location = "Pediatric Ward C303"          // Corrected property from old JoiningDate
                 }
             );
 
@@ -92,20 +121,20 @@ namespace HospitalManagementSystem.Data
                     Id = 1,
                     PatientId = 1,
                     DoctorId = 1,
-                    Date = new DateTime(2025, 6, 13),
-                    Time = new TimeSpan(10, 0, 0),
+                    AppointmentDateTime = new DateTime(2025, 6, 13, 10, 0, 0), // Use combined DateTime
                     Location = "Room 101",
-                    Reason = "Annual Checkup"
+                    Reason = "Annual Checkup",
+                    Status = "Scheduled" // Added Status
                 },
                 new Appointment
                 {
                     Id = 2,
                     PatientId = 2,
                     DoctorId = 2,
-                    Date = new DateTime(2025, 6, 16),
-                    Time = new TimeSpan(14, 30, 0),
+                    AppointmentDateTime = new DateTime(2025, 6, 16, 14, 30, 0), // Use combined DateTime
                     Location = "Room 202",
-                    Reason = "Pediatric Consultation"
+                    Reason = "Pediatric Consultation",
+                    Status = "Scheduled" // Added Status
                 }
             );
 

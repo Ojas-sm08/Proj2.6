@@ -1,37 +1,114 @@
-﻿@{
-    ViewData["Title"] = "Available Slots";
+﻿@model HospitalManagementSystem.Models.DoctorAvailabilityViewModel
+
+@{
+    ViewData["Title"] = "Check Doctor Availability";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this uses your main layout
 }
 
-<h2>Check Available Time Slots</h2>
+<h2 class="mb-4 text-center">⏰ Check Doctor Availability</h2>
 
-<form method="post" asp-action="Feature2">
-    <div>
-        <label>Doctor</label>
-        <select name="doctor" class="form-control">
-            <option value="">-- Select Doctor --</option>
-            @foreach (var doc in ViewBag.Doctors)
-            {
-                <option value="@doc">@doc</option>
-            }
-        </select>
-    </div>
-
-    <div>
-        <label>Date</label>
-        <input type="date" name="date" class="form-control" value="@ViewBag.SelectedDate" />
-    </div>
-
-    <br />
-    <button type="submit" class="btn btn-success">Check Slots</button>
-</form>
-
-@if (ViewBag.AvailableSlots != null)
+@if (TempData["InfoMessage"] != null)
 {
-    <h4>Available Slots for @ViewBag.SelectedDoctor on @ViewBag.SelectedDate</h4>
-    <ul>
-        @foreach (var slot in ViewBag.AvailableSlots)
-        {
-            <li>@slot</li>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm p-4 mb-4">
+    <div class="card-body">
+        <form asp-controller="Appointment" asp-action="CheckAvailability" method="get">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="selectedDoctorId" class="form-label">Select Doctor:</label>
+                    <select id="selectedDoctorId" name="selectedDoctorId" class="form-select" required>
+                        <option value="">-- Select a Doctor --</option>
+                        @foreach (var doctor in Model.AllDoctors)
+                        {
+                            <option value="@doctor.Id" @@(Model.SelectedDoctorId == doctor.Id ? "selected" : "")>Dr. @doctor.Name (@doctor.Specialization)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="selectedDate" class="form-label">Select Date:</label>
+                    <input type="date" id="selectedDate" name="selectedDate" class="form-control" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-2"></i> Find Availability</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.SelectedDoctorId.HasValue && Model.SelectedDoctorDetails != null)
+{
+    <div class="card shadow-lg border-success rounded-lg mt-5">
+        <div class="card-header bg-gradient-success text-white text-center py-3 rounded-top-lg">
+            <h4 class="mb-0 fs-5"><i class="fas fa-user-md me-2"></i> Dr. @Model.SelectedDoctorDetails.Name's Availability on @Model.SelectedDate.ToLongDateString()</h4>
+        </div>
+        <div class="card-body p-4">
+            @if (Model.AvailableSlots != null && Model.AvailableSlots.Any())
+            {
+                <h5 class="mb-3 text-secondary">Available Time Slots:</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var slot in Model.AvailableSlots)
+                    {
+                        @* Convert TimeSpan to DateTime for display with AM/PM *@
+                        <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill shadow-sm">
+                            <i class="far fa-calendar-check me-1"></i> @(new DateTime().Add(slot).ToString(@"hh\:mm tt"))
+                        </span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="alert alert-warning text-center">No available slots found for Dr. @Model.SelectedDoctorDetails.Name on @Model.SelectedDate.ToShortDateString().</p>
+                <p class="text-center text-muted">Please try another date or doctor.</p>
+            }
+        </div>
+    </div>
+}
+else if (Model.AllDoctors != null && Model.AllDoctors.Any())
+{
+    <div class="alert alert-info text-center mt-4" role="alert">
+        Please select a doctor and a date to view their availability.
+    </div>
+}
+else
+{
+    <div class="alert alert-warning text-center mt-4" role="alert">
+        No doctors found in the system to check availability for.
+    </div>
+}
+
+
+@section Scripts {
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <style>
+        .rounded-lg {
+            border-radius: 0.75rem !important; /* Larger border-radius for cards */
         }
-    </ul>
+        .rounded-top-lg {
+            border-top-left-radius: 0.75rem !important;
+            border-top-right-radius: 0.75rem !important;
+        }
+        .bg-gradient-success {
+            background: linear-gradient(45deg, #28a745, #1e7e34); /* Green gradient */
+        }
+        .form-control-lg.rounded-pill {
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-lg.rounded-pill {
+            padding: 0.75rem 2rem;
+        }
+    </style>
 }

@@ -2,11 +2,11 @@
 using HospitalManagementSystem.Models;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using HospitalManagementSystem.Data;
+using Microsoft.AspNetCore.Http; // Required for HttpContext.Session
+using Microsoft.EntityFrameworkCore; // Required for ToListAsync, FindAsync, Include, etc.
+using HospitalManagementSystem.Data; // Required for HospitalDbContext
 using System.Collections.Generic;
-// using Rotativa.AspNetCore; // Removed Rotativa using directive
+using System.Diagnostics; // Added for Debug.WriteLine
 
 // Added QuestPDF using directives
 using QuestPDF.Fluent;
@@ -43,6 +43,7 @@ namespace HospitalManagementSystem.Controllers
             // Only Admins can access this management page.
             if (!IsAdmin())
             {
+                TempData["ErrorMessage"] = "You are not authorized to view this page."; // More specific error
                 return RedirectToAction("Dashboard", "Patient"); // Redirect non-admins
             }
 
@@ -186,8 +187,6 @@ namespace HospitalManagementSystem.Controllers
                                 text.Span(DateTime.Now.ToShortDateString());
                             });
 
-                            // CORRECTED: Moved PaddingVertical outside the Height and Background definition.
-                            // This ensures the padding applies around the 1-unit high line.
                             column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
 
                             column.Item().Text("Personal Information").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
@@ -198,9 +197,9 @@ namespace HospitalManagementSystem.Controllers
                                 col.Item().Text(text => { text.Span("Patient ID: ").SemiBold(); text.Span(patient.PatientId.ToString()); });
                                 col.Item().Text(text => { text.Span("Date of Birth: ").SemiBold(); text.Span(patient.DateOfBirth.ToShortDateString()); });
                                 col.Item().Text(text => { text.Span("Gender: ").SemiBold(); text.Span(patient.Gender); });
+                                col.Item().Text(text => { text.Span("Email: ").SemiBold(); text.Span(patient.Email ?? "N/A"); }); // Added Email
                             });
 
-                            // CORRECTED: Moved PaddingVertical outside the Height and Background definition.
                             column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
 
                             column.Item().Text("Contact Information").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
@@ -211,7 +210,6 @@ namespace HospitalManagementSystem.Controllers
                                 col.Item().Text(text => { text.Span("Address: ").SemiBold(); text.Span(patient.Address); });
                             });
 
-                            // CORRECTED: Moved PaddingVertical outside the Height and Background definition.
                             column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
 
                             column.Item().Text("Medical History").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
@@ -265,11 +263,10 @@ namespace HospitalManagementSystem.Controllers
             }
 
             var appointments = await _context.Appointments
-                                     .Include(a => a.Doctor) // Include Doctor details
-                                     .Where(a => a.PatientId == loggedInPatientId)
-                                     .OrderBy(a => a.Date)
-                                     .ThenBy(a => a.Time)
-                                     .ToListAsync();
+                                            .Include(a => a.Doctor) // Include Doctor details
+                                            .Where(a => a.PatientId == loggedInPatientId)
+                                            .OrderBy(a => a.AppointmentDateTime) // FIX: Order by AppointmentDateTime
+                                            .ToListAsync();
 
             ViewData["Title"] = "My Appointments";
             return View("Appointments", appointments); // Renders Views/Patient/Appointments.cshtml
@@ -279,7 +276,11 @@ namespace HospitalManagementSystem.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin())
+            {
+                TempData["ErrorMessage"] = "You are not authorized to add new patients.";
+                return RedirectToAction("Login", "Account");
+            }
             ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
             return View();
         }
@@ -287,16 +288,47 @@ namespace HospitalManagementSystem.Controllers
         // POST for creating a new patient:
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,DateOfBirth,Gender,ContactNumber,Address,MedicalHistory")] Patient patient)
+        public async Task<IActionResult> Create([Bind("Name,DateOfBirth,Gender,ContactNumber,Email,Address,MedicalHistory")] Patient patient)
         {
-            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin())
+            {
+                TempData["ErrorMessage"] = "You are not authorized to add new patients.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            Debug.WriteLine($"PatientController.Create POST: Attempting to save patient with Name: '{patient.Name}'");
 
             if (ModelState.IsValid)
             {
                 _context.Add(patient);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Patient added successfully!";
-                return RedirectToAction(nameof(Manage));
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    Debug.WriteLine($"Patient '{patient.Name}' saved successfully with PatientId: {patient.PatientId}");
+                    TempData["SuccessMessage"] = $"Patient '{patient.Name}' added successfully!";
+                    return RedirectToAction(nameof(Manage));
+                }
+                catch (DbUpdateException ex)
+                {
+                    Debug.WriteLine($"DbUpdateException during Patient Create: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    }
+                    ModelState.AddModelError(string.Empty, "An error occurred while saving the patient. Please try again.");
+                    TempData["ErrorMessage"] = "An unexpected database error occurred while adding the patient.";
+                }
+            }
+            else
+            {
+                Debug.WriteLine("Patient Create POST: ModelState is NOT valid. Errors:");
+                foreach (var state in ModelState)
+                {
+                    if (state.Value.Errors.Any())
+                    {
+                        Debug.WriteLine($"- {state.Key}: {string.Join("; ", state.Value.Errors.Select(e => e.ErrorMessage))}");
+                    }
+                }
             }
             ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
             return View(patient);
@@ -321,7 +353,11 @@ namespace HospitalManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin())
+            {
+                TempData["ErrorMessage"] = "You are not authorized to edit patient profiles.";
+                return RedirectToAction("Login", "Account");
+            }
 
             if (id == null) return NotFound();
 
@@ -334,9 +370,13 @@ namespace HospitalManagementSystem.Controllers
         // POST: Patient/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("PatientId,Name,DateOfBirth,Gender,ContactNumber,Address,MedicalHistory")] Patient patient)
+        public async Task<IActionResult> Edit(int id, [Bind("PatientId,Name,DateOfBirth,Gender,ContactNumber,Email,Address,MedicalHistory")] Patient patient)
         {
-            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin())
+            {
+                TempData["ErrorMessage"] = "You are not authorized to edit patient profiles.";
+                return RedirectToAction("Login", "Account");
+            }
 
             if (id != patient.PatientId) return NotFound();
 
@@ -368,12 +408,30 @@ namespace HospitalManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin())
+            {
+                TempData["ErrorMessage"] = "You are not authorized to delete patient profiles.";
+                return RedirectToAction("Login", "Account");
+            }
 
             if (id == null) return NotFound();
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(m => m.PatientId == id);
+            // Include appointments to check for dependencies
+            var patient = await _context.Patients
+                                        .Include(p => p.Appointments) // Include Appointments to check for dependents
+                                        .FirstOrDefaultAsync(m => m.PatientId == id);
             if (patient == null) return NotFound();
+
+            // NEW: Check if patient has appointments and set error message
+            if (patient.Appointments != null && patient.Appointments.Any())
+            {
+                ViewBag.CanDelete = false; // Indicate that deletion is not allowed
+                TempData["ErrorMessage"] = $"Cannot delete patient '{patient.Name}' because they have {patient.Appointments.Count} existing appointments. Please delete their appointments first.";
+            }
+            else
+            {
+                ViewBag.CanDelete = true; // Deletion is allowed
+            }
 
             return View(patient);
         }
@@ -383,14 +441,40 @@ namespace HospitalManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (!IsLoggedIn() || !IsAdmin()) return RedirectToAction("Login", "Account");
+            if (!IsLoggedIn() || !IsAdmin())
+            {
+                TempData["ErrorMessage"] = "You are not authorized to delete patient profiles.";
+                return RedirectToAction("Login", "Account");
+            }
 
-            var patient = await _context.Patients.FindAsync(id);
-            if (patient != null)
+            // Fetch patient again, ensuring appointments are included for re-check
+            var patient = await _context.Patients.Include(p => p.Appointments).FirstOrDefaultAsync(p => p.PatientId == id);
+            if (patient == null)
+            {
+                return NotFound();
+            }
+
+            // Re-check for appointments before attempting deletion
+            if (patient.Appointments != null && patient.Appointments.Any())
+            {
+                TempData["ErrorMessage"] = $"Cannot delete patient '{patient.Name}' because they still have existing appointments. Please delete their appointments first.";
+                return RedirectToAction(nameof(Delete), new { id = id }); // Redirect back to delete page with error
+            }
+
+            try
             {
                 _context.Patients.Remove(patient);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Patient deleted successfully!";
+                TempData["SuccessMessage"] = $"Patient '{patient.Name}' deleted successfully!";
+            }
+            catch (DbUpdateException ex)
+            {
+                Debug.WriteLine($"DbUpdateException during Patient Delete: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                TempData["ErrorMessage"] = "An error occurred while deleting the patient. Please try again.";
             }
             return RedirectToAction(nameof(Manage));
         }

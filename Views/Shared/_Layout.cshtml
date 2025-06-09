@@ -1,24 +1,48 @@
-﻿@using Microsoft.AspNetCore.Http
+﻿@* Inject HttpContextAccessor to get session data *@
 @inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
-    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
-}
+    // !!! WARNING: This is for DEVELOPMENT/TESTING ONLY. !!!
+    // !!! DO NOT USE IN PRODUCTION. This bypasses authentication for quick testing. !!!
+    // If no session exists, default to 'admin' for initial development login convenience.
+    if (string.IsNullOrEmpty(Context.Session.GetString("Username")))
+    {
+        Context.Session.SetString("Username", "admin");
+        Context.Session.SetString("Role", "Admin");
+        // Ensure PatientId and DoctorId are cleared or set appropriately for the default admin session
+        // Setting PatientId to "0" (string) for admin session to avoid model binding issues
+        Context.Session.SetString("PatientId", "0");
+        Context.Session.SetString("DoctorId", "0");
+    }
 
+    // Determine the portal brand text based on the user's role from session
+    string portalBrand = "Hospital Management System"; // Default brand
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username"); // Get username for logout button
+    if (role == "Admin")
+    {
+        portalBrand = "Admin Portal";
+    }
+    else if (role == "Doctor")
+    {
+        portalBrand = "Doctor Portal";
+    }
+    else if (role == "Patient")
+    {
+        portalBrand = "Patient Portal";
+    }
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Hospital Management System</title>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <title>@ViewData["Title"] - HospitalManagementSystem</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" /> @* Keep if you have project-specific CSS bundling *@
+    <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" />
 </head>
 <body class="d-flex flex-column min-vh-100">
-    @* Added Bootstrap classes for sticky footer *@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
         <div class="container">
@@ -30,8 +54,6 @@
 
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    @* ms-auto for right alignment, align-items-center for vertical alignment *@
-
                     @if (!string.IsNullOrEmpty(role) && role == "Admin")
                     {
                         <!-- Home -->
@@ -47,7 +69,7 @@
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" asp-controller="Patient" asp-action="Manage">Manage & Search Patients</a></li>
                                 <li><a class="dropdown-item" asp-controller="Patient" asp-action="Notifications">Notifications</a></li>
-                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="ProfilePreview">Profile Preview</a></li>
+                                @* REMOVED: <li><a class="dropdown-item" asp-controller="Patient" asp-action="ProfilePreview">Profile Preview</a></li> *@
                             </ul>
                         </li>
 
@@ -57,7 +79,8 @@
                                 Doctors
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Manage">Doctor List</a></li> @* Assuming Manage is Doctor List *@
+                                <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Index">Doctor Directory (Public)</a></li>
+                                <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Manage">Manage Doctors (Admin)</a></li>
                                 <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Create">Add New Doctor</a></li>
                             </ul>
                         </li>
@@ -68,14 +91,15 @@
                                 Appointments
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Availability">Doctor Availability</a></li> @* Changed to Availability if that's the correct action *@
-                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Create">Check Time Slot</a></li>
+                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Feature2">Check Availability</a></li>
+                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Create">Book Appointment</a></li>
+                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="AllAppointments">All Appointments</a></li>
                             </ul>
                         </li>
 
                         <!-- Billing -->
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Bill" asp-action="Manage">Billing</a> @* Assuming Manage is the correct action for Billing *@
+                            <a class="nav-link" asp-controller="Billing" asp-action="Manage">Billing</a>
                         </li>
                     }
                     else if (!string.IsNullOrEmpty(role) && role == "Patient")
@@ -90,12 +114,37 @@
                                 Patient Features
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="patientDropdown">
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="ProfilePreview">My Profile</a></li>
                                 <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Appointments">My Appointments</a></li>
                                 <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Notifications">Notifications</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="ProfilePreview">My Profile</a></li> @* Patient's own profile remains here *@
                             </ul>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Doctor" asp-action="Index">Find a Doctor</a>
+                        </li>
                     }
+                    else if (!string.IsNullOrEmpty(role) && role == "Doctor")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Doctor" asp-action="Dashboard">My Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Doctor" asp-action="Schedule">My Schedule</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Doctor" asp-action="Patients">My Patients</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Doctor" asp-action="Billing">My Billing</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Patient" asp-action="Manage">Patient List</a>
+                        </li>
+                    }
+
 
                     <!-- Login/Logout -->
                     <li class="nav-item">
@@ -103,7 +152,7 @@
                         {
                             <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                 <button type="submit" class="btn btn-outline-danger btn-sm ms-3">
-                                    Logout (@username) @* Display username in logout button *@
+                                    Logout (@username)
                                 </button>
                             </form>
                         }
@@ -129,21 +178,32 @@
 
     <!-- Page Content -->
     <main class="container py-4 flex-grow-1">
-        @* Added flex-grow-1 to push footer down *@
+        @* Display TempData messages *@
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success mt-3" role="alert">@TempData["SuccessMessage"]</div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger mt-3" role="alert">@TempData["ErrorMessage"]</div>
+        }
+        @if (TempData["LogoutMessage"] != null)
+        {
+            <div class="alert alert-info mt-3" role="alert">@TempData["LogoutMessage"]</div>
+        }
         @RenderBody()
     </main>
 
     <!-- Footer -->
     <footer class="border-top text-center text-muted py-3 mt-auto">
-        @* mt-auto for sticky footer *@
         <div class="container">
             &copy; @DateTime.Now.Year - Hospital Management System - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script> @* Keep jQuery if you use it *@
-    <script src="~/js/site.js" asp-append-version="true"></script> @* Keep your custom site.js *@
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

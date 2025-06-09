@@ -1,0 +1,199 @@
+﻿@model IEnumerable<HospitalManagementSystem.Models.Appointment>
+
+@{
+    ViewData["Title"] = "All Hospital Appointments";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Using main layout
+}
+
+<h2 class="mb-4 text-center">📋 @ViewData["Title"]</h2>
+
+<div class="card shadow-sm p-4">
+    <div class="card-body">
+        <p>
+            <a asp-action="Create" class="btn btn-primary mb-3"><i class="fas fa-plus-circle me-2"></i> Book New Appointment</a>
+        </p>
+
+        @* Display TempData messages here (for status updates/deletes) *@
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            @Html.DisplayNameFor(model => model.AppointmentDateTime)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Patient)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Doctor)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Reason)
+                        </th>
+                        <th>
+                            @Html.DisplayNameFor(model => model.Status)
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @item.AppointmentDateTime.ToString("yyyy-MM-dd hh:mm tt")
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Patient.Name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Doctor.Name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => item.Reason)
+                            </td>
+                            <td>
+                                <span class="badge @(item.Status == "Completed" ? "bg-success" : item.Status == "Cancelled" ? "bg-danger" : "bg-info")">
+                                    @Html.DisplayFor(modelItem => item.Status)
+                                </span>
+                            </td>
+                            <td>
+                                @if (Context.Session != null && Context.Session.GetString("Role") == "Admin")
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-1" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-appointment-btn" data-id="@item.Id" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                }
+                                else if (Context.Session != null && Context.Session.GetString("Role") == "Doctor")
+                                {
+                                    
+                                    @if (item.Status != "Completed" && item.Status != "Cancelled")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-success mark-as-completed-btn" data-id="@item.Id" title="Mark as Completed">
+                                            <i class="fas fa-check-circle me-1"></i>Mark Completed
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Action Complete</span>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info text-center mt-3" role="alert">
+                No appointments found.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Function to show a custom alert message (replaces alert())
+            function showCustomAlert(message, type = 'info') {
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+                $('main.container').prepend(alertHtml); // Add alert to the top of the main content
+                setTimeout(() => {
+                    $('.alert').alert('close'); // Auto-close after 5 seconds
+                }, 5000);
+            }
+
+            // AJAX for Mark as Completed
+            $('.mark-as-completed-btn').on('click', function () {
+                const appointmentId = $(this).data('id');
+                const $button = $(this); // Store reference to the button clicked
+
+                if (confirm('Are you sure you want to mark this appointment as completed?')) { // Using confirm for simplicity
+                    $.ajax({
+                        url: '@Url.Action("MarkAsCompleted", "Appointment")',
+                        type: 'POST',
+                        data: {
+                            id: appointmentId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // Include anti-forgery token
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                showCustomAlert(response.message, 'success');
+                                // Visually update the row or reload the page
+                                $button.closest('tr').find('.badge').removeClass('bg-info bg-danger').addClass('bg-success').text('Completed');
+                                $button.remove(); // Remove the button after marking as completed
+                            } else {
+                                showCustomAlert(response.message || 'Error marking appointment as completed.', 'danger');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            showCustomAlert('An error occurred during status update. Please try again.', 'danger');
+                            console.error("AJAX Error:", status, error, xhr.responseText);
+                        }
+                    });
+                }
+            });
+
+            // AJAX for Delete Appointment
+            $('.delete-appointment-btn').on('click', function () {
+                const appointmentId = $(this).data('id');
+                const $button = $(this); // Store reference to the button clicked
+
+                if (confirm('Are you sure you want to delete this appointment? This cannot be undone.')) { // Using confirm for simplicity
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Appointment")', // Target the POST Delete action
+                        type: 'POST',
+                        data: {
+                            id: appointmentId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // Include anti-forgery token
+                        },
+                        success: function (response) {
+                            if (response.success) { // Assuming your Delete action returns Json({success:true})
+                                showCustomAlert('Appointment deleted successfully.', 'success');
+                                $button.closest('tr').fadeOut(500, function() {
+                                    $(this).remove(); // Remove the row after fade out
+                                });
+                            } else {
+                                showCustomAlert(response.message || 'Error deleting appointment.', 'danger');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            showCustomAlert('An error occurred during deletion. Please try again.', 'danger');
+                            console.error("AJAX Error:", status, error, xhr.responseText);
+                        }
+                    });
+                }
+            });
+
+            // Add the anti-forgery token to the page if it's not already there for AJAX forms
+            if ($('input[name="__RequestVerificationToken"]').length === 0) {
+                $('form').first().prepend('<input type="hidden" name="__RequestVerificationToken" value="' + $('@Html.AntiForgeryToken()').val() + '">');
+            }
+        });
+    </script>
+}

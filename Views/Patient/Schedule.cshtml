@@ -20,17 +20,19 @@ else
                 <th>Time</th>
                 <th>Location</th>
                 <th>Reason</th> @* Added Reason column for completeness *@
+<th>Status</th> @* Added Status column for completeness *@
             </tr>
         </thead>
 <tbody>
     @foreach (var a in Model)
     {
         <tr>
-            <td>@a.Doctor?.Name</td> @* FIX: Access Doctor's Name through navigation property *@
-            <td>@a.Date.ToShortDateString()</td>
-            <td>@a.Time.ToString(@"hh\:mm")</td> @* FIX: Format TimeSpan for display *@
+            <td>@a.Doctor?.Name</td> @* Access Doctor's Name through navigation property *@
+            <td>@a.AppointmentDateTime.ToShortDateString()</td> @* FIX: Use AppointmentDateTime for Date *@
+            <td>@a.AppointmentDateTime.ToString(@"hh\:mm")</td> @* FIX: Use AppointmentDateTime for Time *@
             <td>@a.Location</td>
             <td>@a.Reason</td> @* Display Reason property *@
+            <td>@a.Status</td> @* Display Status property *@
         </tr>
     }
 </tbody>

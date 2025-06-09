@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations; // Required for [Key] or [Required] if used
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HospitalManagementSystem.Models
 {
     public class Doctor
     {
-        // Primary Key for the Doctor entity
-        public int Id { get; set; }
+        [Key]
+        public int Id { get; set; } // Primary key for Doctor
 
         [Required]
         [StringLength(100)]
@@ -17,23 +18,19 @@ namespace HospitalManagementSystem.Models
         [StringLength(100)]
         public string Specialization { get; set; }
 
-        // Properties for Description, Contact, and Location as requested
-        public string? Description { get; set; } // Nullable string
-        public string? Contact { get; set; }     // Nullable string
-        public string? Location { get; set; }    // Nullable string
+        [StringLength(500)]
+        public string? Description { get; set; }
 
-        // Navigation Properties: These link the Doctor to related entities.
-        // They should be ICollection<T> or List<T> to represent a collection of related items.
-        // Ensure that DoctorSchedule, DoctorReview, and Appointment models exist
-        // and have a foreign key property (e.g., DoctorId) linking back to Doctor.Id.
-        public List<DoctorSchedule>? Schedules { get; set; } // List of schedules for this doctor
-        public List<DoctorReview>? Reviews { get; set; }     // List of reviews for this doctor
-        public List<Appointment>? Appointments { get; set; }  // List of appointments for this doctor
+        [StringLength(50)]
+        [Display(Name = "Contact Info")]
+        public string? Contact { get; set; } // Phone or Email
+
+        [StringLength(100)]
+        public string? Location { get; set; } // Clinic location or hospital wing
+
+        // Navigation properties
+        public ICollection<DoctorSchedule>? Schedules { get; set; } // Doctor can have multiple schedules
+        public ICollection<DoctorReview>? Reviews { get; set; } // Optional: If you have a DoctorReview model
+        public ICollection<Appointment>? Appointments { get; set; } // Optional: If you have an Appointment model
     }
-
-    // IMPORTANT: DoctorSchedule, DoctorReview, and Appointment models
-    // should be defined in their OWN SEPARATE FILES within the Models folder.
-    // E.g., Models/DoctorSchedule.cs, Models/DoctorReview.cs, Models/Appointment.cs.
-    // The example structures were only for reference.
-    // Do NOT keep nested definitions here if they are already separate files.
 }

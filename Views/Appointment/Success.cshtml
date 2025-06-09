@@ -1,6 +1,7 @@
 ﻿@model HospitalManagementSystem.Models.Appointment
 @{
     ViewData["Title"] = "Appointment Confirmed";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Assuming this page uses the main layout
 }
 
 <h2>Appointment Confirmed</h2>
@@ -10,19 +11,19 @@
 <table class="table table-bordered">
     <tr>
         <th>Doctor</th>
-        <td>@Model.Doctor?.Name</td> @* FIX: Access Doctor's Name through navigation property *@
+        <td>@Model.Doctor?.Name</td> @* Access Doctor's Name through navigation property *@
     </tr>
     <tr>
         <th>Patient</th>
-        <td>@Model.Patient?.Name</td> @* FIX: Access Patient's Name through navigation property *@
+        <td>@Model.Patient?.Name</td> @* Access Patient's Name through navigation property *@
     </tr>
     <tr>
         <th>Date</th>
-        <td>@Model.Date.ToShortDateString()</td>
+        <td>@Model.AppointmentDateTime.ToShortDateString()</td> @* FIX: Use AppointmentDateTime for Date *@
     </tr>
     <tr>
         <th>Time</th>
-        <td>@Model.Time.ToString(@"hh\:mm")</td> @* FIX: Formatted TimeSpan for better display *@
+        <td>@Model.AppointmentDateTime.ToString(@"hh\:mm")</td> @* FIX: Use AppointmentDateTime for Time *@
     </tr>
     <tr>
         <th>Location</th>
@@ -32,7 +33,11 @@
         <th>Reason</th>
         <td>@Model.Reason</td> @* Display Reason property *@
     </tr>
+    <tr>
+        <th>Status</th>
+        <td>@Model.Status</td> @* Display Status property *@
+    </tr>
 </table>
 
-<a href="/Appointment/Create" class="btn btn-primary">Book Another</a>
+<a href="/Appointment/Create" class="btn btn-primary">Book Another Appointment</a>
 <a asp-action="Appointments" asp-controller="Patient" class="btn btn-outline-secondary ms-2">View My Appointments</a> @* Added link to view patient's appointments *@

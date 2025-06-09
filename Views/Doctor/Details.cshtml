@@ -1,0 +1,47 @@
+﻿@model HospitalManagementSystem.Models.Doctor
+
+@{
+    ViewData["Title"] = "Doctor Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="mb-4">🧑‍⚕️ Doctor Details</h2>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Specialization)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Specialization)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Description)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Description)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Contact)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Contact)
+        </dd>
+        <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Location)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Location)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-controller="Doctor" asp-route-id="@Model?.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Manage" asp-controller="Doctor" class="btn btn-outline-secondary ms-2">Back to List</a>
+</div>

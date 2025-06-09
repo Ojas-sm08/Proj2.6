@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Hospital_Management_System.Migrations
 {
     /// <inheritdoc />
-    public partial class one : Migration
+    public partial class FreshStartWithDescriptivePatientNames : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,9 +21,9 @@ namespace Hospital_Management_System.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Specialization = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Contact = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Location = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Contact = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    Location = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -36,12 +36,13 @@ namespace Hospital_Management_System.Migrations
                 {
                     PatientId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Gender = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ContactNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Address = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    MedicalHistory = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Gender = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    ContactNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Address = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: true),
+                    MedicalHistory = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -73,7 +74,12 @@ namespace Hospital_Management_System.Migrations
                     Date = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
                     EndTime = table.Column<TimeSpan>(type: "time", nullable: false),
-                    Location = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Location = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
+                    MinWorkTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    MaxWorkTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    LunchStartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    LunchEndTime = table.Column<TimeSpan>(type: "time", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -94,11 +100,10 @@ namespace Hospital_Management_System.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PatientId = table.Column<int>(type: "int", nullable: false),
                     DoctorId = table.Column<int>(type: "int", nullable: false),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Time = table.Column<TimeSpan>(type: "time", nullable: false),
-                    Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    AppointmentDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Location = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -108,13 +113,13 @@ namespace Hospital_Management_System.Migrations
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Appointments_Patients_PatientId",
                         column: x => x.PatientId,
                         principalTable: "Patients",
                         principalColumn: "PatientId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -157,12 +162,12 @@ namespace Hospital_Management_System.Migrations
 
             migrationBuilder.InsertData(
                 table: "Patients",
-                columns: new[] { "PatientId", "Address", "ContactNumber", "DateOfBirth", "Gender", "MedicalHistory", "Name" },
+                columns: new[] { "PatientId", "Address", "ContactNumber", "DateOfBirth", "Email", "Gender", "MedicalHistory", "Name" },
                 values: new object[,]
                 {
-                    { 1, "101 Maple St, City", "9876543210", new DateTime(1990, 5, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), "Male", "No significant history.", "patient1" },
-                    { 2, "202 Oak Ave, Town", "0123456789", new DateTime(1985, 8, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "Female", "Seasonal allergies.", "patient2" },
-                    { 3, "789 Pine Ln, Village", "555-1234", new DateTime(1975, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Male", "Hypertension", "John Doe" }
+                    { 1, "101 Maple St, City", "9876543210", new DateTime(1990, 5, 15, 0, 0, 0, 0, DateTimeKind.Unspecified), null, "Female", "No significant history.", "Alice Wonderland" },
+                    { 2, "202 Oak Ave, Town", "0123456789", new DateTime(1985, 8, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), null, "Male", "Seasonal allergies.", "Bob The Builder" },
+                    { 3, "789 Pine Ln, Village", "555-1234", new DateTime(1975, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, "Male", "Hypertension", "Charlie Chaplin" }
                 });
 
             migrationBuilder.InsertData(
@@ -178,11 +183,11 @@ namespace Hospital_Management_System.Migrations
 
             migrationBuilder.InsertData(
                 table: "Appointments",
-                columns: new[] { "Id", "Date", "DoctorId", "Location", "PatientId", "Reason", "Status", "Time" },
+                columns: new[] { "Id", "AppointmentDateTime", "DoctorId", "Location", "PatientId", "Reason", "Status" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 6, 13, 0, 0, 0, 0, DateTimeKind.Unspecified), 1, "Room 101", 1, "Annual Checkup", null, new TimeSpan(0, 10, 0, 0, 0) },
-                    { 2, new DateTime(2025, 6, 16, 0, 0, 0, 0, DateTimeKind.Unspecified), 2, "Room 202", 2, "Pediatric Consultation", null, new TimeSpan(0, 14, 30, 0, 0) }
+                    { 1, new DateTime(2025, 6, 13, 10, 0, 0, 0, DateTimeKind.Unspecified), 1, "Room 101", 1, "Annual Checkup", "Scheduled" },
+                    { 2, new DateTime(2025, 6, 16, 14, 30, 0, 0, DateTimeKind.Unspecified), 2, "Room 202", 2, "Pediatric Consultation", "Scheduled" }
                 });
 
             migrationBuilder.InsertData(
@@ -196,11 +201,11 @@ namespace Hospital_Management_System.Migrations
 
             migrationBuilder.InsertData(
                 table: "DoctorSchedules",
-                columns: new[] { "Id", "Date", "DoctorId", "EndTime", "Location", "StartTime" },
+                columns: new[] { "Id", "Date", "DoctorId", "EndTime", "IsAvailable", "Location", "LunchEndTime", "LunchStartTime", "MaxWorkTime", "MinWorkTime", "StartTime" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 6, 7, 0, 0, 0, 0, DateTimeKind.Unspecified), 1, new TimeSpan(0, 13, 0, 0, 0), "Office A101", new TimeSpan(0, 9, 0, 0, 0) },
-                    { 2, new DateTime(2025, 6, 8, 0, 0, 0, 0, DateTimeKind.Unspecified), 2, new TimeSpan(0, 16, 0, 0, 0), "Clinic C303", new TimeSpan(0, 10, 0, 0, 0) }
+                    { 1, new DateTime(2025, 6, 7, 0, 0, 0, 0, DateTimeKind.Unspecified), 1, new TimeSpan(0, 13, 0, 0, 0), true, "Office A101", new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 9, 0, 0, 0) },
+                    { 2, new DateTime(2025, 6, 8, 0, 0, 0, 0, DateTimeKind.Unspecified), 2, new TimeSpan(0, 16, 0, 0, 0), true, "Clinic C303", new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 0, 0, 0, 0), new TimeSpan(0, 10, 0, 0, 0) }
                 });
 
             migrationBuilder.CreateIndex(

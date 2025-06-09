@@ -1,8 +1,9 @@
-using System.Diagnostics;
-using Hospital_Management_System.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using HospitalManagementSystem.Models;
+using Hospital_Management_System.Models; // Ensure this is present if you use any models here
 
-namespace Hospital_Management_System.Controllers
+namespace HospitalManagementSystem.Controllers
 {
     public class HomeController : Controller
     {
@@ -13,16 +14,23 @@ namespace Hospital_Management_System.Controllers
             _logger = logger;
         }
 
+        // The Index action for your main landing page.
+        // By default, this action does NOT require authentication, making it suitable as a landing page.
+        // You generally don't need [AllowAnonymous] here unless you've set a global [Authorize] filter.
         public IActionResult Index()
         {
+            ViewData["Title"] = "Welcome to Hospital Management System"; // Customize your page title
             return View();
         }
 
+        // Example Privacy page (often requires authentication for sensitive info, but typically public)
         public IActionResult Privacy()
         {
+            ViewData["Title"] = "Privacy Policy";
             return View();
         }
 
+        // Error handling page
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

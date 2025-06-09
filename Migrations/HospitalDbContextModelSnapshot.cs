@@ -30,15 +30,15 @@ namespace Hospital_Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("Date")
+                    b.Property<DateTime>("AppointmentDateTime")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
 
                     b.Property<string>("Location")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
@@ -48,10 +48,9 @@ namespace Hospital_Management_System.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<TimeSpan>("Time")
-                        .HasColumnType("time");
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -65,22 +64,22 @@ namespace Hospital_Management_System.Migrations
                         new
                         {
                             Id = 1,
-                            Date = new DateTime(2025, 6, 13, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            AppointmentDateTime = new DateTime(2025, 6, 13, 10, 0, 0, 0, DateTimeKind.Unspecified),
                             DoctorId = 1,
                             Location = "Room 101",
                             PatientId = 1,
                             Reason = "Annual Checkup",
-                            Time = new TimeSpan(0, 10, 0, 0, 0)
+                            Status = "Scheduled"
                         },
                         new
                         {
                             Id = 2,
-                            Date = new DateTime(2025, 6, 16, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            AppointmentDateTime = new DateTime(2025, 6, 16, 14, 30, 0, 0, DateTimeKind.Unspecified),
                             DoctorId = 2,
                             Location = "Room 202",
                             PatientId = 2,
                             Reason = "Pediatric Consultation",
-                            Time = new TimeSpan(0, 14, 30, 0, 0)
+                            Status = "Scheduled"
                         });
                 });
 
@@ -93,13 +92,16 @@ namespace Hospital_Management_System.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Contact")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Location")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -205,8 +207,23 @@ namespace Hospital_Management_System.Migrations
                     b.Property<TimeSpan>("EndTime")
                         .HasColumnType("time");
 
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Location")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan>("LunchEndTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("LunchStartTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("MaxWorkTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("MinWorkTime")
+                        .HasColumnType("time");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
@@ -224,7 +241,12 @@ namespace Hospital_Management_System.Migrations
                             Date = new DateTime(2025, 6, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DoctorId = 1,
                             EndTime = new TimeSpan(0, 13, 0, 0, 0),
+                            IsAvailable = true,
                             Location = "Office A101",
+                            LunchEndTime = new TimeSpan(0, 0, 0, 0, 0),
+                            LunchStartTime = new TimeSpan(0, 0, 0, 0, 0),
+                            MaxWorkTime = new TimeSpan(0, 0, 0, 0, 0),
+                            MinWorkTime = new TimeSpan(0, 0, 0, 0, 0),
                             StartTime = new TimeSpan(0, 9, 0, 0, 0)
                         },
                         new
@@ -233,7 +255,12 @@ namespace Hospital_Management_System.Migrations
                             Date = new DateTime(2025, 6, 8, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DoctorId = 2,
                             EndTime = new TimeSpan(0, 16, 0, 0, 0),
+                            IsAvailable = true,
                             Location = "Clinic C303",
+                            LunchEndTime = new TimeSpan(0, 0, 0, 0, 0),
+                            LunchStartTime = new TimeSpan(0, 0, 0, 0, 0),
+                            MaxWorkTime = new TimeSpan(0, 0, 0, 0, 0),
+                            MinWorkTime = new TimeSpan(0, 0, 0, 0, 0),
                             StartTime = new TimeSpan(0, 10, 0, 0, 0)
                         });
                 });
@@ -247,24 +274,34 @@ namespace Hospital_Management_System.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PatientId"));
 
                     b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.Property<string>("ContactNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Gender")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("MedicalHistory")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("PatientId");
 
@@ -277,9 +314,9 @@ namespace Hospital_Management_System.Migrations
                             Address = "101 Maple St, City",
                             ContactNumber = "9876543210",
                             DateOfBirth = new DateTime(1990, 5, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Gender = "Male",
+                            Gender = "Female",
                             MedicalHistory = "No significant history.",
-                            Name = "patient1"
+                            Name = "Alice Wonderland"
                         },
                         new
                         {
@@ -287,9 +324,9 @@ namespace Hospital_Management_System.Migrations
                             Address = "202 Oak Ave, Town",
                             ContactNumber = "0123456789",
                             DateOfBirth = new DateTime(1985, 8, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Gender = "Female",
+                            Gender = "Male",
                             MedicalHistory = "Seasonal allergies.",
-                            Name = "patient2"
+                            Name = "Bob The Builder"
                         },
                         new
                         {
@@ -299,7 +336,7 @@ namespace Hospital_Management_System.Migrations
                             DateOfBirth = new DateTime(1975, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Gender = "Male",
                             MedicalHistory = "Hypertension",
-                            Name = "John Doe"
+                            Name = "Charlie Chaplin"
                         });
                 });
 
@@ -363,13 +400,13 @@ namespace Hospital_Management_System.Migrations
                     b.HasOne("HospitalManagementSystem.Models.Doctor", "Doctor")
                         .WithMany("Appointments")
                         .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("HospitalManagementSystem.Models.Patient", "Patient")
                         .WithMany("Appointments")
                         .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Doctor");
@@ -386,7 +423,7 @@ namespace Hospital_Management_System.Migrations
                         .IsRequired();
 
                     b.HasOne("HospitalManagementSystem.Models.Patient", "Patient")
-                        .WithMany("DoctorReviews")
+                        .WithMany()
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -419,8 +456,6 @@ namespace Hospital_Management_System.Migrations
             modelBuilder.Entity("HospitalManagementSystem.Models.Patient", b =>
                 {
                     b.Navigation("Appointments");
-
-                    b.Navigation("DoctorReviews");
                 });
 #pragma warning restore 612, 618
         }

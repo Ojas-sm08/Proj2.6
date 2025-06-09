@@ -1,36 +1,194 @@
-﻿@model List<HospitalManagementSystem.Models.DoctorSchedule>
+﻿@model HospitalManagementSystem.Models.DoctorScheduleViewModel
+
 @{
-    ViewData["Title"] = "Doctor Schedule";
+    // Retrieve the selected date from ViewData, defaulting to today if not set
+    string selectedDate = ViewData["SelectedDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    string pageTitleDate = DateTime.Parse(selectedDate).ToLongDateString(); // Format for display
+    ViewData["Title"] = Model.Doctor != null ? $"{Model.Doctor.Name}'s Daily Schedule - {pageTitleDate}" : $"Doctor Schedule - {pageTitleDate}";
     Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
 }
 
-<h2 class="mb-4">Doctor Schedule</h2>
+<h2 class="mb-4 text-center">🗓️ @(Model.Doctor?.Name)'s Schedule</h2>
 
-@if (Model == null || !Model.Any())
+@if (TempData["InfoMessage"] != null)
 {
-    <div class="alert alert-info">No schedules found.</div>
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
-else
+@if (TempData["ErrorMessage"] != null)
 {
-    <table class="table table-bordered">
-        <thead class="table-light">
-            <tr>
-                <th>Date</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th>Location</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var schedule in Model)
-            {
-                <tr>
-                    <td>@schedule.Date.ToShortDateString()</td>
-                    <td>@schedule.StartTime</td>
-                    <td>@schedule.EndTime</td>
-                    <td>@schedule.Location</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card bg-light shadow-sm mb-4 p-3 rounded">
+    <div class="card-body">
+        <form asp-controller="Doctor" asp-action="Schedule" method="get" class="d-flex align-items-center justify-content-center">
+            <div class="form-group me-3">
+                <label for="selectedDate" class="form-label visually-hidden">Select Date:</label>
+                <input type="date" id="selectedDate" name="selectedDate" class="form-control form-control-lg rounded-pill shadow-sm" value="@selectedDate" />
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm px-4">View Schedule</button>
+        </form>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-lg border-primary rounded-lg">
+            <div class="card-header bg-gradient-primary text-white text-center py-3 rounded-top-lg">
+                <h4 class="mb-0 fs-5"><i class="fas fa-calendar-day me-2"></i> Normal Working Schedule & Activities</h4>
+            </div>
+            <div class="card-body p-4">
+                @if (Model.DoctorSchedule != null)
+                {
+                    <p class="fs-6 mb-2">
+                        <strong><i class="far fa-clock me-1 text-info"></i> Work Hours:</strong> 
+                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.StartTime).ToString(@"hh\:mm tt") ?? "N/A")</span> - 
+                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.EndTime).ToString(@"hh\:mm tt") ?? "N/A")</span>
+                    </p>
+                    <p class="fs-6 mb-2">
+                        <strong><i class="fas fa-mug-hot me-1 text-warning"></i> Lunch Break:</strong> 
+                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.LunchStartTime).ToString(@"hh\:mm tt") ?? "N/A")</span> - 
+                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.LunchEndTime).ToString(@"hh\:mm tt") ?? "N/A")</span>
+                    </p>
+                    <p class="fs-6 mb-4"><strong><i class="fas fa-map-marker-alt me-1 text-danger"></i> Location:</strong> @Model.DoctorSchedule.Location</p>
+
+                    <h5 class="mt-4 border-bottom pb-2 mb-3 text-secondary">Today's Activities:</h5>
+                    @if (Model.DailyActivities != null && Model.DailyActivities.Any())
+                    {
+                        <ul class="list-group list-group-flush border-0">
+                            @foreach (var activity in Model.DailyActivities)
+                            {
+                                <li class="list-group-item d-flex align-items-center py-2 px-0 border-0">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    @activity
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted fst-italic">No specific activities planned for this date's schedule.</p>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">No specific working schedule defined for this date. A default schedule has been generated or will be generated upon booking an appointment.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-lg border-success rounded-lg">
+            <div class="card-header bg-gradient-success text-white text-center py-3 rounded-top-lg">
+                <h4 class="mb-0 fs-5"><i class="fas fa-clipboard-list me-2"></i> Booked Appointments</h4>
+            </div>
+            <div class="card-body p-4">
+                @if (Model.TodaysAppointments != null && Model.TodaysAppointments.Any())
+                {
+                    <ul class="list-group list-group-flush border-0">
+                        @foreach (var appointment in Model.TodaysAppointments)
+                        {
+                            <li class="list-group-item d-flex flex-column align-items-start py-3 px-0 border-bottom" id="appointment-@appointment.Id">
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <span class="fw-bold fs-5 text-primary">@appointment.AppointmentDateTime.ToString(@"hh\:mm tt")</span>
+                                    <div>
+                                        <span class="badge @(appointment.Status == "Completed" ? "bg-success" : appointment.Status == "Cancelled" ? "bg-danger" : "bg-info") fs-6 rounded-pill px-3 py-2">@appointment.Status</span>
+                                        @if (appointment.Status != "Completed" && appointment.Status != "Cancelled")
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-success ms-2 mark-completed-btn" data-appointment-id="@appointment.Id">
+                                                <i class="fas fa-check-circle me-1"></i> Mark as Completed
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                                <small class="text-muted mt-1">Patient: <span class="fw-semibold">@appointment.Patient?.Name</span></small>
+                                <small class="text-muted mt-1">Reason: <span class="fst-italic">@appointment.Reason</span></small>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">No appointments booked for this date.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script> 
+
+    <style>
+        /* Custom CSS for gradients and rounded corners if not fully covered by Bootstrap */
+        .rounded-lg {
+            border-radius: 0.75rem !important; /* Larger border-radius for cards */
+        }
+
+        .rounded-top-lg {
+            border-top-left-radius: 0.75rem !important;
+            border-top-right-radius: 0.75rem !important;
+        }
+
+        .bg-gradient-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3); /* Blue gradient */
+        }
+
+        .bg-gradient-success {
+            background: linear-gradient(45deg, #28a745, #1e7e34); /* Green gradient */
+        }
+
+        /* Adjust input date width */
+        #selectedDate {
+            min-width: 180px; /* Adjust as needed */
+        }
+    </style>
+
+    <script>
+        $(document).ready(function () {
+            // Event listener for the "Mark as Completed" button
+            $('.mark-completed-btn').on('click', function () {
+                var appointmentId = $(this).data('appointment-id');
+                var button = $(this); // Keep a reference to the button clicked
+
+                // Confirm with the user before proceeding
+                if (confirm("Are you sure you want to mark this appointment as Completed?")) {
+                    $.ajax({
+                        url: '/Appointment/MarkAsCompleted', // Endpoint for marking as completed
+                        type: 'POST',
+                        data: { id: appointmentId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() // For anti-forgery token
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                // Remove the appointment from the DOM
+                                $('#appointment-' + appointmentId).fadeOut(400, function() {
+                                    $(this).remove();
+                                    // Optionally show a success message on the page
+                                    // You might want to reload the section or the whole page for consistency
+                                    location.reload(); // Reload the page to refetch and display consistent state
+                                });
+                            } else {
+                                alert('Error: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert('An error occurred: ' + error + '\n' + xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 }

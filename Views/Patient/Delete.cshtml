@@ -2,11 +2,20 @@
 
 @{
     ViewData["Title"] = "Delete Patient";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Assuming admin uses the main layout
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <h2 class="mb-4 text-danger">Delete Patient</h2>
-<h3>Are you sure you want to delete this patient? This action cannot be undone.</h3>
+
+<h3 class="mb-3">Are you sure you want to delete this patient? This action cannot be undone.</h3>
+
+@* Display TempData Error Message *@
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mt-3" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
 
 <div>
     <dl class="row">
@@ -35,6 +44,12 @@
             @Html.DisplayFor(model => model.ContactNumber)
         </dd>
         <dt class="col-sm-3">
+            @Html.DisplayNameFor(model => model.Email)
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Email)
+        </dd>
+        <dt class="col-sm-3">
             @Html.DisplayNameFor(model => model.Address)
         </dt>
         <dd class="col-sm-9">
@@ -50,7 +65,7 @@
 
     <form asp-action="Delete">
         <input type="hidden" asp-for="PatientId" />
-        <button type="submit" class="btn btn-danger">Delete</button>
+        <button type="submit" class="btn btn-danger" @(ViewBag.CanDelete == false ? "disabled" : "")>Delete</button>
         <a asp-action="Manage" class="btn btn-outline-secondary ms-2">Cancel</a>
     </form>
 </div>
