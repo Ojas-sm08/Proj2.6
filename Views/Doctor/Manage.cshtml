@@ -2,52 +2,142 @@
 
 @{
     ViewData["Title"] = "Manage Doctors";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this uses your main layout
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Admin uses the main layout
 }
 
-<h2 class="mb-4">🧑‍⚕️ Manage Doctors</h2>
+<h2 class="mb-4 text-center">👨‍⚕️ Manage Doctors</h2>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Add New Doctor</a>
-</p>
-
-@if (Model == null || !Model.Any())
+@* Display TempData messages here *@
+@if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-info" role="alert">
-        No doctors found.
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
-else
+@if (TempData["ErrorMessage"] != null)
 {
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>@Html.DisplayNameFor(model => model.Name)</th>
-                    <th>@Html.DisplayNameFor(model => model.Specialization)</th>
-                    <th>@Html.DisplayNameFor(model => model.Description)</th>
-                    <th>@Html.DisplayNameFor(model => model.Contact)</th>
-                    <th>@Html.DisplayNameFor(model => model.Location)</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm p-4">
+    <div class="card-body">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-auto mb-2 mb-md-0">
+                <a asp-action="Create" asp-controller="Doctor" class="btn btn-primary w-100"><i class="fas fa-user-plus me-2"></i> Add New Doctor</a>
+            </div>
+            <div class="col-md-auto ms-auto"> @* This column will push content to the right *@
+                <form asp-action="Manage" method="get" class="d-flex flex-wrap align-items-center gap-2"> @* Use d-flex and gap for alignment *@
+                    <div class="flex-grow-1 me-2">
+                        <label for="searchString" class="visually-hidden">Search by name or contact</label>
+                        <input type="text" name="searchString" class="form-control" value="@ViewData["CurrentFilter"]" placeholder="Search by name or contact" />
+                    </div>
+                    <div class="me-2" style="min-width: 180px;"> @* Added min-width for consistent dropdown size *@
+                        <label for="specialization" class="visually-hidden">Filter by Specialization</label>
+                        <select name="specialization" class="form-select">
+                            <option value="All">-- All Specializations --</option>
+                            @foreach (var spec in ViewBag.Specializations)
+                            {
+                                <option value="@spec" @@(ViewData["CurrentSpecialization"]?.ToString() == spec ? "selected" : "")>@spec</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-info"><i class="fas fa-filter"></i> Filter</button>
+                    </div>
+                    <div>
+                        <a asp-action="Manage" class="btn btn-secondary"><i class="fas fa-sync-alt"></i> Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-responsive mt-4">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
                     <tr>
-                        <td>@Html.DisplayFor(modelItem => item.Name)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Specialization)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Description)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Contact)</td>
-                        <td>@Html.DisplayFor(modelItem => item.Location)</td>
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a> |
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm">Details</a> |
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Delete</a>
-                        </td>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Specialization</th>
+                        <th>Description</th>
+                        <th>Contact Info</th>
+                        <th>Location</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.Id)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Specialization)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Contact)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Location)</td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-1" title="Edit"><i class="fas fa-edit"></i></a>
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info me-1" title="View Details"><i class="fas fa-eye"></i></a>
+                                <button type="button" class="btn btn-sm btn-danger delete-doctor-btn" data-id="@item.Id" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="alert alert-info text-center mt-3" role="alert">
+                No doctors found matching your criteria.
+            </div>
+        }
     </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('.delete-doctor-btn').on('click', function () {
+                var doctorId = $(this).data('id');
+                var doctorName = $(this).closest('tr').find('td:eq(1)').text(); // Get doctor name from the table row
+
+                if (confirm('Are you sure you want to delete Dr. "' + doctorName + '"? This will also delete their login account.')) {
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Doctor")',
+                        type: 'POST',
+                        data: { id: doctorId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload(); // Reload the page to show updated list
+                            } else {
+                                alert('Error: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert('An error occurred: ' + error + '\n' + xhr.responseText);
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 }

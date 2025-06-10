@@ -1,35 +1,24 @@
-﻿@* Inject HttpContextAccessor to get session data *@
-@inject IHttpContextAccessor HttpContextAccessor
+﻿@inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    // !!! WARNING: This is for DEVELOPMENT/TESTING ONLY. !!!
-    // !!! DO NOT USE IN PRODUCTION. This bypasses authentication for quick testing. !!!
-    // If no session exists, default to 'admin' for initial development login convenience.
-    if (string.IsNullOrEmpty(Context.Session.GetString("Username")))
-    {
-        Context.Session.SetString("Username", "admin");
-        Context.Session.SetString("Role", "Admin");
-        // Ensure PatientId and DoctorId are cleared or set appropriately for the default admin session
-        // Setting PatientId to "0" (string) for admin session to avoid model binding issues
-        Context.Session.SetString("PatientId", "0");
-        Context.Session.SetString("DoctorId", "0");
-    }
-
-    // Determine the portal brand text based on the user's role from session
-    string portalBrand = "Hospital Management System"; // Default brand
+    string portalBrand = "Hospital";
     var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
-    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username"); // Get username for logout button
-    if (role == "Admin")
+    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
+
+    if (!string.IsNullOrEmpty(username))
     {
-        portalBrand = "Admin Portal";
-    }
-    else if (role == "Doctor")
-    {
-        portalBrand = "Doctor Portal";
-    }
-    else if (role == "Patient")
-    {
-        portalBrand = "Patient Portal";
+        if (role == "Admin")
+        {
+            portalBrand = "Admin Portal";
+        }
+        else if (role == "Doctor")
+        {
+            portalBrand = "Doctor Portal";
+        }
+        else if (role == "Patient")
+        {
+            portalBrand = "Patient Portal";
+        }
     }
 }
 <!DOCTYPE html>
@@ -37,172 +26,143 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - HospitalManagementSystem</title>
+    <title>@ViewData["Title"] - @portalBrand</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" />
 </head>
-<body class="d-flex flex-column min-vh-100">
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" asp-controller="Home" asp-action="Index">🏥 Hospital</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="https://placehold.co/20x20/007bff/ffffff?text=H" alt="Hospital Logo" class="me-2 rounded-circle">
+                    Hospital
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
-                    @if (!string.IsNullOrEmpty(role) && role == "Admin")
-                    {
-                        <!-- Home -->
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        
 
-                        <!-- Patients Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Patients
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="Manage">Manage & Search Patients</a></li>
-                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="Notifications">Notifications</a></li>
-                                @* REMOVED: <li><a class="dropdown-item" asp-controller="Patient" asp-action="ProfilePreview">Profile Preview</a></li> *@
-                            </ul>
-                        </li>
-
-                        <!-- Doctors Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Doctors
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Index">Doctor Directory (Public)</a></li>
-                                <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Manage">Manage Doctors (Admin)</a></li>
-                                <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Create">Add New Doctor</a></li>
-                            </ul>
-                        </li>
-
-                        <!-- Appointments Dropdown -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Appointments
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Feature2">Check Availability</a></li>
-                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Create">Book Appointment</a></li>
-                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="AllAppointments">All Appointments</a></li>
-                            </ul>
-                        </li>
-
-                        <!-- Billing -->
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Billing" asp-action="Manage">Billing</a>
-                        </li>
-                    }
-                    else if (!string.IsNullOrEmpty(role) && role == "Patient")
-                    {
-                        <!-- Home -->
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <!-- Patient Features Dropdown for Patient Role -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="patientDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Patient Features
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="patientDropdown">
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Appointments">My Appointments</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Notifications">Notifications</a></li>
-                                <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="ProfilePreview">My Profile</a></li> @* Patient's own profile remains here *@
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Doctor" asp-action="Index">Find a Doctor</a>
-                        </li>
-                    }
-                    else if (!string.IsNullOrEmpty(role) && role == "Doctor")
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Doctor" asp-action="Dashboard">My Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Doctor" asp-action="Schedule">My Schedule</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Doctor" asp-action="Patients">My Patients</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Doctor" asp-action="Billing">My Billing</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Patient" asp-action="Manage">Patient List</a>
-                        </li>
-                    }
-
-
-                    <!-- Login/Logout -->
-                    <li class="nav-item">
                         @if (!string.IsNullOrEmpty(username))
                         {
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-outline-danger btn-sm ms-3">
-                                    Logout (@username)
-                                </button>
-                            </form>
+                            string? currentRole = Context.Session.GetString("Role");
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link text-dark" href="#" id="patientsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Patients
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="patientsDropdown">
+                                    @if (currentRole == "Admin")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Manage">Manage & Search Patients</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Notifications">Notifications</a></li>
+                                    }
+                                    else if (currentRole == "Patient")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Dashboard">Welcome</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="Notifications">Notifications</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Patient" asp-action="ProfilePreview">My Profile</a></li>
+                                    }
+                                </ul>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link text-dark" href="#" id="doctorsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Doctors
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="doctorsDropdown">
+                                    @if (currentRole == "Admin")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Doctor" asp-action="Manage">Manage Doctors</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Doctor" asp-action="Create">Add New Doctor</a></li>
+                                    }
+                                    else if (currentRole == "Doctor")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Doctor" asp-action="Dashboard">My Dashboard</a></li>
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Doctor" asp-action="Schedule">My Schedule</a></li>
+                                    }
+                                    else if (currentRole == "Patient")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Appointment" asp-action="CheckAvailability">Find a Doctor</a></li>
+                                    }
+                                </ul>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link text-dark" href="#" id="appointmentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Appointments
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="appointmentsDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Appointment" asp-action="CheckAvailability">Check Availability</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Appointment" asp-action="Create">Book Appointment</a></li>
+                                    @if (currentRole == "Admin" || currentRole == "Doctor")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Appointment" asp-action="AllAppointments">All Appointments</a></li>
+                                    }
+                                    else if (currentRole == "Patient")
+                                    {
+                                        <li><a class="dropdown-item" asp-area="" asp-controller="Appointment" asp-action="Appointments">My Appointments</a></li>
+                                    }
+                                </ul>
+                            </li>
+
+                            @if (currentRole == "Admin")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Billing" asp-action="Index">Billing</a>
+                                </li>
+                            }
+
+                            <li class="nav-item">
+                                <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="form-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="nav-link btn btn-link text-danger p-0 border-0 ms-3">Logout (@username)</button>
+                                </form>
+                            </li>
                         }
                         else
                         {
-                            <a class="nav-link btn btn-outline-dark btn-sm ms-3 login-button" asp-controller="Account" asp-action="Login">
-                                Login
-                            </a>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Account" asp-action="Login">Login</a>
+                            </li>
                         }
-                    </li>
-                </ul>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
-
-    <!-- Debug Info (Session Active, as seen in your example) -->
-    <div class="text-center text-muted small mt-1">
-        @if (!string.IsNullOrEmpty(username))
-        {
-            <span class="badge bg-light border text-dark">Session Active: @username (@role)</span>
-        }
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @RenderBody()
+        </main>
     </div>
 
-    <!-- Page Content -->
-    <main class="container py-4 flex-grow-1">
-        @* Display TempData messages *@
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success mt-3" role="alert">@TempData["SuccessMessage"]</div>
-        }
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger mt-3" role="alert">@TempData["ErrorMessage"]</div>
-        }
-        @if (TempData["LogoutMessage"] != null)
-        {
-            <div class="alert alert-info mt-3" role="alert">@TempData["LogoutMessage"]</div>
-        }
-        @RenderBody()
-    </main>
-
-    <!-- Footer -->
-    <footer class="border-top text-center text-muted py-3 mt-auto">
+    <footer class="border-top footer text-muted">
         <div class="container">
             &copy; @DateTime.Now.Year - Hospital Management System - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

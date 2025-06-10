@@ -1,7 +1,158 @@
-﻿@{
-    ViewData["Title"] = "Admin Dashboard";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Or a custom layout if needed
+﻿@* Inject HttpContextAccessor to get session data *@
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Home Page"; // Default title
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Use the main layout
+    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
 }
 
-<h2>Welcome, Admin!</h2>
-<p>This is your dashboard.</p>
+@if (role == "Admin" && !string.IsNullOrEmpty(username))
+{
+    // Admin dashboard content when logged in as Admin
+    <style>
+        /* CSS specific to the Admin Dashboard view in Home/Index */
+        /* This div will be placed inside the <main> tag of _Layout.cshtml. */
+        /* Adjust min-height based on your _Layout.cshtml's header and footer height
+                   to make it fill the remaining viewport space effectively. */
+        .admin-dashboard-full-height {
+            min-height: calc(100vh - 120px); /* Example: 120px for header/footer combined */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-image: url('/images/adminback.jpg'); /* !!! ENSURE IMAGE IS IN wwwroot/images/ !!! */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: white; /* Text color over background */
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7); /* Text shadow for readability */
+            position: relative; /* For the overlay */
+            overflow: hidden; /* Important for border-radius */
+            border-radius: 0.75rem; /* Consistent rounded corners */
+            padding: 20px; /* Internal padding */
+        }
+
+            /* Overlay for better text readability */
+            .admin-dashboard-full-height::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.45); /* Darker overlay for better text contrast */
+                z-index: 1;
+                border-radius: 0.75rem; /* Match parent border-radius */
+            }
+
+        .admin-welcome-content {
+            z-index: 2; /* Ensure content is above the overlay */
+            text-align: center;
+        }
+
+            .admin-welcome-content h1 {
+                font-size: 3rem; /* Slightly smaller welcome message */
+                font-weight: bold;
+                margin-bottom: 1rem;
+            }
+
+            .admin-welcome-content p {
+                font-size: 1.3rem;
+                max-width: 600px;
+                line-height: 1.5;
+                margin-bottom: 0.5rem;
+            }
+
+        /* Responsive adjustments for Admin Dashboard view */
+        @@media (max-width: 768px) {
+            .admin-dashboard-full-height {
+                min-height: calc(100vh - 100px); /* Adjusted for smaller header/footer on mobile */
+                padding: 15px;
+            }
+
+            .admin-welcome-content h1 {
+                font-size: 2.2rem;
+            }
+
+            .admin-welcome-content p {
+                font-size: 1.1rem;
+                padding: 0 0.5rem;
+            }
+        }
+    </style>
+
+    <div class="admin-dashboard-full-height">
+        <div class="admin-welcome-content">
+            <h1>Welcome, @(username)!</h1>
+            <p>Your central command for seamless hospital management.</p>
+            <p>Oversee patients, doctors, appointments, and billing operations with unparalleled ease.</p>
+        </div>
+    </div>
+}
+else
+{
+    // Original role selection content if not logged in or not Admin
+    <style>
+        /* CSS specific to the Role Selection Cards */
+        .role-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+            .role-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            }
+
+            .role-card .card-body {
+                min-height: 150px; /* Ensure consistent height for cards */
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+    </style>
+
+    <div class="text-center py-5">
+        <h1 class="display-4 fw-bold text-primary mb-4">Welcome to Our Hospital Management System</h1>
+        <p class="lead text-muted mb-5">Please select your role to proceed to the login portal.</p>
+
+        <div class="row justify-content-center g-4">
+            <div class="col-md-4 col-sm-6">
+                <div class="card role-card h-100 shadow">
+                    <div class="card-body">
+                        <i class="fas fa-user-shield fa-4x text-success mb-3"></i>
+                        <h5 class="card-title mb-3">Admin Login</h5>
+                        <p class="card-text text-muted">Access administrative controls and overview.</p>
+                        <a asp-controller="Account" asp-action="Login" asp-route-role="Admin" class="btn btn-success mt-auto">Login as Admin</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card role-card h-100 shadow">
+                    <div class="card-body">
+                        <i class="fas fa-user-md fa-4x text-info mb-3"></i>
+                        <h5 class="card-title mb-3">Doctor Login</h5>
+                        <p class="card-text text-muted">Manage your patients, schedule, and appointments.</p>
+                        <a asp-controller="Account" asp-action="Login" asp-route-role="Doctor" class="btn btn-info mt-auto">Login as Doctor</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card role-card h-100 shadow">
+                    <div class="card-body">
+                        <i class="fas fa-user-injured fa-4x text-warning mb-3"></i>
+                        <h5 class="card-title mb-3">Patient Login</h5>
+                        <p class="card-text text-muted">View your profile, appointments, and medical records.</p>
+                        <a asp-controller="Account" asp-action="Login" asp-route-role="Patient" class="btn btn-warning mt-auto">Login as Patient</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+}

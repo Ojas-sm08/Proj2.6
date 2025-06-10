@@ -13,6 +13,14 @@
       "PackagePath": "staticwebassets\\favicon.ico"
     },
     {
+      "Id": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\adminback.jpg",
+      "PackagePath": "staticwebassets\\images\\adminback.jpg"
+    },
+    {
+      "Id": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\doctorback.jpg",
+      "PackagePath": "staticwebassets\\images\\doctorback.jpg"
+    },
+    {
       "Id": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\js\\site.js",
       "PackagePath": "staticwebassets\\js\\site.js"
     },

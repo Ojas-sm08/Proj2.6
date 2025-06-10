@@ -1,9 +1,8 @@
 ﻿@model HospitalManagementSystem.Models.DoctorScheduleViewModel
 
 @{
-    // Retrieve the selected date from ViewData, defaulting to today if not set
     string selectedDate = ViewData["SelectedDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
-    string pageTitleDate = DateTime.Parse(selectedDate).ToLongDateString(); // Format for display
+    string pageTitleDate = DateTime.Parse(selectedDate).ToLongDateString();
     ViewData["Title"] = Model.Doctor != null ? $"{Model.Doctor.Name}'s Daily Schedule - {pageTitleDate}" : $"Doctor Schedule - {pageTitleDate}";
     Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
 }
@@ -37,7 +36,6 @@
     </div>
 </div>
 
-
 <div class="row">
     <div class="col-md-6 mb-4">
         <div class="card shadow-lg border-primary rounded-lg">
@@ -48,14 +46,14 @@
                 @if (Model.DoctorSchedule != null)
                 {
                     <p class="fs-6 mb-2">
-                        <strong><i class="far fa-clock me-1 text-info"></i> Work Hours:</strong> 
-                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.StartTime).ToString(@"hh\:mm tt") ?? "N/A")</span> - 
-                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.EndTime).ToString(@"hh\:mm tt") ?? "N/A")</span>
+                        <strong><i class="far fa-clock me-1 text-info"></i> Work Hours:</strong>
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.StartTime).ToString(@"hh\:mm tt"))</span> -
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.EndTime).ToString(@"hh\:mm tt"))</span>
                     </p>
                     <p class="fs-6 mb-2">
-                        <strong><i class="fas fa-mug-hot me-1 text-warning"></i> Lunch Break:</strong> 
-                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.LunchStartTime).ToString(@"hh\:mm tt") ?? "N/A")</span> - 
-                        <span class="fw-bold">@(new DateTime().Add(Model.DoctorSchedule.LunchEndTime).ToString(@"hh\:mm tt") ?? "N/A")</span>
+                        <strong><i class="fas fa-mug-hot me-1 text-warning"></i> Lunch Break:</strong>
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.LunchStartTime).ToString(@"hh\:mm tt"))</span> -
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.LunchEndTime).ToString(@"hh\:mm tt"))</span>
                     </p>
                     <p class="fs-6 mb-4"><strong><i class="fas fa-map-marker-alt me-1 text-danger"></i> Location:</strong> @Model.DoctorSchedule.Location</p>
 
@@ -80,6 +78,19 @@
                 else
                 {
                     <p class="text-muted fst-italic">No specific working schedule defined for this date. A default schedule has been generated or will be generated upon booking an appointment.</p>
+                    @if (Model.DailyActivities != null && Model.DailyActivities.Any())
+                    {
+                        <h5 class="mt-4 border-bottom pb-2 mb-3 text-secondary">General Activities:</h5>
+                        <ul class="list-group list-group-flush border-0">
+                            @foreach (var activity in Model.DailyActivities)
+                            {
+                                <li class="list-group-item d-flex align-items-center py-2 px-0 border-0">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    @activity
+                                </li>
+                            }
+                        </ul>
+                    }
                 }
             </div>
         </div>
@@ -127,7 +138,7 @@
 @section Scripts {
     <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script> 
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
     <style>
         /* Custom CSS for gradients and rounded corners if not fully covered by Bootstrap */

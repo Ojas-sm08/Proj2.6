@@ -29,7 +29,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Mon, 09 Jun 2025 04:51:31 GMT"
+          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
         }
       ],
       "EndpointProperties": [
@@ -74,7 +74,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Mon, 09 Jun 2025 04:51:31 GMT"
+          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
         }
       ],
       "EndpointProperties": [
@@ -245,6 +245,170 @@
         {
           "Name": "integrity",
           "Value": "sha256-Jtxf9L+5ITKRc1gIRl4VbUpGkRNfOBXjYTdhJD4facM="
+        }
+      ]
+    },
+    {
+      "Route": "images/adminback.0vsan4h7oh.jpg",
+      "AssetFile": "images/adminback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "96448"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:00:40 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "0vsan4h7oh"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY="
+        },
+        {
+          "Name": "label",
+          "Value": "images/adminback.jpg"
+        }
+      ]
+    },
+    {
+      "Route": "images/adminback.jpg",
+      "AssetFile": "images/adminback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "96448"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:00:40 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY="
+        }
+      ]
+    },
+    {
+      "Route": "images/doctorback.jpg",
+      "AssetFile": "images/doctorback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "68472"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:20:53 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y="
+        }
+      ]
+    },
+    {
+      "Route": "images/doctorback.krs9n4mm3w.jpg",
+      "AssetFile": "images/doctorback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "68472"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:20:53 GMT"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "krs9n4mm3w"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y="
+        },
+        {
+          "Name": "label",
+          "Value": "images/doctorback.jpg"
         }
       ]
     },

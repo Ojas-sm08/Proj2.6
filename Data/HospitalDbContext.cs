@@ -15,6 +15,10 @@ namespace HospitalManagementSystem.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<DoctorReview> DoctorReviews { get; set; }
         public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
+
+        public DbSet<HospitalManagementSystem.Models.PatientFile> PatientFiles { get; set; }
+
+        public DbSet<HospitalManagementSystem.Models.Notification> Notifications { get; set; }
         // Add other DbSets if you have more models like Billing
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

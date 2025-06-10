@@ -1,10 +1,101 @@
-﻿@{
+﻿@* Inject HttpContextAccessor to get session data *@
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Doctor Dashboard";
+    // Ensure this view uses the Doctor-specific layout for navigation
     Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
-    ViewData["Title"] = "Welcome Doctor";
-    var username = Context.Session.GetString("Username");
+
+    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
 }
 
-<div class="text-center mt-5">
-    <h2>👋 Welcome, Dr. @username!</h2>
-    <p class="lead">You can now view your schedule, billing, and patient list using the navigation bar.</p>
+<style>
+    /* Full-screen background for the main content area */
+    .doctor-dashboard-background {
+        min-height: calc(100vh - 120px); /* Adjust based on header/footer height in _Layout.Doctor.cshtml */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-image: url('/images/doctorback.jpg'); /* !!! ENSURE IMAGE IS IN wwwroot/images/ !!! */
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        color: white; /* White text for readability over dark background */
+        text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.8); /* Stronger shadow for text */
+        position: relative; /* For the overlay */
+        overflow: hidden;
+        border-radius: 0.75rem; /* Consistent rounded corners */
+        padding: 20px;
+    }
+
+        /* Dark overlay for better text contrast */
+        .doctor-dashboard-background::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.55); /* Darker overlay */
+            z-index: 1;
+            border-radius: 0.75rem; /* Match parent border-radius */
+        }
+
+    .doctor-welcome-content {
+        z-index: 2; /* Ensure content is above the overlay */
+        text-align: center;
+        padding: 1rem;
+    }
+
+        .doctor-welcome-content h1 {
+            font-size: 3.5rem; /* Large and impactful */
+            font-weight: bold;
+            margin-bottom: 1rem;
+            font-family: 'Playfair Display', serif; /* Use a more decorative font if available */
+        }
+
+        .doctor-welcome-content p {
+            font-size: 1.5rem;
+            max-width: 700px;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+            font-weight: 300;
+        }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .doctor-dashboard-background {
+            min-height: calc(100vh - 100px); /* Adjusted for smaller header/footer on mobile */
+            padding: 15px;
+        }
+
+        .doctor-welcome-content h1 {
+            font-size: 2.5rem;
+        }
+
+        .doctor-welcome-content p {
+            font-size: 1.2rem;
+            padding: 0 0.5rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .doctor-welcome-content h1 {
+            font-size: 2rem;
+        }
+
+        .doctor-welcome-content p {
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<div class="doctor-dashboard-background">
+    <div class="doctor-welcome-content">
+        <h1>Welcome, Doctor!</h1>
+        <p>Your dedicated portal for managing patients, schedules, and medical insights.</p>
+        <p>Thank you for your invaluable service to our community.</p>
+    </div>
 </div>

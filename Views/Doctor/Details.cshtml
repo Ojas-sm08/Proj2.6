@@ -1,47 +1,94 @@
-﻿@model HospitalManagementSystem.Models.Doctor
+﻿@model HospitalManagementSystem.Models.PatientDetailsViewModel
 
 @{
-    ViewData["Title"] = "Doctor Details";
+    ViewData["Title"] = Model.Patient?.Name != null ? $"Details for {Model.Patient.Name}" : "Patient Details";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2 class="mb-4">🧑‍⚕️ Doctor Details</h2>
+<h2 class="mb-4 text-center">📋 Patient Details: @(Model.Patient?.Name ?? "N/A")</h2>
 
-<div>
-    <dl class="row">
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Specialization)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Specialization)
-        </dd>
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Contact)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Contact)
-        </dd>
-        <dt class="col-sm-3">
-            @Html.DisplayNameFor(model => model.Location)
-        </dt>
-        <dd class="col-sm-9">
-            @Html.DisplayFor(model => model.Location)
-        </dd>
-    </dl>
+<div class="card shadow-lg p-4 mb-4">
+    <div class="card-body">
+        @if (Model.Patient != null)
+        {
+            <dl class="row">
+                <dt class="col-sm-4">Patient ID:</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Patient.PatientId)</dd>
+
+                <dt class="col-sm-4">Name:</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Patient.Name)</dd>
+
+                <dt class="col-sm-4">Date of Birth:</dt>
+                <dd class="col-sm-8">@Model.Patient.DateOfBirth.ToString("yyyy-MM-dd")</dd>
+
+                <dt class="col-sm-4">Gender:</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Patient.Gender)</dd>
+
+                <dt class="col-sm-4">Contact Number:</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Patient.ContactNumber)</dd>
+
+                <dt class="col-sm-4">Email:</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Patient.Email)</dd>
+
+                <dt class="col-sm-4">Address:</dt>
+                <dd class="col-sm-8">@Html.DisplayFor(model => model.Patient.Address)</dd>
+
+                <dt class="col-sm-4">Medical History:</dt>
+                <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Patient.MedicalHistory) ? "No medical history recorded." : Html.Raw(Model.Patient.MedicalHistory.Replace("\n", "<br/>")))</dd>
+            </dl>
+
+            <hr class="my-4" />
+
+            <h4 class="mb-3">📎 Downloadable Files</h4>
+            @if (Model.PatientFiles != null && Model.PatientFiles.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var file in Model.PatientFiles)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-file-alt me-2"></i>
+                                <strong>@file.FileName</strong>
+                                <small class="text-muted ms-3">(@file.FileType - Uploaded: @file.UploadDate.ToString("yyyy-MM-dd hh:mm tt"))</small>
+                                @if (!string.IsNullOrEmpty(file.Description))
+                                {
+                                    <p class="mb-0 text-muted fst-italic ms-4">@file.Description</p>
+                                }
+                            </div>
+                            <div>
+                                
+                                
+                                <a href="#" class="btn btn-sm btn-primary" title="Download File">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </a>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-info text-center" role="alert">
+                    No files currently uploaded for this patient.
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-warning text-center" role="alert">
+                Patient details could not be loaded.
+            </div>
+        }
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-controller="Doctor" asp-route-id="@Model?.Id" class="btn btn-warning">Edit</a>
-    <a asp-action="Manage" asp-controller="Doctor" class="btn btn-outline-secondary ms-2">Back to List</a>
+
+<div class="text-center mt-3">
+    <a asp-action="Patients" asp-controller="Doctor" class="btn btn-outline-secondary me-2"><i class="fas fa-arrow-left me-2"></i> Back to Patient List</a>
+    @* You can add an Edit button here if you implement PatientController.Edit *@
+    @* <a asp-action="Edit" asp-route-id="@Model.Patient.PatientId" class="btn btn-warning"><i class="fas fa-edit me-2"></i> Edit Patient</a> *@
 </div>
+
+@section Scripts {
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+}

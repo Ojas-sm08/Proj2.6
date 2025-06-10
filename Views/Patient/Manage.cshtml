@@ -1,64 +1,145 @@
-﻿@model List<HospitalManagementSystem.Models.Patient>
+﻿@model IEnumerable<HospitalManagementSystem.Models.Patient>
 
 @{
-    ViewData["Title"] = "Patient Management";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Manage Patients";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Admin uses the main layout
 }
 
-<h2 class="mb-4">Patient Management</h2>
+<h2 class="mb-4 text-center">👥 Manage Patients</h2>
 
-<form asp-action="Manage" method="get" class="row g-3 align-items-center mb-4">
-    <div class="col-md-4">
-        <input type="text" name="searchString" class="form-control" placeholder="Search by name or contact" value="@ViewBag.CurrentSearchString" />
+@* Display TempData messages here *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="col-md-3">
-        <select name="gender" class="form-select">
-            @foreach (var g in ViewBag.Genders)
-            {
-                <option value="@g" selected="@(g == ViewBag.CurrentGender ? "selected" : null)">@g</option>
-            }
-        </select>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="col-md-auto">
-        <button type="submit" class="btn btn-primary">Search</button>
+}
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    <div class="col-md-auto ms-auto">
-        <a asp-action="Create" class="btn btn-success">Add New Patient</a>
-    </div>
-</form>
+}
 
-<table class="table table-bordered mt-3">
-    <thead class="table-light">
-        <tr>
-            <th>Name</th>
-            <th>Date Of Birth</th>
-            <th>Gender</th>
-            <th>Contact Number</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (Model != null && Model.Any())
+<div class="card shadow-sm p-4">
+    <div class="card-body">
+        <div class="row mb-3 align-items-center">
+            <div class="col-md-auto mb-2 mb-md-0">
+                <a asp-action="Create" asp-controller="Patient" class="btn btn-primary w-100"><i class="fas fa-user-plus me-2"></i> Add New Patient</a>
+            </div>
+            <div class="col-md-auto ms-auto"> 
+                <form asp-action="Manage" method="get" class="d-flex flex-wrap align-items-center gap-2"> 
+                    <div class="flex-grow-1 me-2">
+                        <label for="searchString" class="visually-hidden">Search by name, contact, or email</label>
+                        <input type="text" name="searchString" class="form-control" value="@ViewData["CurrentFilter"]" placeholder="Search by name, contact, or email" />
+                    </div>
+                    <div class="me-2" style="min-width: 150px;"> 
+                        <label for="genderFilter" class="visually-hidden">Filter by Gender</label>
+                        <select name="genderFilter" class="form-select">
+                            <option value="All">-- All Genders --</option>
+                            @foreach (var gender in ViewBag.Genders)
+                            {
+                                <option value="@gender" @@(ViewData["CurrentGenderFilter"]?.ToString() == gender ? "selected" : "")>@gender</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-info"><i class="fas fa-filter"></i> Filter</button>
+                    </div>
+                    <div>
+                        <a asp-action="Manage" class="btn btn-secondary"><i class="fas fa-sync-alt"></i> Clear</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-responsive mt-4">
+            <table class="table table-hover table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient ID</th>
+                        <th>Name</th>
+                        <th>Date of Birth</th>
+                        <th>Gender</th>
+                        <th>Contact Number</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@Html.DisplayFor(modelItem => item.PatientId)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                            <td>@item.DateOfBirth.ToString("yyyy-MM-dd")</td>
+                            <td>@Html.DisplayFor(modelItem => item.Gender)</td>
+                            <td>@Html.DisplayFor(modelItem => item.ContactNumber)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                            <td>@Html.DisplayFor(modelItem => item.Address)</td>
+                            <td>
+                                <a asp-controller="Patient" asp-action="Details" asp-route-id="@item.PatientId" class="btn btn-sm btn-info me-1" title="View Details"><i class="fas fa-eye"></i></a>
+                                <a asp-controller="Patient" asp-action="Edit" asp-route-id="@item.PatientId" class="btn btn-sm btn-warning me-1" title="Edit"><i class="fas fa-edit"></i></a>
+                                <button type="button" class="btn btn-sm btn-danger delete-patient-btn" data-id="@item.PatientId" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
         {
-            @foreach (var patient in Model)
-            {
-                <tr>
-                    <td>@patient.Name</td>
-                    <td>@patient.DateOfBirth.ToShortDateString()</td>
-                    <td>@patient.Gender</td>
-                    <td>@patient.ContactNumber</td>
-                    <td>
-                        @* This is the "View" button that connects to ProfilePreview *@
-                        <a asp-action="ProfilePreview" asp-route-id="@patient.PatientId" class="btn btn-info btn-sm">View</a> |
-                        <a asp-action="Edit" asp-route-id="@patient.PatientId" class="btn btn-primary btn-sm">Edit</a> |
-                        <a asp-action="Delete" asp-route-id="@patient.PatientId" class="btn btn-danger btn-sm">Delete</a>
-                    </td>
-                </tr>
-            }
+            <div class="alert alert-info text-center mt-3" role="alert">
+                No patients found matching your criteria.
+            </div>
         }
-        else
-        {
-            <tr><td colspan="5" class="text-center">No patients found.</td></tr>
-        }
-    </tbody>
-</table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('.delete-patient-btn').on('click', function () {
+                var patientId = $(this).data('id');
+                var patientName = $(this).closest('tr').find('td:eq(1)').text(); // Get patient name from the table row
+
+                if (confirm('Are you sure you want to delete patient "' + patientName + '"? This will also delete associated files and user account.')) {
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Patient")',
+                        type: 'POST',
+                        data: { id: patientId },
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload(); // Reload the page to show updated list
+                            } else {
+                                alert('Error: ' + response.message);
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            alert('An error occurred: ' + error + '\n' + xhr.responseText);
+                            console.error(xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

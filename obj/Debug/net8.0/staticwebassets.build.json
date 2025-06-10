@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "eWk87QUhY4Ol1iTA0tiNNUsPqmBh+wohqwPcwYgPELI=",
+  "Hash": "B6NlYSYOQQzoeWeZYC5cu9qgLgwqcvhqUkGgoklahFc=",
   "Source": "Hospital Management System",
   "BasePath": "_content/Hospital Management System",
   "Mode": "Default",
@@ -99,6 +99,48 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\favicon.ico"
+    },
+    {
+      "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\adminback.jpg",
+      "SourceId": "Hospital Management System",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\",
+      "BasePath": "_content/Hospital Management System",
+      "RelativePath": "images/adminback#[.{fingerprint}]?.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "0vsan4h7oh",
+      "Integrity": "nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\adminback.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\doctorback.jpg",
+      "SourceId": "Hospital Management System",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\",
+      "BasePath": "_content/Hospital Management System",
+      "RelativePath": "images/doctorback#[.{fingerprint}]?.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "krs9n4mm3w",
+      "Integrity": "4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\doctorback.jpg"
     },
     {
       "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\js\\site.js",
@@ -1507,7 +1549,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Mon, 09 Jun 2025 04:51:31 GMT"
+          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1544,7 +1586,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Mon, 09 Jun 2025 04:51:31 GMT"
+          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1589,7 +1631,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Mon, 09 Jun 2025 04:51:31 GMT"
+          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1634,7 +1676,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Mon, 09 Jun 2025 04:51:31 GMT"
+          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1645,6 +1687,170 @@
         {
           "Name": "integrity",
           "Value": "sha256-TNsQGS7DjDnQvomWCoAAJVeZeX4lwNHZr8ZXSvcF6rI="
+        }
+      ]
+    },
+    {
+      "Route": "images/adminback.0vsan4h7oh.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\adminback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "96448"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:00:40 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "0vsan4h7oh"
+        },
+        {
+          "Name": "label",
+          "Value": "images/adminback.jpg"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY="
+        }
+      ]
+    },
+    {
+      "Route": "images/adminback.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\adminback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "96448"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:00:40 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-nId/Pu4/++NquOwcO7Wyu+ucNzv9cphcQks3g6FXQcY="
+        }
+      ]
+    },
+    {
+      "Route": "images/doctorback.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\doctorback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "68472"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:20:53 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y="
+        }
+      ]
+    },
+    {
+      "Route": "images/doctorback.krs9n4mm3w.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\doctorback.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "68472"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Tue, 10 Jun 2025 12:20:53 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "krs9n4mm3w"
+        },
+        {
+          "Name": "label",
+          "Value": "images/doctorback.jpg"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y="
         }
       ]
     },

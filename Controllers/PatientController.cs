@@ -1,20 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using HospitalManagementSystem.Data;
 using HospitalManagementSystem.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http; // Required for HttpContext.Session
-using Microsoft.EntityFrameworkCore; // Required for ToListAsync, FindAsync, Include, etc.
-using HospitalManagementSystem.Data; // Required for HospitalDbContext
-using System.Collections.Generic;
-using System.Diagnostics; // Added for Debug.WriteLine
-
-// Added QuestPDF using directives
-using QuestPDF.Fluent;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using QuestPDF.Drawing; // Added this using directive
-using System.IO; // Required for MemoryStream
-
+using Microsoft.AspNetCore.Http; // For HttpContext.Session
+using System.Collections.Generic; // For List
+using System.Diagnostics; // For Debug.WriteLine
+using System; // For Exception
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -27,252 +20,51 @@ namespace HospitalManagementSystem.Controllers
             _context = context;
         }
 
+        // Helper method for session/role checks
         private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
         private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
+        private bool IsDoctor() => HttpContext.Session.GetString("Role") == "Doctor";
         private bool IsPatient() => HttpContext.Session.GetString("Role") == "Patient";
 
 
-        // GET: /Patient/Manage (Your primary patient listing/management page)
-        public async Task<IActionResult> Manage(string searchString, string gender)
+        // GET: Patient/Manage (Admin View to Manage Patients)
+        [HttpGet]
+        public async Task<IActionResult> Manage(string searchString, string genderFilter)
         {
-            if (!IsLoggedIn())
+            if (!IsLoggedIn() || !IsAdmin())
             {
+                TempData["ErrorMessage"] = "You are not authorized to manage patients.";
                 return RedirectToAction("Login", "Account");
             }
 
-            // Only Admins can access this management page.
-            if (!IsAdmin())
-            {
-                TempData["ErrorMessage"] = "You are not authorized to view this page."; // More specific error
-                return RedirectToAction("Dashboard", "Patient"); // Redirect non-admins
-            }
-
+            ViewData["Title"] = "Manage Patients";
             IQueryable<Patient> patients = _context.Patients;
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                patients = patients.Where(p => p.Name.Contains(searchString) || p.ContactNumber.Contains(searchString));
+                patients = patients.Where(p => p.Name.Contains(searchString) ||
+                                                 p.ContactNumber.Contains(searchString) ||
+                                                 (p.Email != null && p.Email.Contains(searchString)));
             }
 
-            if (!string.IsNullOrEmpty(gender) && gender != "All")
+            if (!string.IsNullOrEmpty(genderFilter) && genderFilter != "All")
             {
-                patients = patients.Where(p => p.Gender == gender);
+                patients = patients.Where(p => p.Gender == genderFilter);
             }
 
-            ViewBag.CurrentSearchString = searchString;
-            ViewBag.CurrentGender = gender;
+            ViewBag.Genders = await _context.Patients
+                                            .Select(p => p.Gender)
+                                            .Distinct()
+                                            .OrderBy(g => g)
+                                            .ToListAsync();
 
-            ViewBag.Genders = new List<string> { "All", "Male", "Female", "Other" };
+            ViewData["CurrentFilter"] = searchString;
+            ViewData["CurrentGenderFilter"] = genderFilter;
 
             return View(await patients.ToListAsync());
         }
 
-        // GET: /Patient/Notifications (New Action)
-        public IActionResult Notifications()
-        {
-            if (!IsLoggedIn())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-            ViewData["Title"] = "Patient Notifications";
-            return View(); // Renders Views/Patient/Notifications.cshtml
-        }
-
-        // GET: /Patient/ProfilePreview/{id?} (Modified Action to accept ID)
-        public async Task<IActionResult> ProfilePreview(int? id)
-        {
-            if (!IsLoggedIn())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            string? role = HttpContext.Session.GetString("Role");
-            Patient? patient = null;
-
-            if (role == "Patient")
-            {
-                if (int.TryParse(HttpContext.Session.GetString("PatientId"), out int loggedInPatientId))
-                {
-                    patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == loggedInPatientId);
-                }
-            }
-            else if (role == "Admin")
-            {
-                if (id.HasValue)
-                {
-                    patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id.Value);
-                }
-                else
-                {
-                    ViewBag.Message = "As an Admin, please select a patient from the 'Manage & Search Patients' list to view their profile.";
-                }
-            }
-
-            ViewData["Title"] = "Patient Profile Preview";
-            return View(patient);
-        }
-
-        // MODIFIED ACTION: GET: Patient/DownloadProfilePdf/{id} - Now generates a real PDF using QuestPDF
-        [HttpGet]
-        public async Task<IActionResult> DownloadProfilePdf(int id)
-        {
-            if (!IsLoggedIn())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            string? role = HttpContext.Session.GetString("Role");
-            bool authorized = false;
-
-            if (role == "Admin")
-            {
-                authorized = true;
-            }
-            else if (role == "Patient")
-            {
-                if (int.TryParse(HttpContext.Session.GetString("PatientId"), out int loggedInPatientId))
-                {
-                    if (loggedInPatientId == id)
-                    {
-                        authorized = true;
-                    }
-                }
-            }
-
-            if (!authorized)
-            {
-                TempData["ErrorMessage"] = "You are not authorized to download this profile.";
-                return RedirectToAction("Login", "Account");
-            }
-
-            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id);
-
-            if (patient == null)
-            {
-                return NotFound();
-            }
-
-            // --- REAL PDF GENERATION USING QUESTPDF ---
-            // Set the QuestPDF license type. This is mandatory for commercial use but good practice for community.
-            QuestPDF.Settings.License = LicenseType.Community;
-            // Register a font for broader compatibility if needed (e.g., Arial).
-            // FontManager.RegisterSystemFonts(); // Uncomment this line if you need system fonts
-            // For simple cases, default fonts are often sufficient.
-
-            var document = Document.Create(container =>
-            {
-                container.Page(page =>
-                {
-                    page.Size(PageSizes.A4);
-                    page.Margin(30);
-                    page.PageColor(Colors.White);
-                    page.DefaultTextStyle(x => x.FontSize(12));
-
-                    page.Header()
-                        .Text("Patient Profile")
-                        .FontSize(24)
-                        .Bold()
-                        .FontColor(Colors.Blue.Darken2)
-                        .AlignLeft();
-
-                    page.Content()
-                        .PaddingVertical(10)
-                        .Column(column =>
-                        {
-                            column.Spacing(10);
-
-                            column.Item().Text(text =>
-                            {
-                                text.Span("Generated On: ").SemiBold();
-                                text.Span(DateTime.Now.ToShortDateString());
-                            });
-
-                            column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
-
-                            column.Item().Text("Personal Information").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
-                            column.Item().PaddingLeft(10).Column(col =>
-                            {
-                                col.Spacing(5);
-                                col.Item().Text(text => { text.Span("Name: ").SemiBold(); text.Span(patient.Name); });
-                                col.Item().Text(text => { text.Span("Patient ID: ").SemiBold(); text.Span(patient.PatientId.ToString()); });
-                                col.Item().Text(text => { text.Span("Date of Birth: ").SemiBold(); text.Span(patient.DateOfBirth.ToShortDateString()); });
-                                col.Item().Text(text => { text.Span("Gender: ").SemiBold(); text.Span(patient.Gender); });
-                                col.Item().Text(text => { text.Span("Email: ").SemiBold(); text.Span(patient.Email ?? "N/A"); }); // Added Email
-                            });
-
-                            column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
-
-                            column.Item().Text("Contact Information").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
-                            column.Item().PaddingLeft(10).Column(col =>
-                            {
-                                col.Spacing(5);
-                                col.Item().Text(text => { text.Span("Contact Number: ").SemiBold(); text.Span(patient.ContactNumber); });
-                                col.Item().Text(text => { text.Span("Address: ").SemiBold(); text.Span(patient.Address); });
-                            });
-
-                            column.Item().PaddingVertical(5).Height(1).Background(Colors.Grey.Lighten1);
-
-                            column.Item().Text("Medical History").FontSize(16).SemiBold().FontColor(Colors.Grey.Darken2);
-                            column.Item().PaddingLeft(10).Text(text => text.Span(patient.MedicalHistory ?? "N/A"));
-                        });
-
-                    page.Footer()
-                        .AlignCenter()
-                        .Text(x =>
-                        {
-                            // Using static placeholder for page numbers as discussed
-                            x.Span("Page X of Y").FontSize(10);
-                        });
-                });
-            });
-
-            // Generate the PDF into a MemoryStream
-            using var stream = new MemoryStream();
-            document.GeneratePdf(stream);
-            stream.Position = 0; // Reset stream position to the beginning
-
-            // Return the PDF file
-            return File(stream.ToArray(), "application/pdf", $"PatientProfile_{patient.Name.Replace(" ", "_")}.pdf");
-        }
-
-
-        // Example of a Patient Dashboard (for a logged-in patient)
-        public IActionResult Dashboard()
-        {
-            if (!IsLoggedIn() || !IsPatient())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-            ViewData["Title"] = "Patient Dashboard";
-            return View(); // Renders Views/Patient/Dashboard.cshtml
-        }
-
-        // Example of a Patient's Appointments list
-        public async Task<IActionResult> Appointments()
-        {
-            if (!IsLoggedIn() || !IsPatient())
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            var patientIdString = HttpContext.Session.GetString("PatientId");
-            if (!int.TryParse(patientIdString, out int loggedInPatientId))
-            {
-                TempData["ErrorMessage"] = "Could not retrieve patient ID from session. Please log in again.";
-                return RedirectToAction("Login", "Account");
-            }
-
-            var appointments = await _context.Appointments
-                                            .Include(a => a.Doctor) // Include Doctor details
-                                            .Where(a => a.PatientId == loggedInPatientId)
-                                            .OrderBy(a => a.AppointmentDateTime) // FIX: Order by AppointmentDateTime
-                                            .ToListAsync();
-
-            ViewData["Title"] = "My Appointments";
-            return View("Appointments", appointments); // Renders Views/Patient/Appointments.cshtml
-        }
-
-        // GET for creating a new patient:
+        // GET: Patient/Create (Admin creates new patient)
         [HttpGet]
         public IActionResult Create()
         {
@@ -281,11 +73,11 @@ namespace HospitalManagementSystem.Controllers
                 TempData["ErrorMessage"] = "You are not authorized to add new patients.";
                 return RedirectToAction("Login", "Account");
             }
-            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+            ViewData["Title"] = "Add New Patient";
             return View();
         }
 
-        // POST for creating a new patient:
+        // POST: Patient/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Name,DateOfBirth,Gender,ContactNumber,Email,Address,MedicalHistory")] Patient patient)
@@ -296,56 +88,14 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            Debug.WriteLine($"PatientController.Create POST: Attempting to save patient with Name: '{patient.Name}'");
-
             if (ModelState.IsValid)
             {
                 _context.Add(patient);
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    Debug.WriteLine($"Patient '{patient.Name}' saved successfully with PatientId: {patient.PatientId}");
-                    TempData["SuccessMessage"] = $"Patient '{patient.Name}' added successfully!";
-                    return RedirectToAction(nameof(Manage));
-                }
-                catch (DbUpdateException ex)
-                {
-                    Debug.WriteLine($"DbUpdateException during Patient Create: {ex.Message}");
-                    if (ex.InnerException != null)
-                    {
-                        Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                    }
-                    ModelState.AddModelError(string.Empty, "An error occurred while saving the patient. Please try again.");
-                    TempData["ErrorMessage"] = "An unexpected database error occurred while adding the patient.";
-                }
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"Patient {patient.Name} added successfully!";
+                return RedirectToAction(nameof(Manage));
             }
-            else
-            {
-                Debug.WriteLine("Patient Create POST: ModelState is NOT valid. Errors:");
-                foreach (var state in ModelState)
-                {
-                    if (state.Value.Errors.Any())
-                    {
-                        Debug.WriteLine($"- {state.Key}: {string.Join("; ", state.Value.Errors.Select(e => e.ErrorMessage))}");
-                    }
-                }
-            }
-            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
-            return View(patient);
-        }
-
-        // GET: Patient/Details/5
-        [HttpGet]
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (!IsLoggedIn()) return RedirectToAction("Login", "Account");
-
-            if (id == null) return NotFound();
-
-            var patient = await _context.Patients
-                                        .FirstOrDefaultAsync(m => m.PatientId == id);
-            if (patient == null) return NotFound();
-
+            ViewData["Title"] = "Add New Patient";
             return View(patient);
         }
 
@@ -355,7 +105,7 @@ namespace HospitalManagementSystem.Controllers
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                TempData["ErrorMessage"] = "You are not authorized to edit patient profiles.";
+                TempData["ErrorMessage"] = "You are not authorized to edit patients.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -363,22 +113,23 @@ namespace HospitalManagementSystem.Controllers
 
             var patient = await _context.Patients.FindAsync(id);
             if (patient == null) return NotFound();
-            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+
+            ViewData["Title"] = $"Edit Patient: {patient.Name}";
             return View(patient);
         }
 
         // POST: Patient/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("PatientId,Name,DateOfBirth,Gender,ContactNumber,Email,Address,MedicalHistory")] Patient patient)
+        public async Task<IActionResult> Edit(int PatientId, [Bind("PatientId,Name,DateOfBirth,Gender,ContactNumber,Email,Address,MedicalHistory")] Patient patient)
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                TempData["ErrorMessage"] = "You are not authorized to edit patient profiles.";
+                TempData["ErrorMessage"] = "You are not authorized to edit patients.";
                 return RedirectToAction("Login", "Account");
             }
 
-            if (id != patient.PatientId) return NotFound();
+            if (PatientId != patient.PatientId) return NotFound();
 
             if (ModelState.IsValid)
             {
@@ -386,22 +137,23 @@ namespace HospitalManagementSystem.Controllers
                 {
                     _context.Update(patient);
                     await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Patient updated successfully!";
+                    TempData["SuccessMessage"] = $"Patient {patient.Name} updated successfully!";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!PatientExists(patient.PatientId)) return NotFound();
-                    else throw;
+                    if (!PatientExists(patient.PatientId))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
                 }
                 return RedirectToAction(nameof(Manage));
             }
-            ViewBag.Genders = new List<string> { "Male", "Female", "Other" };
+            ViewData["Title"] = $"Edit Patient: {patient.Name}";
             return View(patient);
-        }
-
-        private bool PatientExists(int id)
-        {
-            return _context.Patients.Any(e => e.PatientId == id);
         }
 
         // GET: Patient/Delete/5
@@ -410,29 +162,17 @@ namespace HospitalManagementSystem.Controllers
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                TempData["ErrorMessage"] = "You are not authorized to delete patient profiles.";
+                TempData["ErrorMessage"] = "You are not authorized to delete patients.";
                 return RedirectToAction("Login", "Account");
             }
 
             if (id == null) return NotFound();
 
-            // Include appointments to check for dependencies
             var patient = await _context.Patients
-                                        .Include(p => p.Appointments) // Include Appointments to check for dependents
                                         .FirstOrDefaultAsync(m => m.PatientId == id);
             if (patient == null) return NotFound();
 
-            // NEW: Check if patient has appointments and set error message
-            if (patient.Appointments != null && patient.Appointments.Any())
-            {
-                ViewBag.CanDelete = false; // Indicate that deletion is not allowed
-                TempData["ErrorMessage"] = $"Cannot delete patient '{patient.Name}' because they have {patient.Appointments.Count} existing appointments. Please delete their appointments first.";
-            }
-            else
-            {
-                ViewBag.CanDelete = true; // Deletion is allowed
-            }
-
+            ViewData["Title"] = $"Delete Patient: {patient.Name}";
             return View(patient);
         }
 
@@ -443,40 +183,161 @@ namespace HospitalManagementSystem.Controllers
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                TempData["ErrorMessage"] = "You are not authorized to delete patient profiles.";
+                return Json(new { success = false, message = "Unauthorized to delete patients." });
+            }
+
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    var patient = await _context.Patients.FindAsync(id);
+                    if (patient == null)
+                    {
+                        return Json(new { success = false, message = "Patient not found." });
+                    }
+
+                    // Check for associated appointments
+                    var appointments = await _context.Appointments
+                                                     .Where(a => a.PatientId == patient.PatientId)
+                                                     .ToListAsync();
+                    if (appointments.Any())
+                    {
+                        transaction.Rollback();
+                        return Json(new { success = false, message = $"Cannot delete patient {patient.Name}. There are {appointments.Count} existing appointments linked to this patient. Please delete or reassign appointments first." });
+                    }
+
+                    // Check for associated patient files
+                    var patientFiles = await _context.PatientFiles
+                                                     .Where(pf => pf.PatientId == patient.PatientId)
+                                                     .ToListAsync();
+                    if (patientFiles.Any())
+                    {
+                        _context.PatientFiles.RemoveRange(patientFiles); // Remove all associated files
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"Deleted {patientFiles.Count} files for patient ID: {id}");
+                    }
+
+                    // Check for associated user account (if patient has a user login)
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.PatientId == patient.PatientId);
+                    if (user != null)
+                    {
+                        _context.Users.Remove(user);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"Deleted associated user for patient ID: {id}, Username: {user.Username}");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"No associated user found for patient ID: {id}");
+                    }
+
+
+                    _context.Patients.Remove(patient);
+                    await _context.SaveChangesAsync();
+
+                    transaction.Commit();
+                    return Json(new { success = true, message = $"Patient {patient.Name} and associated data deleted successfully!" });
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Debug.WriteLine($"Error deleting patient: {ex.Message}");
+                    return Json(new { success = false, message = $"Error deleting patient: {ex.Message}" });
+                }
+            }
+        }
+
+
+        // GET: Patient/Details/5 (Allows Doctor/Admin/Patient to view a patient's details)
+        [HttpGet]
+        public async Task<IActionResult> Details(int? id)
+        {
+            if (!IsLoggedIn() || (!IsAdmin() && !IsDoctor() && !IsPatient()))
+            {
+                TempData["ErrorMessage"] = "You must be logged in as an authorized user to view patient details.";
                 return RedirectToAction("Login", "Account");
             }
 
-            // Fetch patient again, ensuring appointments are included for re-check
-            var patient = await _context.Patients.Include(p => p.Appointments).FirstOrDefaultAsync(p => p.PatientId == id);
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var patient = await _context.Patients
+                                        .FirstOrDefaultAsync(m => m.PatientId == id);
             if (patient == null)
             {
                 return NotFound();
             }
 
-            // Re-check for appointments before attempting deletion
-            if (patient.Appointments != null && patient.Appointments.Any())
+            // Specific authorization based on role:
+            if (IsDoctor())
             {
-                TempData["ErrorMessage"] = $"Cannot delete patient '{patient.Name}' because they still have existing appointments. Please delete their appointments first.";
-                return RedirectToAction(nameof(Delete), new { id = id }); // Redirect back to delete page with error
+                var doctorId = HttpContext.Session.GetInt32("DoctorId");
+                Debug.WriteLine($"PatientController.Details: DoctorId from session for current doctor: {doctorId}");
+
+                if (doctorId == null || doctorId == 0) // Check for 0 as well, indicating no actual DoctorId
+                {
+                    TempData["ErrorMessage"] = "Doctor ID not found in session or invalid. Please log in again.";
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var hasAppointmentWithThisDoctor = await _context.Appointments
+                                                                 .AnyAsync(a => a.DoctorId == doctorId && a.PatientId == patient.PatientId);
+
+                if (!hasAppointmentWithThisDoctor)
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to view this patient's details as they are not listed as your patient.";
+                    return RedirectToAction("Dashboard", "Doctor");
+                }
+            }
+            else if (IsPatient())
+            {
+                var patientIdInSession = HttpContext.Session.GetInt32("PatientId");
+                if (id != patientIdInSession)
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to view other patient's details.";
+                    return RedirectToAction("Dashboard", "Patient");
+                }
             }
 
-            try
+            var patientFiles = await _context.PatientFiles
+                                             .Where(pf => pf.PatientId == patient.PatientId)
+                                             .OrderByDescending(pf => pf.UploadDate)
+                                             .ToListAsync();
+
+            var viewModel = new PatientDetailsViewModel
             {
-                _context.Patients.Remove(patient);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Patient '{patient.Name}' deleted successfully!";
-            }
-            catch (DbUpdateException ex)
+                Patient = patient,
+                PatientFiles = patientFiles
+            };
+
+            ViewData["Title"] = $"Patient Details: {patient.Name}";
+            return View(viewModel);
+        }
+
+        // GET: Patient/Notifications (Admin view for patient-related notifications)
+        [HttpGet]
+        public async Task<IActionResult> Notifications()
+        {
+            if (!IsLoggedIn() || !IsAdmin())
             {
-                Debug.WriteLine($"DbUpdateException during Patient Delete: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                }
-                TempData["ErrorMessage"] = "An error occurred while deleting the patient. Please try again.";
+                TempData["ErrorMessage"] = "You are not authorized to view patient notifications.";
+                return RedirectToAction("Login", "Account");
             }
-            return RedirectToAction(nameof(Manage));
+
+            ViewData["Title"] = "Patient Notifications";
+
+            var notifications = await _context.Notifications
+                                              .Include(n => n.Patient)
+                                              .OrderByDescending(n => n.CreatedDate)
+                                              .ToListAsync();
+
+            return View(notifications);
+        }
+
+        private bool PatientExists(int id)
+        {
+            return _context.Patients.Any(e => e.PatientId == id);
         }
     }
 }

@@ -3,7 +3,7 @@ using HospitalManagementSystem.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http; // Required for HttpContext.Session
-using Microsoft.EntityFrameworkCore; // Required for ToListAsync()
+using Microsoft.EntityFrameworkCore; // Required for ToListAsync(), FirstOrDefaultAsync()
 using HospitalManagementSystem.Data;
 using System.Diagnostics; // Added for Debug.WriteLine
 
@@ -22,10 +22,30 @@ namespace HospitalManagementSystem.Controllers
         [HttpGet]
         public IActionResult Login()
         {
-            // Clear any existing session data on accessing the login page
-            HttpContext.Session.Clear();
-
+            // If already logged in, redirect to appropriate dashboard immediately
+            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("Username")))
+            {
+                var role = HttpContext.Session.GetString("Role");
+                if (role == "Admin")
+                {
+                    Debug.WriteLine("AccountController.Login (GET): User is Admin, redirecting to Admin/Index.");
+                    return RedirectToAction("Index", "Admin");
+                }
+                else if (role == "Doctor")
+                {
+                    Debug.WriteLine("AccountController.Login (GET): User is Doctor, redirecting to Doctor/Dashboard.");
+                    return RedirectToAction("Dashboard", "Doctor"); // Redirect doctors to their dashboard
+                }
+                else if (role == "Patient")
+                {
+                    Debug.WriteLine("AccountController.Login (GET): User is Patient, redirecting to Patient/Dashboard.");
+                    return RedirectToAction("Dashboard", "Patient");
+                }
+            }
+            // Clear any existing session data if not logged in (to ensure a fresh login)
+            HttpContext.Session.Clear(); // Only clear if not already logged in
             ViewData["Title"] = "User Login";
+            Debug.WriteLine("AccountController.Login (GET): User not logged in, showing login view.");
             return View();
         }
 
@@ -37,25 +57,24 @@ namespace HospitalManagementSystem.Controllers
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
                 TempData["ErrorMessage"] = "Please enter both username and password.";
+                Debug.WriteLine("AccountController.Login (POST): Missing username or password.");
                 return View();
             }
 
-            // Find the user by username (case-insensitive comparison)
             var user = await _context.Users
                                     .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
             if (user == null)
             {
                 TempData["ErrorMessage"] = "Invalid username. Please try again.";
+                Debug.WriteLine($"AccountController.Login (POST): Invalid username '{username}'.");
                 return View();
             }
 
-            // IMPORTANT SECURITY WARNING: In a real application, you must hash passwords
-            // and compare the hash, not plain text passwords.
-            // This is for demonstration purposes only.
             if (user.PasswordHash != password)
             {
                 TempData["ErrorMessage"] = "Invalid password. Please enter a valid password.";
+                Debug.WriteLine($"AccountController.Login (POST): Invalid password for user '{username}'.");
                 return View();
             }
 
@@ -63,101 +82,95 @@ namespace HospitalManagementSystem.Controllers
             HttpContext.Session.SetString("Username", user.Username);
             HttpContext.Session.SetString("Role", user.Role);
 
-            TempData["SuccessMessage"] = $"Welcome, {user.Username}!";
-
-            // Set specific IDs in session based on role
+            // Set specific IDs in session based on role, using SetInt32
             if (user.Role == "Patient")
             {
-                // Assuming patient's username is their name (e.g., "patient1" -> Patient name "patient1")
                 var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Name.ToLower() == user.Username.ToLower());
                 if (patient != null)
                 {
-                    HttpContext.Session.SetInt32("PatientId", patient.PatientId); // Store patient's specific ID
+                    HttpContext.Session.SetInt32("PatientId", patient.PatientId);
+                    Debug.WriteLine($"AccountController.Login (POST): Patient '{user.Username}' logged in. PatientId: {patient.PatientId} set in session.");
                 }
                 else
                 {
-                    // If a patient user exists but no matching patient profile, set PatientId to 0
-                    HttpContext.Session.SetString("PatientId", "0");
+                    HttpContext.Session.SetInt32("PatientId", 0);
                     TempData["ErrorMessage"] += " Could not find matching patient profile for this user.";
-                    Debug.WriteLine($"Login (Patient Role): User '{user.Username}' logged in, but no matching Patient profile found for name '{user.Username}'.");
+                    Debug.WriteLine($"AccountController.Login (POST): User '{user.Username}' logged in, but no matching Patient profile found. PatientId set to 0.");
                 }
-                // For patient role, DoctorId is not applicable in session, set to "0"
-                HttpContext.Session.SetString("DoctorId", "0");
+                HttpContext.Session.SetInt32("DoctorId", 0);
             }
             else if (user.Role == "Doctor")
             {
-                // REFINED LOGIC: Standardize username and doctor name for robust comparison
-                // Example: username "dr.johndoe" -> "johndoe"
                 string normalizedUsername = user.Username.Replace("dr.", "").Replace(".", "").ToLower();
+                Debug.WriteLine($"AccountController.Login (POST): Doctor '{user.Username}' logging in. Normalized username for doctor lookup: '{normalizedUsername}'.");
 
-                Debug.WriteLine($"Login (Doctor Role): User '{user.Username}' logged in. Normalized username for doctor lookup: '{normalizedUsername}'.");
-
-                // Find doctor where their name, when normalized (e.g., "John Doe" -> "johndoe"), matches the normalized username
                 var doctor = await _context.Doctors
                                            .FirstOrDefaultAsync(d => d.Name.Replace(" ", "").ToLower() == normalizedUsername);
 
                 if (doctor != null)
                 {
-                    HttpContext.Session.SetInt32("DoctorId", doctor.Id); // Store doctor's specific ID using Doctor.Id
-                    Debug.WriteLine($"Login (Doctor Role): Found matching doctor '{doctor.Name}' with ID: {doctor.Id}. DoctorId set in session.");
+                    HttpContext.Session.SetInt32("DoctorId", doctor.Id);
+                    Debug.WriteLine($"AccountController.Login (POST): Found matching doctor '{doctor.Name}' with ID: {doctor.Id}. DoctorId set in session.");
                 }
                 else
                 {
-                    // If a doctor user exists but no matching doctor profile, set DoctorId to 0
-                    HttpContext.Session.SetString("DoctorId", "0");
-                    TempData["ErrorMessage"] += " Doctor ID not found in session."; // This is the message you saw
-                    Debug.WriteLine($"Login (Doctor Role): User '{user.Username}' logged in, but NO matching Doctor profile found for normalized name '{normalizedUsername}'.");
-                    Debug.WriteLine("Please ensure Doctor.Name matches the username after removing 'dr.' and spaces, and converting to lowercase.");
+                    HttpContext.Session.SetInt32("DoctorId", 0);
+                    TempData["ErrorMessage"] += " Could not find matching doctor profile for this user.";
+                    Debug.WriteLine($"AccountController.Login (POST): User '{user.Username}' logged in, but NO matching Doctor profile found. DoctorId set to 0.");
                 }
-                // For doctor role, PatientId is not applicable in session, set to "0"
-                HttpContext.Session.SetString("PatientId", "0");
+                HttpContext.Session.SetInt32("PatientId", 0);
             }
             else // For Admin or any other role
             {
-                // For Admin or other roles, set both PatientId and DoctorId to "0"
-                HttpContext.Session.SetString("PatientId", "0");
-                HttpContext.Session.SetString("DoctorId", "0");
+                HttpContext.Session.SetInt32("PatientId", 0);
+                HttpContext.Session.SetInt32("DoctorId", 0);
+                Debug.WriteLine($"AccountController.Login (POST): Admin/Other role '{user.Username}' logged in. PatientId/DoctorId set to 0.");
             }
+
+            TempData["SuccessMessage"] = $"Welcome, {user.Username}!";
+            Debug.WriteLine($"AccountController.Login (POST): Successful login for '{user.Username}' with role '{user.Role}'.");
 
             // Redirect based on user role
             if (user.Role == "Admin")
             {
-                return RedirectToAction("Index", "Admin"); // Assuming you have an AdminController
+                Debug.WriteLine("AccountController.Login (POST): Redirecting to Admin/Index.");
+                return RedirectToAction("Index", "Admin");
             }
             else if (user.Role == "Patient")
             {
+                Debug.WriteLine("AccountController.Login (POST): Redirecting to Patient/Dashboard.");
                 return RedirectToAction("Dashboard", "Patient");
             }
             else if (user.Role == "Doctor")
             {
-                // Redirect to the Doctor's Dashboard
-                // IMPORTANT: If DoctorId was not found, this will still try to redirect to Dashboard,
-                // and the Dashboard action will then re-redirect to Login with the error.
-                return RedirectToAction("Dashboard", "Doctor");
+                Debug.WriteLine("AccountController.Login (POST): Redirecting to Doctor/Dashboard.");
+                return RedirectToAction("Dashboard", "Doctor"); // THIS SHOULD BE THE LANDING PAGE FOR DOCTORS
             }
             else
             {
-                // Fallback for unhandled roles
+                Debug.WriteLine("AccountController.Login (POST): Unhandled role, redirecting to Home/Index.");
                 return RedirectToAction("Index", "Home");
             }
         }
 
         // POST: /Account/Logout
-        [HttpPost] // This is crucial for matching the form's method
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
-            HttpContext.Session.Clear(); // Clears all session data
+            HttpContext.Session.Clear();
             TempData["LogoutMessage"] = "You have been successfully logged out.";
-            return RedirectToAction("Login", "Account"); // Redirect to login page after logout
+            Debug.WriteLine("AccountController.Logout: Session cleared, redirecting to Login.");
+            return RedirectToAction("Login", "Account");
         }
 
-        // GET: /Account/AccessDenied (Optional: For displaying access denied messages)
+        // GET: /Account/AccessDenied
         [HttpGet]
         public IActionResult AccessDenied()
         {
-            TempData["ErrorMessage"] = "You do not have permission to view this page."; // Use TempData for consistency
+            TempData["ErrorMessage"] = "You do not have permission to view this page.";
             ViewData["Title"] = "Access Denied";
+            Debug.WriteLine("AccountController.AccessDenied: Access denied page shown.");
             return View();
         }
     }

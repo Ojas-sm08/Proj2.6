@@ -262,7 +262,7 @@ namespace HospitalManagementSystem.Controllers
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                return Json(new { success = false, message = "Unauthorized to delete appointments." }); // Return JSON for AJAX
+                return Json(new { success = false, message = "Unauthorized to delete appointments." });
             }
 
             try
@@ -270,17 +270,17 @@ namespace HospitalManagementSystem.Controllers
                 var appointment = await _context.Appointments.FindAsync(id);
                 if (appointment == null)
                 {
-                    return Json(new { success = false, message = "Appointment not found." }); // Return JSON for AJAX
+                    return Json(new { success = false, message = "Appointment not found." });
                 }
 
                 _context.Appointments.Remove(appointment);
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Appointment deleted successfully!" }); // Return JSON for AJAX
+                return Json(new { success = true, message = "Appointment deleted successfully!" });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error deleting appointment: {ex.Message}");
-                return Json(new { success = false, message = $"Error deleting appointment: {ex.Message}" }); // Return JSON for AJAX
+                return Json(new { success = false, message = $"Error deleting appointment: {ex.Message}" });
             }
         }
 
@@ -290,13 +290,13 @@ namespace HospitalManagementSystem.Controllers
         {
             if (!IsLoggedIn() || !IsDoctor())
             {
-                return Json(new { success = false, message = "Unauthorized to mark as completed." }); // Return JSON for AJAX
+                return Json(new { success = false, message = "Unauthorized to mark as completed." });
             }
 
             var appointment = await _context.Appointments.FindAsync(id);
             if (appointment == null)
             {
-                return Json(new { success = false, message = "Appointment not found." }); // Return JSON for AJAX
+                return Json(new { success = false, message = "Appointment not found." });
             }
 
             try
@@ -323,9 +323,10 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Ensure doctors are fetched with correct ID property and handle potential null names
             var doctors = await _context.Doctors
                                         .OrderBy(d => d.Name)
-                                        .Select(d => new Doctor { Id = d.Id, Name = d.Name, Specialization = d.Specialization })
+                                        .Select(d => new Doctor { Id = d.Id, Name = d.Name ?? "Unnamed Doctor", Specialization = d.Specialization ?? "N/A" }) // Ensure Name is not null
                                         .ToListAsync();
 
             var viewModel = new DoctorAvailabilityViewModel
