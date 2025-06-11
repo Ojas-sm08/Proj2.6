@@ -1,9 +1,67 @@
-﻿@{
-    Layout = "~/Views/Shared/_Layout.Patient.cshtml";
-    ViewData["Title"] = "Dashboard";
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Patient Dashboard";
+
+    // Retrieve username from session
+    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
+    // Clean and capitalize the username for display, similar to _Layout.Patient.cshtml
+    string displayUsername = username?.Replace("pat.", "");
+    if (!string.IsNullOrWhiteSpace(displayUsername) && displayUsername.Length > 0)
+    {
+        displayUsername = char.ToUpper(displayUsername[0]) + displayUsername.Substring(1);
+    }
+    else
+    {
+        displayUsername = "Patient"; // Default if username is not found or empty
+    }
 }
 
-<div class="text-center mt-5">
-    <h2>👋 Welcome, @ViewBag.Username!</h2>
-    <p class="lead">Use the navigation above to manage your profile, appointments, and billing.</p>
+<style>
+    /* Custom CSS for the background image and its properties */
+    .dashboard-background {
+        background-image: url('/images/patitentbackground.jpg'); /* Path to your uploaded image */
+        background-size: cover; /* Cover the entire container */
+        background-position: center; /* Center the background image */
+        background-repeat: no-repeat; /* Do not repeat the image */
+        min-height: 70vh; /* Ensure it takes a good portion of the viewport height */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* Vertically center content */
+        align-items: center; /* Horizontally center content */
+        text-align: center;
+        position: relative; /* Needed for overlay */
+        overflow: hidden; /* Prevent background overflow */
+    }
+
+        /* Optional: Add a subtle overlay to make text more readable on top of the image */
+        .dashboard-background::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3); /* Dark overlay */
+            z-index: 1;
+        }
+
+    .dashboard-content {
+        position: relative; /* Ensure content is above the overlay */
+        z-index: 2;
+    }
+</style>
+
+<div class="dashboard-background rounded-lg shadow-xl">
+    <div class="dashboard-content p-8 max-w-4xl mx-auto">
+        <h1 class="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4 drop-shadow-lg">
+            Welcome, <span class="text-purple-300">@displayUsername</span>!
+        </h1>
+        <p class="text-xl md:text-2xl text-white opacity-90 drop-shadow-md">
+            Your health information and services are at your fingertips.
+        </p>
+    </div>
 </div>
+
+ 

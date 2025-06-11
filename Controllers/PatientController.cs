@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http; // For HttpContext.Session
 using System.Collections.Generic; // For List
 using System.Diagnostics; // For Debug.WriteLine
 using System; // For Exception
+using System.IO; // For MemoryStream
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -43,8 +44,8 @@ namespace HospitalManagementSystem.Controllers
             if (!string.IsNullOrEmpty(searchString))
             {
                 patients = patients.Where(p => p.Name.Contains(searchString) ||
-                                                 p.ContactNumber.Contains(searchString) ||
-                                                 (p.Email != null && p.Email.Contains(searchString)));
+                                                p.ContactNumber.Contains(searchString) ||
+                                                (p.Email != null && p.Email.Contains(searchString)));
             }
 
             if (!string.IsNullOrEmpty(genderFilter) && genderFilter != "All")
@@ -100,12 +101,37 @@ namespace HospitalManagementSystem.Controllers
         }
 
         // GET: Patient/Edit/5
+        // Allows Admin to edit any patient, and Patient to edit their own profile.
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (!IsLoggedIn() || !IsAdmin())
+            if (!IsLoggedIn())
             {
-                TempData["ErrorMessage"] = "You are not authorized to edit patients.";
+                TempData["ErrorMessage"] = "You must be logged in to edit profiles.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var currentUserId = HttpContext.Session.GetInt32("PatientId");
+            var currentUserRole = HttpContext.Session.GetString("Role");
+
+            // Authorization logic:
+            // 1. Admin can edit any patient.
+            // 2. Patient can ONLY edit their own profile (id must match PatientId in session).
+            if (currentUserRole == "Admin")
+            {
+                // Admin is authorized, proceed.
+            }
+            else if (currentUserRole == "Patient")
+            {
+                if (id == null || id == 0 || id != currentUserId)
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to edit this patient's profile.";
+                    return RedirectToAction("ProfilePreview", "Patient"); // Redirect patient to their profile preview
+                }
+            }
+            else // Doctor or other unauthorized roles
+            {
+                TempData["ErrorMessage"] = "You are not authorized to edit patient profiles.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -119,13 +145,38 @@ namespace HospitalManagementSystem.Controllers
         }
 
         // POST: Patient/Edit/5
+        // Handles submission of patient profile edits.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int PatientId, [Bind("PatientId,Name,DateOfBirth,Gender,ContactNumber,Email,Address,MedicalHistory")] Patient patient)
         {
-            if (!IsLoggedIn() || !IsAdmin())
+            if (!IsLoggedIn())
             {
-                TempData["ErrorMessage"] = "You are not authorized to edit patients.";
+                TempData["ErrorMessage"] = "You must be logged in to edit profiles.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var currentUserId = HttpContext.Session.GetInt32("PatientId");
+            var currentUserRole = HttpContext.Session.GetString("Role");
+
+            // Authorization logic:
+            // 1. Admin can edit any patient.
+            // 2. Patient can ONLY edit their own profile (PatientId must match PatientId in session).
+            if (currentUserRole == "Admin")
+            {
+                // Admin is authorized, proceed.
+            }
+            else if (currentUserRole == "Patient")
+            {
+                if (PatientId != currentUserId)
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to edit this patient's profile.";
+                    return RedirectToAction("ProfilePreview", "Patient"); // Redirect patient to their profile preview
+                }
+            }
+            else // Doctor or other unauthorized roles
+            {
+                TempData["ErrorMessage"] = "You are not authorized to edit patient profiles.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -137,7 +188,7 @@ namespace HospitalManagementSystem.Controllers
                 {
                     _context.Update(patient);
                     await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = $"Patient {patient.Name} updated successfully!";
+                    TempData["SuccessMessage"] = $"Profile for {patient.Name} updated successfully!"; // More user-friendly message
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -150,10 +201,23 @@ namespace HospitalManagementSystem.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Manage));
+
+                // Redirect after successful edit:
+                // If the current user is a Patient, redirect them to their profile preview.
+                // If the current user is an Admin, redirect them to the patient management list.
+                if (currentUserRole == "Patient")
+                {
+                    Debug.WriteLine($"PatientController.Edit (POST): Patient '{patient.Name}' edited their profile, redirecting to ProfilePreview.");
+                    return RedirectToAction("ProfilePreview", "Patient");
+                }
+                else // Implies Admin based on earlier authorization
+                {
+                    Debug.WriteLine($"PatientController.Edit (POST): Admin edited patient '{patient.Name}', redirecting to Manage.");
+                    return RedirectToAction(nameof(Manage));
+                }
             }
             ViewData["Title"] = $"Edit Patient: {patient.Name}";
-            return View(patient);
+            return View(patient); // If ModelState is not valid, redisplay the form with errors
         }
 
         // GET: Patient/Delete/5
@@ -296,7 +360,7 @@ namespace HospitalManagementSystem.Controllers
                 if (id != patientIdInSession)
                 {
                     TempData["ErrorMessage"] = "You are not authorized to view other patient's details.";
-                    return RedirectToAction("Dashboard", "Patient");
+                    return RedirectToAction("ProfilePreview", "Patient"); // Redirect patient to their own profile if trying to view others
                 }
             }
 
@@ -328,12 +392,152 @@ namespace HospitalManagementSystem.Controllers
             ViewData["Title"] = "Patient Notifications";
 
             var notifications = await _context.Notifications
-                                              .Include(n => n.Patient)
-                                              .OrderByDescending(n => n.CreatedDate)
-                                              .ToListAsync();
+                                            .Include(n => n.Patient)
+                                            .OrderByDescending(n => n.CreatedDate)
+                                            .ToListAsync();
 
             return View(notifications);
         }
+
+        // GET: Patient/Dashboard
+        public IActionResult Dashboard()
+        {
+            // Ensure the user is logged in as a patient to access this dashboard
+            var username = HttpContext.Session.GetString("Username");
+            var role = HttpContext.Session.GetString("Role");
+
+            if (string.IsNullOrEmpty(username) || role != "Patient")
+            {
+                TempData["ErrorMessage"] = "You must be logged in as a patient to access the dashboard.";
+                return RedirectToAction("Login", "Account", new { role = "Patient" }); // Redirect to patient login
+            }
+
+            ViewData["Title"] = "Patient Dashboard";
+            ViewBag.Username = username?.Replace("pat.", ""); // Pass the cleaned username to the view
+            Debug.WriteLine($"PatientController.Dashboard: User '{username}' ({role}) accessed dashboard.");
+            return View();
+        }
+
+        // NEW ACTION: Patient/ProfilePreview for logged-in patient's own info
+        [HttpGet]
+        public async Task<IActionResult> ProfilePreview()
+        {
+            // 1. Check if logged in and if role is Patient
+            if (!IsLoggedIn() || !IsPatient())
+            {
+                TempData["ErrorMessage"] = "You must be logged in as a patient to view your profile.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // 2. Get the PatientId from session
+            var patientIdInSession = HttpContext.Session.GetInt32("PatientId");
+            if (patientIdInSession == null || patientIdInSession == 0)
+            {
+                TempData["ErrorMessage"] = "Patient ID not found in session. Please log in again.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // 3. Fetch the patient details
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == patientIdInSession);
+            if (patient == null)
+            {
+                TempData["ErrorMessage"] = "Your patient profile could not be found.";
+                // Optionally, log this as an unusual event if a logged-in patient's ID is missing
+                return RedirectToAction("Dashboard", "Patient"); // Redirect to dashboard or login
+            }
+
+            // 4. Fetch associated patient files (if any, for future use/display)
+            var patientFiles = await _context.PatientFiles
+                                             .Where(pf => pf.PatientId == patient.PatientId)
+                                             .OrderByDescending(pf => pf.UploadDate)
+                                             .ToListAsync();
+
+            // 5. Create a ViewModel to pass to the view
+            var viewModel = new PatientDetailsViewModel
+            {
+                Patient = patient,
+                PatientFiles = patientFiles
+            };
+
+            ViewData["Title"] = "My Info"; // Set the title for the view
+            return View(viewModel); // Pass the ViewModel to the ProfilePreview.cshtml view
+        }
+
+        // NEW ACTION: DownloadProfilePdf
+        [HttpGet]
+        public async Task<IActionResult> DownloadProfilePdf(int? id)
+        {
+            if (!IsLoggedIn())
+            {
+                TempData["ErrorMessage"] = "You must be logged in to download patient profiles.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var currentUserId = HttpContext.Session.GetInt32("PatientId");
+            var currentUserRole = HttpContext.Session.GetString("Role");
+
+            // Authorization logic for PDF download:
+            // Admin can download any patient's PDF.
+            // Patient can ONLY download their own profile PDF (id must match PatientId in session).
+            // Doctor can download PDF for patients they have appointments with (this logic is in Details, you might want to adapt it).
+            if (currentUserRole == "Admin")
+            {
+                // Admin is authorized, proceed.
+            }
+            else if (currentUserRole == "Patient")
+            {
+                if (id == null || id == 0 || id != currentUserId)
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to download this patient's profile.";
+                    return RedirectToAction("ProfilePreview", "Patient");
+                }
+            }
+            else // Doctor or other unauthorized roles
+            {
+                // For Doctors, you would need to implement similar logic as in the Details action
+                // to check if they have an appointment with this patient.
+                // For now, we'll restrict it if not Admin or the patient themselves for simplicity.
+                TempData["ErrorMessage"] = "You are not authorized to download patient profiles.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (id == null) return NotFound();
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientId == id);
+            if (patient == null) return NotFound();
+
+            // --- PDF Generation Logic (Placeholder) ---
+            // In a real application, you would use a PDF generation library here (e.g., QuestPDF, iTextSharp, IronPDF).
+            // For demonstration, we'll create a simple text file and return it as a PDF.
+
+            string content = $"Patient Profile\n\n" +
+                             $"Name: {patient.Name}\n" +
+                             $"Patient ID: {patient.PatientId}\n" +
+                             $"Date of Birth: {patient.DateOfBirth.ToShortDateString()}\n" +
+                             $"Gender: {patient.Gender}\n" +
+                             $"Contact: {patient.ContactNumber}\n" +
+                             $"Email: {patient.Email}\n" +
+                             $"Address: {patient.Address}\n" +
+                             $"Medical History: {patient.MedicalHistory}\n\n" +
+                             $"Generated on: {DateTime.Now}";
+
+            var fileName = $"Patient_Profile_{patient.Name.Replace(" ", "_")}_{patient.PatientId}.pdf";
+            var contentType = "application/pdf"; // Set the correct content type for PDF
+
+            // Create a MemoryStream to hold the PDF data
+            using (var memoryStream = new MemoryStream())
+            {
+                // In a real scenario, PDF library would write to this stream.
+                // For demo, write content as bytes.
+                var writer = new StreamWriter(memoryStream);
+                writer.Write(content);
+                writer.Flush(); // Ensure all buffered text is written to the stream
+                memoryStream.Position = 0; // Reset stream position to the beginning
+
+                return File(memoryStream.ToArray(), contentType, fileName);
+            }
+        }
+        // END NEW ACTION
 
         private bool PatientExists(int id)
         {

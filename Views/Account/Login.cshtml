@@ -1,9 +1,8 @@
 ﻿@model HospitalManagementSystem.Models.LoginViewModel
 @{
     ViewData["Title"] = "Login";
-    Layout = null; // No shared layout for this full-page design
+    Layout = null; // No shared layout for this page
 
-    // Retrieve expected role from ViewData, set by the controller
     var expectedRole = ViewData["ExpectedRole"]?.ToString();
 }
 
@@ -13,11 +12,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Hospital Management System</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <!-- Google Fonts: Inter and Playfair Display -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         body {
@@ -30,15 +26,17 @@
             align-items: center;
             min-height: 100vh;
         }
+
         .login-wrapper {
             display: flex;
             width: 90%;
-            max-width: 600px; /* Adjusted: Even smaller overall width */
+            max-width: 600px;
             border-radius: 1.5rem;
             overflow: hidden;
-            box-shadow: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.12); /* Slightly less pronounced shadow for smaller size */
-            min-height: 380px; /* Adjusted: Even smaller minimum height */
+            box-shadow: 0 0.8rem 2.5rem rgba(0, 0, 0, 0.12);
+            min-height: 380px;
         }
+
         .left-panel {
             flex: 1;
             background: linear-gradient(135deg, #FF6F61, #FF9944, #5C0099, #8E2DE2);
@@ -48,142 +46,156 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 1.8rem; /* Reduced padding */
+            padding: 1.8rem;
             color: white;
             text-align: center;
             position: relative;
         }
-        .left-panel .main-quote {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.4rem; /* Adjusted: Smaller font for the quote */
-            line-height: 1.2;
-            font-weight: 700;
-            text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.3); /* Slightly softer shadow */
-            margin-bottom: 0.4rem;
-        }
-        .left-panel .small-quote {
-            font-size: 0.75rem; /* Adjusted: Smaller font for small quote */
-            line-height: 1.4;
-            font-weight: 300;
-            margin-top: 0;
-        }
+
+            .left-panel .main-quote {
+                font-family: 'Playfair Display', serif;
+                font-size: 1.4rem;
+                line-height: 1.2;
+                font-weight: 700;
+                text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.3);
+                margin-bottom: 0.4rem;
+            }
+
+            .left-panel .small-quote {
+                font-size: 0.75rem;
+                line-height: 1.4;
+                font-weight: 300;
+                margin-top: 0;
+            }
+
         .right-panel {
             flex: 1;
             background-color: white;
-            padding: 1.8rem; /* Reduced padding */
+            padding: 1.8rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
         }
+
         .login-form-content {
-            max-width: 240px; /* Adjusted: Even smaller max-width for the form content */
+            max-width: 240px;
             width: 100%;
         }
+
         .input-group-text {
             background-color: #e9ecef;
             border-color: #ced4da;
             border-right: none;
-            padding: 0.5rem 0.8rem; /* Adjusted padding for smaller input group */
-            border-top-left-radius: 1.5rem; /* Slightly smaller border radius */
+            padding: 0.5rem 0.8rem;
+            border-top-left-radius: 1.5rem;
             border-bottom-left-radius: 1.5rem;
         }
-        .form-control { /* Targeted general form-control for smaller size */
-            height: calc(2.25rem + 2px); /* Default Bootstrap input height for .form-control */
-            padding: 0.5rem 0.75rem; /* Default Bootstrap input padding */
-            font-size: 0.875rem; /* Default Bootstrap input font size */
-            border-radius: 0.25rem; /* Default Bootstrap input border radius */
+
+        .form-control {
+            height: calc(2.25rem + 2px);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.25rem;
         }
-        /* Specific override for inputs within input-group */
-        .form-control.rounded-end-pill {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-            padding-left: 0.8rem; /* Consistent padding with input-group-text */
-            border-top-right-radius: 1.5rem; /* New: Make the right end rounded for the input field */
-            border-bottom-right-radius: 1.5rem;
-        }
-        .form-control-lg { /* Removed .form-control-lg from HTML, ensuring smaller size */
-            /* These styles are now directly managed by .form-control and specific overrides */
-        }
+
+            .form-control.rounded-end-pill {
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                padding-left: 0.8rem;
+                border-top-right-radius: 1.5rem;
+                border-bottom-right-radius: 1.5rem;
+            }
 
         .form-title {
-            font-size: 1.75rem; /* Adjusted: Smaller font size for "Login" title */
-            margin-bottom: 20px; /* Reduced margin */
+            font-size: 1.75rem;
+            margin-bottom: 20px;
         }
 
-        /* Adjust label size if needed, but visually hidden now */
-        .form-label {
-            font-size: 0.875rem; /* Standard smaller font size for labels if they were visible */
+        .btn-lg {
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 1.5rem;
         }
 
-        /* Adjust button size */
-        .btn-lg { /* Overriding Bootstrap's btn-lg to be smaller */
-            padding: 0.5rem 1rem; /* Adjusted padding */
-            font-size: 1rem; /* Adjusted font size */
-            border-radius: 1.5rem; /* Adjusted border-radius */
-        }
-
-        /* Adjust Don't have an account? Sign Up text */
         .small {
-            font-size: 0.8rem !important; /* Make this text slightly smaller */
-        }
-        .mt-4 { /* Reduce margin for this text if it appears too far down */
-             margin-top: 1.5rem !important;
+            font-size: 0.8rem !important;
         }
 
-        /* Responsive adjustments */
+        .mt-4 {
+            margin-top: 1.5rem !important;
+        }
+
         @@media (max-width: 991.98px) {
             .login-wrapper {
-                max-width: 400px; /* Adjusted for stacking on medium */
+                max-width: 400px;
                 min-height: 350px;
             }
+
             .left-panel {
                 padding: 1.2rem;
                 height: 160px;
             }
-            .left-panel .main-quote {
-                font-size: 1.3rem;
-            }
-            .left-panel .small-quote {
-                font-size: 0.7rem;
-            }
+
+                .left-panel .main-quote {
+                    font-size: 1.3rem;
+                }
+
+                .left-panel .small-quote {
+                    font-size: 0.7rem;
+                }
+
             .right-panel {
                 padding: 1.5rem;
             }
+
             .form-title {
                 font-size: 1.5rem;
             }
+
             .input-group-text, .form-control.rounded-end-pill {
-                padding: 0.4rem 0.7rem; /* Even smaller on mobile */
+                padding: 0.4rem 0.7rem;
                 font-size: 0.85rem;
             }
+
             .btn-lg {
                 padding: 0.4rem 0.8rem;
                 font-size: 0.9rem;
             }
         }
+
         @@media (max-width: 575.98px) {
             .login-wrapper {
                 border-radius: 1rem;
             }
+
             .left-panel {
                 height: 140px;
                 padding: 1rem;
             }
+
             .right-panel {
                 padding: 1.2rem;
             }
+
             .login-form-content {
                 max-width: 100%;
             }
         }
 
-        /* Gradient animation */
         @@keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
     </style>
 </head>
@@ -191,7 +203,7 @@
     <div class="login-wrapper">
         <div class="left-panel d-none d-lg-flex">
             <div class="main-quote">
-                An apple a day <br/> keeps the doctor away
+                An apple a day <br /> keeps the doctor away
             </div>
             <div class="small-quote">
                 A simple truth for a healthy life.
@@ -200,7 +212,6 @@
 
         <div class="right-panel">
             <div class="login-form-content">
-                @* Display TempData messages for Error, Success, or Logout *@
                 @if (TempData["SuccessMessage"] != null)
                 {
                     <div class="alert alert-success alert-dismissible fade show text-center" role="alert">
@@ -229,7 +240,7 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="expectedRole" value="@expectedRole" />
 
-                    <div class="mb-3"> 
+                    <div class="mb-3">
                         <label asp-for="Username" class="form-label visually-hidden">Username</label>
                         <div class="input-group rounded-pill">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
@@ -238,30 +249,27 @@
                         <span asp-validation-for="Username" class="text-danger d-block mt-1 text-start"></span>
                     </div>
 
-                    <div class="mb-4"> 
+                    <div class="mb-4">
                         <label asp-for="Password" class="form-label visually-hidden">Password</label>
-                        <div class="input-group rounded-pill"> 
+                        <div class="input-group rounded-pill">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                             <input asp-for="Password" type="password" class="form-control rounded-end-pill" placeholder="Enter password" required />
                         </div>
                         <span asp-validation-for="Password" class="text-danger d-block mt-1 text-start"></span>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold">Login</button> 
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill fw-bold">Login</button>
 
                     <p class="mt-4 small text-center">
-                        Don't have an account? <a href="#" class="text-decoration-none">Sign Up</a>
+                        Don't have an account? <a asp-controller="Account" asp-action="RegisterPatient" class="text-decoration-none">Sign Up</a>
                     </p>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS (bundle includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <!-- jQuery for validation scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <!-- jQuery Validation for client-side validation -->
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 </body>

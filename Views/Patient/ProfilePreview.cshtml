@@ -1,72 +1,154 @@
-﻿@model HospitalManagementSystem.Models.Patient // This view expects a Patient model, can be null for admin message
+﻿@model HospitalManagementSystem.Models.PatientDetailsViewModel
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
 @{
-    ViewData["Title"] = "Patient Profile Preview";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure it uses your main layout
+    ViewData["Title"] = "My Info";
+
+    // Get the user's role from session
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+
+    // Dynamically set the layout based on the user's role
+    if (role == "Admin") // Assuming "Admin" is the string used for the admin role
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml"; // Use the main layout for Admin (which is Bootstrap)
+    }
+    else // For Patient and other roles, use the Patient-specific layout (now Bootstrap)
+    {
+        Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    }
+
+    // Helper function to clean the patient's name for display
+    // This removes "pat." prefix and capitalizes the first letter
+    string CleanPatientNameForDisplay(string patientName)
+    {
+        if (string.IsNullOrWhiteSpace(patientName))
+        {
+            return "Patient";
+        }
+        string cleanedName = patientName.Replace("pat.", "", StringComparison.OrdinalIgnoreCase); // Remove "pat." case-insensitively
+
+        if (!string.IsNullOrWhiteSpace(cleanedName) && cleanedName.Length > 0)
+        {
+            return char.ToUpper(cleanedName[0]) + cleanedName.Substring(1);
+        }
+        return cleanedName; // Return as is if already empty or single char
+    }
+
+    // Get the patient's name from the model and clean it for display
+    string patientDisplayName = "N/A";
+    if (Model != null && Model.Patient != null)
+    {
+        patientDisplayName = CleanPatientNameForDisplay(Model.Patient.Name);
+    }
 }
 
-<h2 class="mb-4">👤 Patient Profile Preview</h2>
+<div class="container py-4">
+    <h1 class="h3 mb-4 text-gray-900 d-flex align-items-center">
+        <i class="fas fa-user-circle text-primary me-3"></i> My Information
+    </h1>
 
-@if (Model != null)
-{
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Patient Details</h5>
+    @if (Model != null && Model.Patient != null)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white p-3 rounded-top">
+                <h5 class="mb-0">Patient Details</h5>
+            </div>
+            <div class="card-body p-4">
+                <h2 class="h4 text-primary mb-3">@patientDisplayName</h2> <!-- Display the cleaned patient name here -->
+                <div class="row g-3">
+                    <!-- Bootstrap row with gutter spacing -->
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Full Name:</small>
+                        <p class="lead mb-0">@patientDisplayName</p> <!-- Display the cleaned patient name here -->
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Patient ID:</small>
+                        <p class="lead mb-0">@Model.Patient.PatientId</p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Date of Birth:</small>
+                        <p class="lead mb-0">@(Model.Patient.DateOfBirth == default(DateTime) ? "N/A" : Model.Patient.DateOfBirth.ToShortDateString())</p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Gender:</small>
+                        <p class="lead mb-0">@Model.Patient.Gender</p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Contact Number:</small>
+                        <p class="lead mb-0">@Model.Patient.ContactNumber</p>
+                    </div>
+
+                    <div class="col-md-12">
+                        <!-- Takes full width on all screen sizes -->
+                        <small class="text-muted d-block">Address:</small>
+                        <p class="lead mb-0">@Model.Patient.Address</p>
+                    </div>
+
+                    <div class="col-md-12">
+                        <!-- Takes full width on all screen sizes -->
+                        <small class="text-muted d-block">Medical History:</small>
+                        <p class="lead mb-0">@Model.Patient.MedicalHistory</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <h5 class="card-title text-primary">@Model.Name</h5>
-            <dl class="row">
-                <dt class="col-sm-4">Patient ID:</dt>
-                <dd class="col-sm-8">@Model.PatientId</dd>
 
-                <dt class="col-sm-4">Date of Birth:</dt>
-                <dd class="col-sm-8">@Model.DateOfBirth.ToShortDateString()</dd>
+        <div class="d-flex flex-wrap justify-content-center gap-3 mt-4">
+            <!-- Flexbox for buttons with spacing -->
+            <a asp-action="Edit" asp-route-id="@Model.Patient.PatientId" class="btn btn-primary btn-lg rounded-pill shadow">
+                <i class="fas fa-edit me-2"></i> Edit Profile
+            </a>
+            <!-- Note: The "Back to Patient List" button should only appear if the admin is viewing this. -->
+            <!-- For a patient viewing their own profile, a "Back to Dashboard" or "Cancel" would be more appropriate. -->
+            @if (role == "Admin")
+            {
+                <a asp-action="Manage" class="btn btn-outline-secondary btn-lg rounded-pill shadow">
+                    <i class="fas fa-arrow-alt-circle-left me-2"></i> Back to Patient Management
+                </a>
+            }
+            else if (role == "Patient")
+            {
+                <a asp-action="Dashboard" class="btn btn-outline-secondary btn-lg rounded-pill shadow">
+                    <i class="fas fa-arrow-alt-circle-left me-2"></i> Back to Dashboard
+                </a>
+            }
 
-                <dt class="col-sm-4">Gender:</dt>
-                <dd class="col-sm-8">@Model.Gender</dd>
-
-                <dt class="col-sm-4">Contact Number:</dt>
-                <dd class="col-sm-8">@Model.ContactNumber</dd>
-
-                <dt class="col-sm-4">Address:</dt>
-                <dd class="col-sm-8">@Model.Address</dd>
-
-                <dt class="col-sm-4">Medical History:</dt>
-                <dd class="col-sm-8">@Model.MedicalHistory</dd>
-            </dl>
+            <a asp-controller="Patient" asp-action="DownloadProfilePdf" asp-route-id="@Model.Patient.PatientId" class="btn btn-info btn-lg rounded-pill shadow">
+                <i class="fas fa-file-pdf me-2"></i> Download PDF
+            </a>
         </div>
-    </div>
-    <div class="mt-3">
-        <a asp-action="Edit" asp-route-id="@Model.PatientId" class="btn btn-primary">Edit Profile</a>
-        <a asp-action="Manage" class="btn btn-secondary ms-2">Back to Patient List</a>
-
-        @* This is the "Download PDF" button *@
-        <a asp-controller="Patient" asp-action="DownloadProfilePdf" asp-route-id="@Model.PatientId" class="btn btn-info ms-2">
-            <i class="bi bi-file-earmark-pdf"></i> Download PDF
-        </a>
-    </div>
-}
-else if (ViewBag.Message != null)
-{
-    <div class="alert alert-info">
-        @ViewBag.Message
-    </div>
-    <div class="mt-3">
-        <a asp-action="Manage" class="btn btn-primary">Go to Patient List</a>
-    </div>
-}
-else
-{
-    <div class="alert alert-warning">
-        No patient profile found to preview. Please select a patient or ensure you are logged in as a patient.
-    </div>
-    <div class="mt-3">
-        <a asp-action="Manage" class="btn btn-primary">Go to Patient List</a>
-    </div>
-}
+    }
+    else if (ViewBag.Message != null)
+    {
+        <div class="alert alert-info mt-4" role="alert">
+            @ViewBag.Message
+        </div>
+        <div class="text-center mt-4">
+            <a asp-action="Manage" class="btn btn-primary btn-lg rounded-pill shadow">
+                Go to Patient List
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-4" role="alert">
+            No patient profile found to preview. Please select a patient or ensure you are logged in as a patient.
+        </div>
+        <div class="text-center mt-4">
+            <a asp-action="Manage" class="btn btn-primary btn-lg rounded-pill shadow">
+                Go to Patient List
+            </a>
+        </div>
+    }
+</div>
 
 @section Scripts {
-    <script>
-        // Optional: Add some client-side script for PDF generation if using a client-side library,
-        // but typically PDF generation is server-side.
-    </script>
+    <!-- Client-side validation scripts, if any, for this view -->
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

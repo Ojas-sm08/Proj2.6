@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "B6NlYSYOQQzoeWeZYC5cu9qgLgwqcvhqUkGgoklahFc=",
+  "Hash": "DLoY4sUPFLy+9LWdDad3bsh4Vu62dQ0THZcvgBpUnoA=",
   "Source": "Hospital Management System",
   "BasePath": "_content/Hospital Management System",
   "Mode": "Default",
@@ -141,6 +141,27 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\images\\doctorback.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\patitentbackground.jpg",
+      "SourceId": "Hospital Management System",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\",
+      "BasePath": "_content/Hospital Management System",
+      "RelativePath": "images/patitentbackground#[.{fingerprint}]?.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "wsg8s1h2y0",
+      "Integrity": "ENf8BxM6er47TLYyeEX6gaxySzC1eu4KKATTV3ZbqK8=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\patitentbackground.jpg"
     },
     {
       "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\js\\site.js",
@@ -1549,7 +1570,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
+          "Value": "Wed, 11 Jun 2025 11:14:21 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1586,7 +1607,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
+          "Value": "Wed, 11 Jun 2025 11:14:21 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1631,7 +1652,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
+          "Value": "Wed, 11 Jun 2025 11:14:21 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1676,7 +1697,7 @@
         },
         {
           "Name": "Last-Modified",
-          "Value": "Tue, 10 Jun 2025 05:38:40 GMT"
+          "Value": "Wed, 11 Jun 2025 11:14:21 GMT"
         },
         {
           "Name": "Cache-Control",
@@ -1851,6 +1872,88 @@
         {
           "Name": "integrity",
           "Value": "sha256-4OD2wB58ZChzMe5C2pvvwq72ONJQlqlgl7a7GTfVZ2Y="
+        }
+      ]
+    },
+    {
+      "Route": "images/patitentbackground.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\patitentbackground.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "118170"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"ENf8BxM6er47TLYyeEX6gaxySzC1eu4KKATTV3ZbqK8=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 11 Jun 2025 09:41:02 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-ENf8BxM6er47TLYyeEX6gaxySzC1eu4KKATTV3ZbqK8="
+        }
+      ]
+    },
+    {
+      "Route": "images/patitentbackground.wsg8s1h2y0.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\proj2\\Hospital\\wwwroot\\images\\patitentbackground.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "118170"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"ENf8BxM6er47TLYyeEX6gaxySzC1eu4KKATTV3ZbqK8=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Wed, 11 Jun 2025 09:41:02 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "wsg8s1h2y0"
+        },
+        {
+          "Name": "label",
+          "Value": "images/patitentbackground.jpg"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-ENf8BxM6er47TLYyeEX6gaxySzC1eu4KKATTV3ZbqK8="
         }
       ]
     },

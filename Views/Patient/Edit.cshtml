@@ -1,81 +1,135 @@
 ﻿@model HospitalManagementSystem.Models.Patient
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    ViewData["Title"] = $"Edit Patient: {Model.Name}";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Admin uses the main layout
+    ViewData["Title"] = "Edit Profile"; // Generic title for the browser tab
+
+    // Get the user's role from session to dynamically set the layout
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+
+    if (role == "Admin") // If Admin, use the main _Layout.cshtml (Bootstrap)
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else // If Patient (or any other role), use the Patient-specific layout (now Bootstrap)
+    {
+        Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    }
+
+    // Prepare display name for the heading, cleaning "pat." prefix
+    string patientDisplayName = Model?.Name ?? "Patient"; // Default to "Patient" if Model or Name is null
+    patientDisplayName = patientDisplayName.Replace("pat.", "", StringComparison.OrdinalIgnoreCase);
+
+    if (!string.IsNullOrWhiteSpace(patientDisplayName) && patientDisplayName.Length > 0)
+    {
+        patientDisplayName = char.ToUpper(patientDisplayName[0]) + patientDisplayName.Substring(1);
+    }
+    else
+    {
+        patientDisplayName = "Patient"; // Fallback if name becomes empty after cleaning
+    }
 }
 
-<h2 class="mb-4 text-center">📝 Edit Patient: @Model.Name</h2>
+<div class="container py-4">
+    <!-- Bootstrap container -->
+    <h1 class="h3 mb-4 text-dark d-flex align-items-center justify-content-center">
+        <!-- Center the heading with Bootstrap flex -->
+        <i class="fas fa-user-edit text-primary me-3"></i> Edit Profile: @patientDisplayName
+    </h1>
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm p-4">
-            <div class="card-body">
-                <form asp-action="Edit">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                    <input type="hidden" asp-for="PatientId" /> 
+    <div class="row justify-content-center">
+        <!-- Bootstrap row for centering content -->
+        <div class="col-md-8 col-lg-6">
+            <!-- Adjust column width for responsiveness -->
+            <div class="card shadow-sm p-4">
+                <!-- Bootstrap card styling -->
+                <div class="card-body">
+                    <form asp-action="Edit" asp-controller="Patient" method="post">
+                        <!-- Explicitly set controller -->
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="PatientId" />
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Name" class="control-label"></label>
-                        <input asp-for="Name" class="form-control" />
-                        <span asp-validation-for="Name" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <!-- Replaced form-group with mb-3 for Bootstrap 5 spacing -->
+                            <label asp-for="Name" class="form-label">Full Name</label> <!-- Use form-label -->
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="DateOfBirth" class="control-label"></label>
-                        <input asp-for="DateOfBirth" type="date" class="form-control" />
-                        <span asp-validation-for="DateOfBirth" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="DateOfBirth" class="form-label">Date of Birth</label>
+                            <input asp-for="DateOfBirth" type="date" value="@(Model.DateOfBirth == default(DateTime) ? "" : Model.DateOfBirth.ToString("yyyy-MM-dd"))" class="form-control" />
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Gender" class="control-label"></label>
-                        <select asp-for="Gender" class="form-control">
-                            <option value="">-- Select Gender --</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <span asp-validation-for="Gender" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="Gender" class="form-label">Gender</label>
+                            <select asp-for="Gender" class="form-select">
+                                <!-- Use form-select for dropdowns -->
+                                <option value="">-- Select Gender --</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span asp-validation-for="Gender" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="ContactNumber" class="control-label"></label>
-                        <input asp-for="ContactNumber" class="form-control" />
-                        <span asp-validation-for="ContactNumber" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="ContactNumber" class="form-label">Contact Number</label>
+                            <input asp-for="ContactNumber" class="form-control" />
+                            <span asp-validation-for="ContactNumber" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Email" class="control-label"></label>
-                        <input asp-for="Email" class="form-control" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label">Email</label>
+                            <input asp-for="Email" type="email" class="form-control" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="Address" class="control-label"></label>
-                        <textarea asp-for="Address" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="Address" class="text-danger"></span>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label">Address</label>
+                            <textarea asp-for="Address" rows="3" class="form-control"></textarea>
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group mb-3">
-                        <label asp-for="MedicalHistory" class="control-label"></label>
-                        <textarea asp-for="MedicalHistory" class="form-control" rows="5"></textarea>
-                        <span asp-validation-for="MedicalHistory" class="text-danger"></span>
-                    </div>
+                        <div class="mb-4">
+                            <!-- Slightly more margin for last form group -->
+                            <label asp-for="MedicalHistory" class="form-label">Medical History</label>
+                            <textarea asp-for="MedicalHistory" rows="5" class="form-control"></textarea>
+                            <span asp-validation-for="MedicalHistory" class="text-danger"></span>
+                        </div>
 
-                    <div class="form-group d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> Save Changes</button>
-                    </div>
-                </form>
+                        <div class="d-flex justify-content-between flex-wrap gap-3 mt-4">
+                            <!-- Flexbox for buttons with gap -->
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow flex-grow-1 flex-md-grow-0">
+                                <i class="fas fa-save me-2"></i> Save Changes
+                            </button>
+                            <!-- Dynamic Back/Cancel Button -->
+                            @if (role == "Admin")
+                            {
+                                <a asp-action="Manage" class="btn btn-outline-secondary btn-lg rounded-pill shadow flex-grow-1 flex-md-grow-0">
+                                    <i class="fas fa-arrow-left me-2"></i> Back to Patient Management
+                                </a>
+                            }
+                            else
+                            {
+                                <a asp-action="ProfilePreview" class="btn btn-outline-secondary btn-lg rounded-pill shadow flex-grow-1 flex-md-grow-0">
+                                    <i class="fas fa-times-circle me-2"></i> Cancel
+                                </a>
+                            }
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="text-center mt-3">
-    <a asp-action="Manage" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i> Back to Patient Management</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <!-- Font Awesome is typically loaded in _Layouts, so no need to load it again here -->
+    @* <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script> *@
 }

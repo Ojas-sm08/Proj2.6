@@ -1,88 +1,170 @@
-﻿@using Microsoft.AspNetCore.Http
-@inject IHttpContextAccessor HttpContextAccessor
+﻿@inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
-}
+    // Determine the portal brand text based on the user's role from session
+    string portalBrand = "Patient Portal"; // Default for this layout
+    var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
+    // Explicitly declare and retrieve the 'Role' from session for use in the layout
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
 
+    // Clean the username by removing "pat." prefix and capitalizing the first letter for display
+    string displayUsername = username?.Replace("pat.", "");
+    if (!string.IsNullOrWhiteSpace(displayUsername) && displayUsername.Length > 0)
+    {
+        displayUsername = char.ToUpper(displayUsername[0]) + displayUsername.Substring(1);
+    }
+    else
+    {
+        displayUsername = username; // Fallback to original if transformation fails
+    }
+
+    // Format the role string for display, or show nothing if role is not set
+    string displayRole = String.IsNullOrWhiteSpace(role) ? "" : $" (@{role})";
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Patient Portal</title>
+    <title>@ViewData["Title"] - @portalBrand</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Font Awesome for Icons (assuming it's available and compatible with Bootstrap) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Local CSS files, assuming they exist and you want to keep them -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" />
+
+    <style>
+        /* Optional: Custom styling if needed that Bootstrap doesn't cover */
+        body {
+            font-family: 'Inter', sans-serif; /* Keep Inter font if you have it loaded */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+    </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-primary" asp-controller="Patient" asp-action="Dashboard">🏥 Patient Portal</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarPatient"
-                    aria-controls="navbarPatient" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+    <header>
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm py-3">
+            <div class="container-fluid">
+                <a class="navbar-brand d-flex align-items-center" asp-controller="Patient" asp-action="Dashboard">
+                    <i class="fas fa-hospital me-2 text-purple-400"></i> @portalBrand
+                </a>
 
-            <div class="collapse navbar-collapse" id="navbarPatient">
-                <ul class="navbar-nav ms-auto">
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarPatientCollapse" aria-controls="navbarPatientCollapse"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-                    <!-- Dashboard -->
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Patient" asp-action="Dashboard">Home</a>
-                    </li>
+                <!-- Navbar Menu -->
+                <div class="collapse navbar-collapse" id="navbarPatientCollapse">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                        <!-- Home -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Patient" asp-action="Dashboard">
+                                <i class="fas fa-home me-1"></i> Home
+                            </a>
+                        </li>
 
-                    <!-- My Info -->
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Patient" asp-action="ProfilePreview">My Info</a>
-                    </li>
+                        <!-- My Info -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Patient" asp-action="ProfilePreview">
+                                <i class="fas fa-user-circle me-1"></i> My Info
+                            </a>
+                        </li>
 
-                    <!-- Total Bill -->
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Patient" asp-action="Billing">Total Bill</a>
-                    </li>
+                        <!-- Total Bill -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Patient" asp-action="Billing">
+                                <i class="fas fa-file-invoice-dollar me-1"></i> Total Bill
+                            </a>
+                        </li>
 
-                    <!-- Doctors List -->
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Patient" asp-action="DoctorList">Doctors</a>
-                    </li>
+                        <!-- Doctors List -->
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-controller="Patient" asp-action="DoctorList">
+                                <i class="fas fa-user-md me-1"></i> Doctors
+                            </a>
+                        </li>
 
-                    <!-- Appointments Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="appointmentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Appointments
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="appointmentsDropdown">
-                            <li><a class="dropdown-item" asp-controller="Patient" asp-action="Create">Make Appointment</a></li>
-                            <li><a class="dropdown-item" asp-controller="Patient" asp-action="Appointments">My Schedule</a></li>
-                        </ul>
-                    </li>
+                        <!-- Appointments Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="appointmentsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-calendar-alt me-1"></i> Appointments
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="appointmentsDropdown">
+                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="Create">Make Appointment</a></li>
+                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="Appointments">My Schedule</a></li>
+                            </ul>
+                        </li>
 
-                    <!-- Logout -->
-                    <li class="nav-item">
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger ms-3">Logout (@username)</button>
-                        </form>
-                    </li>
-                </ul>
+                        <!-- Logout -->
+                        <li class="nav-item ms-lg-3">
+                            @if (!string.IsNullOrWhiteSpace(username))
+                            {
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline-block">
+                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill shadow-sm">
+                                        <i class="fas fa-sign-out-alt me-2"></i> Logout (@displayUsername)
+                                    </button>
+                                </form>
+                            }
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
+    </header>
 
-    <!-- Page Content -->
-    <main class="container py-4">
+    <!-- Session Active Badge (Bootstrap style) -->
+    <div class="text-center mt-2">
+        @if (!string.IsNullOrWhiteSpace(username))
+        {
+            <small class="text-muted">Session Active: @displayUsername @displayRole</small>
+        }
+    </div>
+
+    <main role="main" class="container pb-3 flex-grow-1">
+        <!-- Display TempData messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show mt-4" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        @if (TempData["LogoutMessage"] != null)
+        {
+            <div class="alert alert-info alert-dismissible fade show mt-4" role="alert">
+                @TempData["LogoutMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
         @RenderBody()
     </main>
 
-    <!-- Footer -->
-    <footer class="border-top text-center text-muted py-3 mt-auto">
+    <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; @DateTime.Now.Year - Hospital Management System (Patient)
+            &copy; @DateTime.Now.Year - Hospital Management System (Patient) - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    @RenderSection("Scripts", required: false)
+    <!-- Bootstrap JS Bundle (with Popper.js) -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
