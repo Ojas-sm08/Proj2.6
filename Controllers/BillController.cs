@@ -21,8 +21,8 @@ namespace HospitalManagementSystem.Controllers
 
         // Configure your Stripe API keys here (for demonstration purposes)
         // In a real application, these should be loaded from a secure configuration (e.g., appsettings.json, Azure Key Vault, environment variables)
-        private const string StripeSecretKey = "sk_test_51RZWJQPVdm91fx0NIR7HJCfY8AXUiOJp80wxz7fmxfIFKZGmpf3N779Iq8QwpJuewTXJi0Xt1oZJagLkTfciHHOe00yOGEAFQu"; // Replace with your actual Stripe Secret Key
-        private const string StripePublishableKey = "pk_test_51RZWJQPVdm91fx0NBCQUr3WuFJZe6gPqmxS0IBiBiHBQQ3kgmzQAPOZuUlVfg63QCRp4zlFWGUg1gtKI9qVk4wL900M4Peh6gc"; // Replace with your actual Stripe Publishable Key
+        private const string StripeSecretKey = ""; // Replace with your actual Stripe Secret Key
+        private const string StripePublishableKey = ""; // Replace with your actual Stripe Publishable Key
 
         public BillController(HospitalDbContext context, IHttpContextAccessor httpContextAccessor)
         {

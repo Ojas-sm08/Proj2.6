@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\controllers\\billcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\billcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\models\\appointment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:models\\appointment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,10 +17,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\controllers\\billcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\billcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Migrations\\20250613122050_Prefinal10.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -162,7 +162,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 1549,
-          "SelectedChildIndex": 31,
+          "SelectedChildIndex": 24,
           "Children": [
             {
               "$type": "Document",
@@ -192,7 +192,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "AppointmentController.cs",
               "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Controllers\\AppointmentController.cs",
               "RelativeDocumentMoniker": "Controllers\\AppointmentController.cs",
@@ -271,7 +271,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "HospitalDbContext.cs",
               "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Data\\HospitalDbContext.cs",
               "RelativeDocumentMoniker": "Data\\HospitalDbContext.cs",
@@ -483,13 +483,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 0,
               "Title": "BillController.cs",
               "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Controllers\\BillController.cs",
               "RelativeDocumentMoniker": "Controllers\\BillController.cs",
               "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Controllers\\BillController.cs",
               "RelativeToolTip": "Controllers\\BillController.cs",
-              "ViewState": "AgIAAA8AAAAAAAAAAAAAABgAAACgAAAAAAAAAA==",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAABsAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-13T07:03:20.05Z",
               "IsPinned": true,
@@ -573,7 +573,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Appointment.cs",
               "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Models\\Appointment.cs",
               "RelativeDocumentMoniker": "Models\\Appointment.cs",
