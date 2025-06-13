@@ -1,7 +1,27 @@
 ﻿@inject IHttpContextAccessor HttpContextAccessor
 @{
-    var role = HttpContextAccessor.HttpContext.Session.GetString("Role");
-    Layout = role == "Admin" ? "~/Views/Shared/_Layout.cshtml"
-           : role == "Doctor" ? "~/Views/Shared/_Layout.Doctor.cshtml"
-           : "~/Views/Shared/_Layout.Patient.cshtml";
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role"); // Use null-conditional for safety
+
+    string determinedLayout = "~/Views/Shared/_Layout.cshtml"; // Default to a general layout if no role or specific layout found
+
+    if (!string.IsNullOrEmpty(role))
+    {
+        switch (role)
+        {
+            case "Admin":
+                determinedLayout = "~/Views/Shared/_Layout.cshtml"; // Main layout for Admin
+                break;
+            case "Doctor":
+                determinedLayout = "~/Views/Shared/_Layout.Doctor.cshtml"; // Doctor specific layout
+                break;
+            case "Patient":
+                determinedLayout = "~/Views/Shared/_Layout.Patient.cshtml"; // Patient specific layout
+                break;
+            default:
+                // Handle unknown roles, perhaps log or stick to the default general layout
+                break;
+        }
+    }
+
+    Layout = determinedLayout;
 }

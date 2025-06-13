@@ -1,12 +1,11 @@
-﻿// Controllers/AppointmentController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using HospitalManagementSystem.Models;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http; // For Session extensions
 using Microsoft.EntityFrameworkCore;
 using HospitalManagementSystem.Data;
-using System.Diagnostics;
+using System.Diagnostics; // For Debug.WriteLine
 using System; // For DateTime, TimeSpan
 using System.Collections.Generic; // For List
 
@@ -21,6 +20,7 @@ namespace HospitalManagementSystem.Controllers
             _context = context;
         }
 
+        // Helper methods for session-based role/ID checks
         private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
         private bool IsDoctor() => HttpContext.Session.GetString("Role") == "Doctor";
         private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
@@ -92,11 +92,11 @@ namespace HospitalManagementSystem.Controllers
             }
 
             var patientAppointments = await _context.Appointments
-                                                     .Include(a => a.Doctor)
-                                                     .Include(a => a.Patient)
-                                                     .Where(a => a.PatientId == patientId.Value)
-                                                     .OrderByDescending(a => a.AppointmentDateTime)
-                                                     .ToListAsync();
+                                                    .Include(a => a.Doctor)
+                                                    .Include(a => a.Patient)
+                                                    .Where(a => a.PatientId == patientId.Value)
+                                                    .OrderByDescending(a => a.AppointmentDateTime)
+                                                    .ToListAsync();
 
             ViewData["Title"] = "My Appointments";
             return View(patientAppointments);
@@ -130,7 +130,7 @@ namespace HospitalManagementSystem.Controllers
             {
                 PatientId = patientId ?? 0,
                 DoctorId = doctorId ?? 0,
-                AppointmentDateTime = DateTime.Now.AddHours(1).Date.AddHours(9),
+                AppointmentDateTime = DateTime.Now.AddHours(1).Date.AddHours(9), // Suggests a default future date/time
                 Status = "Scheduled"
             };
 
@@ -213,7 +213,7 @@ namespace HospitalManagementSystem.Controllers
                 }
                 else if (IsDoctor())
                 {
-                    return RedirectToAction("Schedule", "Doctor");
+                    return RedirectToAction("Schedule", "Doctor"); // Assuming a Doctor/Schedule action
                 }
                 else
                 {
@@ -268,7 +268,7 @@ namespace HospitalManagementSystem.Controllers
             else
             {
                 TempData["ErrorMessage"] = "You are not authorized to edit this appointment.";
-                if (IsDoctor()) return RedirectToAction("Schedule", "Doctor");
+                if (IsDoctor()) return RedirectToAction("Schedule", "Doctor"); // Assuming a Doctor/Schedule action
                 return RedirectToAction("Login", "Account"); // Fallback for other unauthorized roles
             }
         }
@@ -294,10 +294,10 @@ namespace HospitalManagementSystem.Controllers
             if (id != appointment.Id) return NotFound();
 
             var existingAppointment = await _context.Appointments
-                                                     .AsNoTracking()
-                                                     .Include(a => a.Patient)
-                                                     .Include(a => a.Doctor)
-                                                     .FirstOrDefaultAsync(a => a.Id == id);
+                                                    .AsNoTracking() // Use AsNoTracking for fetching before update
+                                                    .Include(a => a.Patient)
+                                                    .Include(a => a.Doctor)
+                                                    .FirstOrDefaultAsync(a => a.Id == id);
 
             if (existingAppointment == null)
             {
@@ -324,8 +324,8 @@ namespace HospitalManagementSystem.Controllers
             if (appointment.AppointmentDateTime < DateTime.Now && appointment.Status != "Completed" && appointment.Status != "Cancelled")
             {
                 ModelState.AddModelError("AppointmentDateTime", "Appointment date and time cannot be in the past for scheduled appointments.");
-                ViewBag.Patients = await _context.Patients.Select(p => new { p.PatientId, p.Name }).OrderBy(p => p.Name).ToListAsync();
-                ViewBag.Doctors = await _context.Doctors.Select(d => new { d.Id, d.Name, d.Specialization }).OrderBy(d => d.Name).ToListAsync();
+                ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name ?? "Unnamed Patient" }).ToListAsync();
+                ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name ?? "Unnamed Doctor" }).ToListAsync();
                 ViewData["Title"] = "Edit Appointment";
                 return View(appointment);
             }
@@ -335,14 +335,14 @@ namespace HospitalManagementSystem.Controllers
                 bool isDoctorBusy = await _context.Appointments.AnyAsync(a =>
                     a.DoctorId == appointment.DoctorId &&
                     a.AppointmentDateTime == appointment.AppointmentDateTime &&
-                    a.Id != appointment.Id &&
+                    a.Id != appointment.Id && // Exclude the current appointment being edited
                     a.Status != "Cancelled" && a.Status != "Completed");
 
                 if (isDoctorBusy)
                 {
                     TempData["ErrorMessage"] = "The selected doctor is not available at this exact time. Please choose another time.";
-                    ViewBag.Patients = await _context.Patients.Select(p => new { p.PatientId, p.Name }).OrderBy(p => p.Name).ToListAsync();
-                    ViewBag.Doctors = await _context.Doctors.Select(d => new { d.Id, d.Name, d.Specialization }).OrderBy(d => d.Name).ToListAsync();
+                    ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name ?? "Unnamed Patient" }).ToListAsync();
+                    ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name ?? "Unnamed Doctor" }).ToListAsync();
                     ViewData["Title"] = "Edit Appointment";
                     return View(appointment);
                 }
@@ -360,13 +360,13 @@ namespace HospitalManagementSystem.Controllers
                 }
                 else
                 {
-                    throw;
+                    throw; // Re-throw if a real concurrency issue
                 }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error updating appointment: {ex.Message}");
                 TempData["ErrorMessage"] = $"An error occurred while updating the appointment: {ex.Message}";
+                Debug.WriteLine($"Error updating appointment: {ex.Message}");
                 ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name ?? "Unnamed Patient" }).ToListAsync();
                 ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name ?? "Unnamed Doctor" }).ToListAsync();
                 ViewData["Title"] = "Edit Appointment";
@@ -385,11 +385,6 @@ namespace HospitalManagementSystem.Controllers
             {
                 return RedirectToAction("AllAppointments", "Appointment");
             }
-        }
-
-        private bool AppointmentExists(int id)
-        {
-            return _context.Appointments.Any(e => e.Id == id);
         }
 
         // GET: Appointment/Details/5
@@ -464,10 +459,7 @@ namespace HospitalManagementSystem.Controllers
 
             try
             {
-                // With OnDelete(DeleteBehavior.Cascade) configured for Appointment to Bill,
-                // EF Core will handle the deletion of associated Bills and their BillItems automatically.
                 var appointment = await _context.Appointments.FindAsync(id);
-
                 if (appointment == null)
                 {
                     return Json(new { success = false, message = "Appointment not found." });
@@ -480,18 +472,13 @@ namespace HospitalManagementSystem.Controllers
                 }
 
                 _context.Appointments.Remove(appointment);
-                await _context.SaveChangesAsync(); // This will trigger cascade delete in the database
+                await _context.SaveChangesAsync();
                 return Json(new { success = true, message = "Appointment deleted successfully!" });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error deleting appointment: {ex.Message}");
-                string errorMessage = ex.Message;
-                if (ex.InnerException != null)
-                {
-                    errorMessage += $" Inner exception: {ex.InnerException.Message}";
-                }
-                return Json(new { success = false, message = $"Error deleting appointment: {errorMessage}" });
+                return Json(new { success = false, message = $"Error deleting appointment: {ex.Message}" });
             }
         }
 
@@ -553,37 +540,11 @@ namespace HospitalManagementSystem.Controllers
             }
         }
 
-        // NEW: AJAX endpoint to get Appointment details for Bill Creation
-        [HttpGet]
-        public async Task<IActionResult> GetAppointmentDetails(int id)
-        {
-            if (!IsLoggedIn())
-            {
-                return Json(new { success = false, message = "Unauthorized access." });
-            }
-
-            var appointment = await _context.Appointments
-                                            .Include(a => a.Patient)
-                                            .Include(a => a.Doctor)
-                                            .Select(a => new { a.Id, a.PatientId, a.DoctorId, PatientName = a.Patient.Name, DoctorName = a.Doctor.Name, AppointmentDateTime = a.AppointmentDateTime.ToString("yyyy-MM-dd hh:mm tt") })
-                                            .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (appointment == null)
-            {
-                return Json(new { success = false, message = "Appointment not found." });
-            }
-
-            // Basic authorization check: Doctor can only get details for their own appointments, Admin for any
-            if (IsDoctor() && GetDoctorIdFromSession() != appointment.DoctorId && !IsAdmin())
-            {
-                return Json(new { success = false, message = "You are not authorized to view details for this appointment." });
-            }
-
-            return Json(new { success = true, appointment = appointment });
-        }
-
 
         // GET: Appointment/CheckAvailability (renders Views/Appointment/Feature2.cshtml)
+        // This action might not be directly related to the "Create" form's slot selection,
+        // but its logic for determining available slots is similar to GetAvailableSlots.
+        // Keeping it as is, but noting its separate purpose.
         [HttpGet]
         public async Task<IActionResult> CheckAvailability(int? selectedDoctorId, DateTime? selectedDate)
         {
@@ -594,9 +555,9 @@ namespace HospitalManagementSystem.Controllers
             }
 
             var doctors = await _context.Doctors
-                                         .OrderBy(d => d.Name)
-                                         .Select(d => new Doctor { Id = d.Id, Name = d.Name ?? "Unnamed Doctor", Specialization = d.Specialization ?? "N/A" })
-                                         .ToListAsync();
+                                        .OrderBy(d => d.Name)
+                                        .Select(d => new Doctor { Id = d.Id, Name = d.Name ?? "Unnamed Doctor", Specialization = d.Specialization ?? "N/A" })
+                                        .ToListAsync();
 
             var viewModel = new DoctorAvailabilityViewModel
             {
@@ -634,8 +595,9 @@ namespace HospitalManagementSystem.Controllers
 
                     var bookedAppointments = await _context.Appointments
                                                             .Where(a => a.DoctorId == selectedDoctorId.Value
-                                                                   && a.AppointmentDateTime.Date == viewModel.SelectedDate.Date
-                                                                   && a.Status != "Cancelled" && a.Status != "Completed")
+                                                                     && a.AppointmentDateTime.Date == viewModel.SelectedDate.Date
+                                                                     && a.Status != "Cancelled"
+                                                                     && a.Status != "Completed")
                                                             .Select(a => a.AppointmentDateTime.TimeOfDay)
                                                             .ToListAsync();
 
@@ -668,60 +630,115 @@ namespace HospitalManagementSystem.Controllers
         [HttpGet]
         public async Task<JsonResult> GetAvailableSlots(int doctorId, DateTime selectedDate)
         {
+            Debug.WriteLine($"GetAvailableSlots called: DoctorId={doctorId}, Date={selectedDate:yyyy-MM-dd}");
+
             if (doctorId <= 0 || selectedDate == DateTime.MinValue)
             {
+                Debug.WriteLine("Invalid doctor or date provided in GetAvailableSlots (backend check).");
+                Response.StatusCode = 400; // Bad Request
                 return Json(new { success = false, message = "Invalid doctor or date provided." });
             }
 
-            var doctor = await _context.Doctors.FindAsync(doctorId);
-            if (doctor == null)
+            try
             {
-                return Json(new { success = false, message = "Doctor not found." });
-            }
-
-            var doctorSchedule = await _context.DoctorSchedules
-                                                .FirstOrDefaultAsync(ds => ds.DoctorId == doctorId && ds.Date.Date == selectedDate.Date);
-
-            if (doctorSchedule == null)
-            {
-                doctorSchedule = new DoctorSchedule
+                var doctor = await _context.Doctors.FindAsync(doctorId);
+                if (doctor == null)
                 {
-                    StartTime = new TimeSpan(9, 0, 0),
-                    EndTime = new TimeSpan(17, 0, 0),
-                    LunchStartTime = new TimeSpan(12, 0, 0),
-                    LunchEndTime = new TimeSpan(13, 0, 0),
-                    DoctorId = doctorId,
-                    Date = selectedDate.Date,
-                    Location = "General Clinic"
-                };
-            }
-
-            var bookedAppointments = await _context.Appointments
-                                                    .Where(a => a.DoctorId == doctorId
-                                                           && a.AppointmentDateTime.Date == selectedDate.Date
-                                                           && a.Status != "Cancelled"
-                                                           && a.Status != "Completed")
-                                                    .Select(a => a.AppointmentDateTime.TimeOfDay)
-                                                    .ToListAsync();
-
-            TimeSpan slotDuration = TimeSpan.FromMinutes(30);
-            List<object> availableSlots = new List<object>();
-
-            for (TimeSpan time = doctorSchedule.StartTime; time < doctorSchedule.EndTime; time = time.Add(slotDuration))
-            {
-                if ((time >= doctorSchedule.LunchStartTime && time < doctorSchedule.LunchEndTime) ||
-                    (time.Add(slotDuration) > doctorSchedule.LunchStartTime && time.Add(slotDuration) <= doctorSchedule.LunchEndTime))
-                {
-                    continue;
+                    Debug.WriteLine($"Doctor with ID {doctorId} not found (backend check).");
+                    Response.StatusCode = 404; // Not Found
+                    return Json(new { success = false, message = "Doctor not found." });
                 }
 
-                if (!bookedAppointments.Contains(time))
+                var doctorSchedule = await _context.DoctorSchedules
+                                                   .FirstOrDefaultAsync(ds => ds.DoctorId == doctorId && ds.Date.Date == selectedDate.Date);
+
+                // Use default schedule if no specific one is found for the date
+                if (doctorSchedule == null)
                 {
-                    availableSlots.Add(new { Time = time.ToString(@"hh\:mm"), DateTime = selectedDate.Date.Add(time).ToString("o") }); // Add DateTime for easier handling
+                    Debug.WriteLine($"No specific schedule for Doctor {doctorId} on {selectedDate.Date:yyyy-MM-dd}. Using default (9 AM - 5 PM).");
+                    doctorSchedule = new DoctorSchedule
+                    {
+                        StartTime = new TimeSpan(9, 0, 0),
+                        EndTime = new TimeSpan(17, 0, 0), // 5 PM
+                        LunchStartTime = new TimeSpan(12, 0, 0), // 12 PM
+                        LunchEndTime = new TimeSpan(13, 0, 0),   // 1 PM
+                    };
+                }
+
+                var bookedAppointments = await _context.Appointments
+                                                        .Where(a => a.DoctorId == doctorId
+                                                                 && a.AppointmentDateTime.Date == selectedDate.Date
+                                                                 && a.Status != "Cancelled"
+                                                                 && a.Status != "Completed") // Only consider active appointments as booked
+                                                        .Select(a => a.AppointmentDateTime.TimeOfDay)
+                                                        .ToListAsync();
+
+                Debug.WriteLine($"Found {bookedAppointments.Count} booked slots for DoctorId={doctorId} on {selectedDate.Date:yyyy-MM-dd}");
+                foreach (var booked in bookedAppointments)
+                {
+                    Debug.WriteLine($"- Booked: {booked}");
+                }
+
+                TimeSpan slotDuration = TimeSpan.FromMinutes(30);
+                List<string> availableSlotsFormatted = new List<string>();
+
+                for (TimeSpan time = doctorSchedule.StartTime; time < doctorSchedule.EndTime; time = time.Add(slotDuration))
+                {
+                    // Check for lunch break and ensure next slot isn't during lunch
+                    if ((time >= doctorSchedule.LunchStartTime && time < doctorSchedule.LunchEndTime) ||
+                        (time.Add(slotDuration) > doctorSchedule.LunchStartTime && time.Add(slotDuration) <= doctorSchedule.LunchEndTime))
+                    {
+                        Debug.WriteLine($"- Skipping lunch break slot: {time}");
+                        continue;
+                    }
+
+                    // Only consider future slots if the date is today
+                    if (selectedDate.Date == DateTime.Today && time <= DateTime.Now.TimeOfDay)
+                    {
+                        Debug.WriteLine($"- Skipping past slot for today: {time}");
+                        continue;
+                    }
+
+                    if (!bookedAppointments.Contains(time))
+                    {
+                        availableSlotsFormatted.Add(time.ToString(@"hh\:mm")); // Format to HH:MM (e.g., "09:00")
+                        Debug.WriteLine($"- Adding available slot: {time.ToString(@"hh\:mm")}");
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"- Slot {time} is booked.");
+                    }
+                }
+
+                // If no slots are available, return with a specific message
+                if (!availableSlotsFormatted.Any())
+                {
+                    Debug.WriteLine("No available slots found for this doctor/date combination (backend result).");
+                    return Json(new { success = true, slots = new List<string> { "No slots available" }, message = "No slots found for this date and doctor." });
+                }
+                else
+                {
+                    // Add a default "Select slot" at the beginning for the dropdown if there are slots
+                    availableSlotsFormatted.Insert(0, "-- Select Time Slot --");
+                    Debug.WriteLine($"Returning {availableSlotsFormatted.Count - 1} available slots (plus default option).");
+                    return Json(new { success = true, slots = availableSlotsFormatted }); // Return the list of strings
                 }
             }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"ERROR in GetAvailableSlots (backend catch block): {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                Response.StatusCode = 500; // Indicate a server error
+                return Json(new { success = false, message = $"Server error while fetching slots: {ex.Message}" }); // Return error object with success=false
+            }
+        }
 
-            return Json(new { success = true, availableSlots = availableSlots });
+        private bool AppointmentExists(int id)
+        {
+            return _context.Appointments.Any(e => e.Id == id);
         }
     }
 }

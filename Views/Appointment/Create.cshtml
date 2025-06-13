@@ -1,6 +1,5 @@
 ﻿@model HospitalManagementSystem.Models.Appointment
-@inject IHttpContextAccessor HttpContextAccessor 
-@* Inject to access session for role check *@
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Book New Appointment";
@@ -29,7 +28,7 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                     @* Patient Selection - Only if Admin is booking, or pre-filled for Patient *@
-                    @if (Context.Session != null && Context.Session.GetString("Role") == "Admin") 
+                    @if (Context.Session != null && Context.Session.GetString("Role") == "Admin")
                     {
                         <div class="form-group mb-3">
                             <label asp-for="PatientId" class="control-label">Patient</label>
@@ -42,7 +41,7 @@
                     else if (Context.Session != null && Context.Session.GetString("Role") == "Patient")
                     {
                         <!-- Hidden input for PatientId if current user is a patient -->
-                        <input type="hidden" asp-for="PatientId" value="@(Context.Session.GetInt32("PatientId") ?? 0)" /> 
+                        <input type="hidden" asp-for="PatientId" value="@(Context.Session.GetInt32("PatientId") ?? 0)" />
                         <p class="mb-3">Booking for: <strong>@(Context.Session.GetString("Username") ?? "Guest User")</strong></p>
                     }
 
@@ -57,7 +56,7 @@
                     <div class="form-group mb-3">
                         <label for="appointmentDate" class="control-label">Appointment Date</label>
                         <input type="date" id="appointmentDate" name="AppointmentDateTime_Date" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                        <span asp-validation-for="AppointmentDateTime" class="text-danger"></span> 
+                        <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
@@ -79,8 +78,8 @@
                         <span asp-validation-for="Reason" class="text-danger"></span>
                     </div>
 
-                   
-                    
+
+
                     <div class="form-group d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-plus-circle me-2"></i> Book Appointment</button>
                     </div>
@@ -91,7 +90,9 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -125,24 +126,54 @@
                         },
                         success: function (response) {
                             slotLoadingMessage.addClass('d-none');
-                            if (response.success && response.slots.length > 0) {
+
+                            // Check if the response indicates success and has slots
+                            if (response.success && response.slots && response.slots.length > 0) {
                                 availableSlotsSelect.empty();
-                                availableSlotsSelect.append('<option value="">-- Select Time Slot --</option>');
                                 $.each(response.slots, function (index, slot) {
-                                    // Split the time string (e.g., "09:00 AM") to get just the time part for the value
-                                    const timeOnly = slot.split(' ')[0]; // "09:00"
-                                    availableSlotsSelect.append($('<option></option>').val(timeOnly).text(slot));
+                                    // The value attribute should be just the time for model binding
+                                    // The text displayed can be the full string (e.g., "-- Select Time Slot --" or "09:00 AM")
+                                    let optionValue = slot;
+                                    // If it's not the default text, just use the time part for the value
+                                    if (slot !== "-- Select Time Slot --" && slot !== "No slots available") {
+                                        optionValue = slot.split(' ')[0]; // Take "HH:mm" from "HH:mm AM/PM" or "HH:mm"
+                                    }
+                                    availableSlotsSelect.append($('<option></option>').val(optionValue).text(slot));
                                 });
                                 availableSlotsSelect.prop('disabled', false);
-                            } else {
+
+                                // If the only slot is "No slots available", keep disabled
+                                if (response.slots.length === 1 && response.slots[0] === "No slots available") {
+                                    availableSlotsSelect.prop('disabled', true);
+                                    slotErrorMessage.text(response.message || "No slots found for this date and doctor.").removeClass('d-none');
+                                }
+
+                            } else if (response.success === false) { // Handle explicit server-side errors
+                                availableSlotsSelect.empty().append('<option value="">-- Error Loading Slots --</option>');
+                                slotErrorMessage.text(response.message || "An error occurred on the server.").removeClass('d-none');
+                            } else { // Handle unexpected empty successful response
                                 availableSlotsSelect.empty().append('<option value="">-- No Slots Available --</option>');
-                                slotErrorMessage.text(response.message || "No slots found for this date and doctor.").removeClass('d-none');
+                                slotErrorMessage.text("No slots found for this date and doctor.").removeClass('d-none');
                             }
                         },
                         error: function (xhr, status, error) {
                             slotLoadingMessage.addClass('d-none');
                             availableSlotsSelect.empty().append('<option value="">-- Error Loading Slots --</option>');
-                            slotErrorMessage.text('Error loading slots. Please try again.').removeClass('d-none');
+
+                            let errorMessage = 'Error loading slots. Please try again.';
+                            try {
+                                const errorResponse = JSON.parse(xhr.responseText);
+                                if (errorResponse && errorResponse.message) {
+                                    errorMessage = errorResponse.message;
+                                } else if (xhr.status === 404) {
+                                    errorMessage = "Doctor or slots endpoint not found.";
+                                } else if (xhr.status === 400) {
+                                    errorMessage = "Invalid request for slots.";
+                                }
+                            } catch (e) {
+                                // If responseText isn't JSON, use generic error
+                            }
+                            slotErrorMessage.text(errorMessage).removeClass('d-none');
                             console.error("AJAX Error:", status, error, xhr.responseText);
                         }
                     });
@@ -150,6 +181,7 @@
                     slotLoadingMessage.addClass('d-none');
                     availableSlotsSelect.empty().append('<option value="">-- Select Doctor and Date --</option>');
                     availableSlotsSelect.prop('disabled', true);
+                    slotErrorMessage.text('').addClass('d-none'); // Clear any previous error message
                 }
             }
 
@@ -158,15 +190,17 @@
                 const datePart = appointmentDateInput.val(); // "yyyy-MM-dd"
                 const timePart = availableSlotsSelect.val(); // "HH:mm" (e.g., "09:00", "14:30")
 
-                if (datePart && timePart) {
+                // Only combine if both date and time are selected and not the default/error text
+                if (datePart && timePart && timePart !== "" && timePart !== "-- Select Time Slot --" && timePart !== "No slots available" && timePart !== "-- Error Loading Slots --") {
                     // Combine into a full datetime string for model binding
-                    finalAppointmentDateTime.val(`${datePart}T${timePart}:00`); // e.g., "2025-06-11T14:30:00"
+                    // Format as ISO 8601 string compatible with DateTime parsing
+                    // Example: "2025-06-11T14:30:00"
+                    finalAppointmentDateTime.val(`${datePart}T${timePart}:00`);
                 } else {
-                    // If no time slot is selected, prevent submission or show error
-                    if (!timePart) {
-                        alert("Please select an available time slot.");
-                        return false; // Prevent form submission
-                    }
+                    // If no valid time slot is selected, clear the hidden field and prevent submission
+                    finalAppointmentDateTime.val('');
+                    alert("Please select an available time slot before booking."); // Use a custom modal instead of alert
+                    return false; // Prevent form submission
                 }
             });
 
@@ -176,6 +210,7 @@
             appointmentDateInput.on('change', loadAvailableSlots);
 
             // Initial load if doctor/date are pre-selected (e.g., after a validation error)
+            // This ensures that if the page reloads with pre-selected values, slots are fetched.
             if (doctorSelect.val() && appointmentDateInput.val()) {
                 loadAvailableSlots();
             }

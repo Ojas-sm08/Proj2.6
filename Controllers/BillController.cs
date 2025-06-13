@@ -9,6 +9,8 @@ using HospitalManagementSystem.Data;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics; // For Debug.WriteLine
+using Stripe; // Add for Stripe integration
+using Stripe.Checkout; // Add for Stripe Checkout Sessions
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -17,10 +19,18 @@ namespace HospitalManagementSystem.Controllers
         private readonly HospitalDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
+        // Configure your Stripe API keys here (for demonstration purposes)
+        // In a real application, these should be loaded from a secure configuration (e.g., appsettings.json, Azure Key Vault, environment variables)
+        private const string StripeSecretKey = "sk_test_51RZWJQPVdm91fx0NIR7HJCfY8AXUiOJp80wxz7fmxfIFKZGmpf3N779Iq8QwpJuewTXJi0Xt1oZJagLkTfciHHOe00yOGEAFQu"; // Replace with your actual Stripe Secret Key
+        private const string StripePublishableKey = "pk_test_51RZWJQPVdm91fx0NBCQUr3WuFJZe6gPqmxS0IBiBiHBQQ3kgmzQAPOZuUlVfg63QCRp4zlFWGUg1gtKI9qVk4wL900M4Peh6gc"; // Replace with your actual Stripe Publishable Key
+
         public BillController(HospitalDbContext context, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
+
+            // Set Stripe API key globally (ideally done once in Startup.cs or Program.cs)
+            StripeConfiguration.ApiKey = StripeSecretKey;
         }
 
         private bool IsLoggedIn() => !string.IsNullOrEmpty(_httpContextAccessor.HttpContext?.Session.GetString("Username"));
@@ -33,7 +43,7 @@ namespace HospitalManagementSystem.Controllers
 
         // GET: Bill/Index (For Admin/Doctor to view all bills or their own)
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string searchString) // Added searchString parameter
         {
             if (!IsLoggedIn() || (!IsAdmin() && !IsDoctor()))
             {
@@ -42,13 +52,13 @@ namespace HospitalManagementSystem.Controllers
             }
 
             IQueryable<Bill> bills = _context.Bills
-                                            .Include(b => b.Patient)  // Bill's Patient
-                                            .Include(b => b.Doctor)   // Bill's Doctor
-                                            .Include(b => b.BillItems) // Bill's Items
-                                            .Include(b => b.Appointment) // Bill's Appointment
-                                                .ThenInclude(a => a.Patient) // From Appointment, load its Patient
-                                            .Include(b => b.Appointment) // Start a new chain from Bill to Appointment
-                                                .ThenInclude(a => a.Doctor);   // From Appointment, load its Doctor
+                                             .Include(b => b.Patient)  // Bill's Patient
+                                             .Include(b => b.Doctor)   // Bill's Doctor
+                                             .Include(b => b.BillItems) // Bill's Items
+                                             .Include(b => b.Appointment) // Bill's Appointment
+                                                 .ThenInclude(a => a.Patient) // From Appointment, load its Patient
+                                             .Include(b => b.Appointment) // Start a new chain from Bill to Appointment
+                                                 .ThenInclude(a => a.Doctor);    // From Appointment, load its Doctor
 
 
             if (IsDoctor())
@@ -61,19 +71,31 @@ namespace HospitalManagementSystem.Controllers
                 }
                 // Doctors see bills they created or bills associated with their appointments
                 bills = bills.Where(b => b.DoctorId == doctorId.Value || (b.Appointment != null && b.Appointment.DoctorId == doctorId.Value));
-                ViewData["Title"] = "My Bills";
+                ViewData["Title"] = "My Bills"; // Doctor's view is "My Bills"
             }
             else if (IsAdmin())
             {
-                ViewData["Title"] = "All Hospital Bills";
+                ViewData["Title"] = "All Hospital Bills"; // Admin's view is "All Hospital Bills"
             }
+
+            // Apply search filter (added for Index action)
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                bills = bills.Where(b =>
+                    (b.Patient != null && b.Patient.Name != null && b.Patient.Name.Contains(searchString)) ||
+                    (b.Doctor != null && b.Doctor.Name != null && b.Doctor.Name.Contains(searchString)) ||
+                    (b.Status != null && b.Status.Contains(searchString)) ||
+                    b.BillId.ToString().Contains(searchString) ||
+                    (b.Notes != null && b.Notes.Contains(searchString)));
+            }
+            ViewData["CurrentFilter"] = searchString; // Store current filter for view
 
             return View(await bills.OrderByDescending(b => b.BillDate).ToListAsync());
         }
 
         // GET: Bill/MyBills (For Patient to view their own bills)
         [HttpGet]
-        public async Task<IActionResult> MyBills()
+        public async Task<IActionResult> MyBills(string searchString) // Added searchString parameter
         {
             if (!IsLoggedIn() || !IsPatient())
             {
@@ -88,20 +110,29 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var patientBills = await _context.Bills
-                                            .Include(b => b.Patient)
-                                            .Include(b => b.Doctor)
-                                            .Include(b => b.BillItems)
-                                            .Include(b => b.Appointment)
-                                                .ThenInclude(a => a.Patient) // From Appointment, load its Patient
-                                            .Include(b => b.Appointment) // Start a new chain from Bill to Appointment
-                                                .ThenInclude(a => a.Doctor)   // From Appointment, load its Doctor
-                                            .Where(b => b.PatientId == patientId.Value)
-                                            .OrderByDescending(b => b.BillDate)
-                                            .ToListAsync();
+            IQueryable<Bill> bills = _context.Bills
+                                             .Where(b => b.PatientId == patientId.Value) // Filter by logged-in patient
+                                             .Include(b => b.Patient)
+                                             .Include(b => b.Doctor)
+                                             .Include(b => b.BillItems)
+                                             .Include(b => b.Appointment)
+                                                 .ThenInclude(a => a.Patient)
+                                             .Include(b => b.Appointment)
+                                                 .ThenInclude(a => a.Doctor);
+
+            // Apply search filter (added for MyBills action)
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                bills = bills.Where(b =>
+                    (b.Doctor != null && b.Doctor.Name != null && b.Doctor.Name.Contains(searchString)) ||
+                    (b.Status != null && b.Status.Contains(searchString)) ||
+                    b.BillId.ToString().Contains(searchString) ||
+                    (b.Notes != null && b.Notes.Contains(searchString)));
+            }
+            ViewData["CurrentFilter"] = searchString; // Store current filter for view
 
             ViewData["Title"] = "My Bills";
-            return View(patientBills);
+            return View(await bills.OrderByDescending(b => b.BillDate).ToListAsync());
         }
 
         // GET: Bill/Create (For Doctor/Admin to create a new bill for an appointment)
@@ -151,11 +182,12 @@ namespace HospitalManagementSystem.Controllers
             else
             {
                 // If no appointmentId is provided, list all active appointments
+                // Only show completed or scheduled appointments that do not have an existing bill
                 ViewBag.Appointments = await _context.Appointments
                                                      .Include(a => a.Patient)
                                                      .Include(a => a.Doctor)
-                                                     .Where(a => a.Status == "Completed" || a.Status == "Scheduled") // Only show completed or scheduled appointments
-                                                     .Where(a => !_context.Bills.Any(b => b.AppointmentId == a.Id)) // Only appointments without existing bills
+                                                     .Where(a => a.Status == "Completed" || a.Status == "Scheduled")
+                                                     .Where(a => !_context.Bills.Any(b => b.AppointmentId == a.Id))
                                                      .Select(a => new { Value = a.Id, Text = $"{a.AppointmentDateTime:yyyy-MM-dd hh:mm tt} - {a.Patient.Name} with {a.Doctor.Name}" })
                                                      .ToListAsync();
             }
@@ -164,7 +196,7 @@ namespace HospitalManagementSystem.Controllers
             {
                 AppointmentId = selectedAppointment?.Id ?? 0,
                 PatientId = selectedAppointment?.PatientId ?? 0,
-                DoctorId = GetDoctorIdFromSession() ?? (IsAdmin() ? null : (int?)0),
+                DoctorId = GetDoctorIdFromSession() ?? (IsAdmin() ? null : (int?)0), // Assign doctor ID if logged in as doctor
                 BillDate = DateTime.Today,
                 Status = "Pending",
                 BillItems = new List<BillItem>() // Initialize with an empty list for the form
@@ -261,6 +293,7 @@ namespace HospitalManagementSystem.Controllers
             }
             else if (IsAdmin() && !bill.DoctorId.HasValue && bill.Appointment != null && bill.Appointment.DoctorId != 0)
             {
+                // If admin is creating and doctor is not specified, default to appointment's doctor
                 bill.DoctorId = bill.Appointment.DoctorId;
             }
 
@@ -357,12 +390,12 @@ namespace HospitalManagementSystem.Controllers
             else
             {
                 ViewBag.Appointments = await _context.Appointments
-                                                    .Include(a => a.Patient)
-                                                    .Include(a => a.Doctor)
-                                                    .Where(a => a.Status == "Completed" || a.Status == "Scheduled")
-                                                    .Where(a => !_context.Bills.Any(b => b.AppointmentId == a.Id))
-                                                    .Select(a => new { Value = a.Id, Text = $"{a.AppointmentDateTime:yyyy-MM-dd hh:mm tt} - {a.Patient.Name} with {a.Doctor.Name}" })
-                                                    .ToListAsync();
+                                                     .Include(a => a.Patient)
+                                                     .Include(a => a.Doctor)
+                                                     .Where(a => a.Status == "Completed" || a.Status == "Scheduled")
+                                                     .Where(a => !_context.Bills.Any(b => b.AppointmentId == a.Id))
+                                                     .Select(a => new { Value = a.Id, Text = $"{a.AppointmentDateTime:yyyy-MM-dd hh:mm tt} - {a.Patient.Name} with {a.Doctor.Name}" })
+                                                     .ToListAsync();
             }
 
             ViewData["Title"] = "Create New Bill";
@@ -391,7 +424,7 @@ namespace HospitalManagementSystem.Controllers
                                      .Include(b => b.Appointment)
                                          .ThenInclude(a => a.Patient) // Correct: From Appointment, load its Patient
                                      .Include(b => b.Appointment) // Correct: Start a new chain from Bill to Appointment
-                                         .ThenInclude(a => a.Doctor)   // Correct: From Appointment, load its Doctor
+                                         .ThenInclude(a => a.Doctor)    // Correct: From Appointment, load its Doctor
                                      .FirstOrDefaultAsync(m => m.BillId == id);
 
             if (bill == null)
@@ -431,14 +464,14 @@ namespace HospitalManagementSystem.Controllers
             if (id == null) return NotFound();
 
             var bill = await _context.Bills
-                                    .Include(b => b.Patient)
-                                    .Include(b => b.Doctor)
-                                    .Include(b => b.BillItems)
-                                    .Include(b => b.Appointment)
-                                        .ThenInclude(a => a.Patient) // Correct: From Appointment, load its Patient
-                                    .Include(b => b.Appointment) // Correct: Start a new chain from Bill to Appointment
-                                        .ThenInclude(a => a.Doctor)   // Correct: From Appointment, load its Doctor
-                                    .FirstOrDefaultAsync(m => m.BillId == id);
+                                     .Include(b => b.Patient)
+                                     .Include(b => b.Doctor)
+                                     .Include(b => b.BillItems)
+                                     .Include(b => b.Appointment)
+                                         .ThenInclude(a => a.Patient) // Correct: From Appointment, load its Patient
+                                     .Include(b => b.Appointment) // Correct: Start a new chain from Bill to Appointment
+                                         .ThenInclude(a => a.Doctor)    // Correct: From Appointment, load its Doctor
+                                     .FirstOrDefaultAsync(m => m.BillId == id);
 
             if (bill == null)
             {
@@ -465,7 +498,12 @@ namespace HospitalManagementSystem.Controllers
         // POST: Bill/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Bill bill, [FromForm] string[] itemNames, [FromForm] decimal[] quantities, [FromForm] decimal[] unitPrices, [FromForm] int[] billItemIds)
+        public async Task<IActionResult> Edit(int id,
+                                              Bill bill,
+                                              [FromForm] int[] billItemIds, // Added for existing items
+                                              [FromForm] string[] itemNames,
+                                              [FromForm] decimal[] quantities,
+                                              [FromForm] decimal[] unitPrices)
         {
             // Debugging: Log incoming form data for Edit
             Debug.WriteLine($"Bill Edit POST: BillId={id}, AppointmentId={bill.AppointmentId}, PatientId={bill.PatientId}, DoctorId={bill.DoctorId}");
@@ -487,12 +525,12 @@ namespace HospitalManagementSystem.Controllers
             if (id != bill.BillId) return NotFound();
 
             var existingBill = await _context.Bills
-                                            .Include(b => b.BillItems) // Include existing items to manage them
-                                            .Include(b => b.Appointment)
-                                                .ThenInclude(a => a.Patient) // Include Appointment's Patient
-                                            .Include(b => b.Appointment) // Start a new chain from Bill to Appointment
-                                                .ThenInclude(a => a.Doctor)   // Include Appointment's Doctor
-                                            .FirstOrDefaultAsync(b => b.BillId == id);
+                                             .Include(b => b.BillItems) // Include existing items to manage them
+                                             .Include(b => b.Appointment)
+                                                 .ThenInclude(a => a.Patient) // Include Appointment's Patient
+                                             .Include(b => b.Appointment) // Start a new chain from Bill to Appointment
+                                                 .ThenInclude(a => a.Doctor)    // Include Appointment's Doctor
+                                             .FirstOrDefaultAsync(b => b.BillId == id);
 
             if (existingBill == null)
             {
@@ -569,6 +607,7 @@ namespace HospitalManagementSystem.Controllers
                             // Add new item
                             existingBill.BillItems.Add(new BillItem
                             {
+                                BillId = existingBill.BillId, // Associate with the current bill
                                 ItemName = itemNames[i].Trim(),
                                 Quantity = quantities[i],
                                 UnitPrice = unitPrices[i],
@@ -605,18 +644,18 @@ namespace HospitalManagementSystem.Controllers
                     _context.Update(existingBill); // Use Update for the main Bill entity
                     await _context.SaveChangesAsync();
                     TempData["SuccessMessage"] = "Bill updated successfully!";
-                    return RedirectToAction("Details", new { id = existingBill.BillId });
+                    return RedirectToAction("Index", "Bill"); // Redirect after successful update
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BillExists(existingBill.BillId))
+                    if (!BillExists(existingBill.BillId)) // Changed AppointmentExists to BillExists
                     {
                         TempData["ErrorMessage"] = "The bill was deleted by another user. Cannot save changes.";
                         return NotFound();
                     }
                     else
                     {
-                        throw;
+                        throw; // Re-throw if a real concurrency issue
                     }
                 }
                 catch (Exception ex)
@@ -627,11 +666,17 @@ namespace HospitalManagementSystem.Controllers
                         Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                     }
                     TempData["ErrorMessage"] = $"An error occurred while updating the bill: {ex.Message}. Please check server logs for details.";
+                    // Re-populate ViewBags on error
+                    ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name }).ToListAsync();
+                    ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name }).ToListAsync();
+                    ViewBag.SelectedAppointment = existingBill.Appointment;
+                    ViewData["Title"] = "Edit Bill";
+                    return View(bill); // Return the incoming bill, not the existing one
                 }
             }
             else
             {
-                Debug.WriteLine("Model state is invalid after processing BillItems for Edit:");
+                Debug.WriteLine("Model state is invalid during Bill Edit POST:");
                 foreach (var state in ModelState)
                 {
                     foreach (var error in state.Value.Errors)
@@ -641,86 +686,351 @@ namespace HospitalManagementSystem.Controllers
                 }
             }
 
-            // If ModelState is invalid or an error occurred, re-populate ViewBags and return to view
+            // If ModelState is invalid, re-populate ViewBags and return to view
             ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name }).ToListAsync();
             ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name }).ToListAsync();
-            ViewBag.SelectedAppointment = existingBill.Appointment;
+            ViewBag.SelectedAppointment = existingBill.Appointment; // Re-populate based on existing
             ViewData["Title"] = "Edit Bill";
-            return View(existingBill);
+            return View(bill);
         }
 
-        // POST: Bill/MarkAsPaid/5 (AJAX endpoint)
-        [HttpPost]
-        public async Task<IActionResult> MarkAsPaid(int id)
+        private bool BillExists(int id) // Corrected method name
+        {
+            return _context.Bills.Any(e => e.BillId == id);
+        }
+
+        // GET: Bill/Delete/5
+        [HttpGet]
+        public async Task<IActionResult> Delete(int? id)
         {
             if (!IsLoggedIn() || (!IsAdmin() && !IsDoctor()))
             {
-                return Json(new { success = false, message = "Unauthorized to mark bills as paid." });
+                TempData["ErrorMessage"] = "You are not authorized to delete bills.";
+                return RedirectToAction("Login", "Account");
             }
 
-            var bill = await _context.Bills.FindAsync(id);
+            if (id == null) return NotFound();
+
+            var bill = await _context.Bills
+                                     .Include(b => b.Patient)
+                                     .Include(b => b.Doctor)
+                                     .Include(b => b.BillItems)
+                                     .Include(b => b.Appointment)
+                                         .ThenInclude(a => a.Patient)
+                                     .Include(b => b.Appointment)
+                                         .ThenInclude(a => a.Doctor)
+                                     .FirstOrDefaultAsync(m => m.BillId == id);
+
             if (bill == null)
             {
+                TempData["ErrorMessage"] = $"Bill with ID {id} not found.";
+                return NotFound();
+            }
+
+            // Authorization: Admin, or Doctor (for bills they are associated with)
+            if (!(IsAdmin() || (IsDoctor() && (GetDoctorIdFromSession() == bill.DoctorId || (bill.Appointment != null && GetDoctorIdFromSession() == bill.Appointment.DoctorId)))))
+            {
+                TempData["ErrorMessage"] = "You are not authorized to delete this bill.";
+                if (IsDoctor()) return RedirectToAction("Index", "Bill");
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewData["Title"] = $"Delete Bill - {bill.BillId}";
+            return View(bill);
+        }
+
+        // POST: Bill/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            Debug.WriteLine($"DeleteConfirmed action called for BillId: {id}");
+
+            if (!IsLoggedIn() || (!IsAdmin() && !IsDoctor()))
+            {
+                Debug.WriteLine("Unauthorized attempt to delete bill.");
+                return Json(new { success = false, message = "You are not authorized to delete bills." });
+            }
+
+            try
+            {
+                var bill = await _context.Bills
+                                         .Include(b => b.BillItems) // Ensure bill items are loaded for deletion
+                                         .FirstOrDefaultAsync(m => m.BillId == id);
+
+                if (bill == null)
+                {
+                    Debug.WriteLine($"Bill with ID {id} not found for deletion.");
+                    return Json(new { success = false, message = "Bill not found for deletion." });
+                }
+
+                // Authorization: Admin, or Doctor (for bills they are associated with)
+                // This authorization logic should ideally match the GET Delete action
+                bool isAuthorized = IsAdmin() ||
+                                    (IsDoctor() && (GetDoctorIdFromSession() == bill.DoctorId || (bill.Appointment != null && GetDoctorIdFromSession() == bill.Appointment.DoctorId)));
+
+                if (!isAuthorized)
+                {
+                    Debug.WriteLine($"User not authorized to delete bill ID {id}.");
+                    return Json(new { success = false, message = "You are not authorized to delete this bill." });
+                }
+
+                // If there are BillItems, delete them first (if cascade delete is not configured or fails)
+                if (bill.BillItems != null && bill.BillItems.Any())
+                {
+                    _context.BillItems.RemoveRange(bill.BillItems);
+                    Debug.WriteLine($"Attempting to delete {bill.BillItems.Count} associated bill items for Bill ID {id}.");
+                }
+
+                _context.Bills.Remove(bill);
+                Debug.WriteLine($"Attempting to remove Bill ID {id} from context.");
+
+                await _context.SaveChangesAsync();
+                Debug.WriteLine($"Bill ID {id} and its items successfully deleted and changes saved.");
+
+                TempData["SuccessMessage"] = "Bill deleted successfully!";
+                return Json(new { success = true, message = "Bill deleted successfully!" });
+            }
+            catch (DbUpdateException dbEx) // Catch specific database update exceptions
+            {
+                Debug.WriteLine($"DbUpdateException while deleting bill {id}: {dbEx.Message}");
+                if (dbEx.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception (DbUpdateException): {dbEx.InnerException.Message}");
+                    // This is where you'd often see foreign key constraint violation messages
+                }
+                Response.StatusCode = 500; // Internal Server Error
+                return Json(new { success = false, message = $"Database error: {dbEx.Message}. This might be due to related records." });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"General Error deleting bill {id}: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception (General): {ex.InnerException.Message}");
+                }
+                Response.StatusCode = 500; // Internal Server Error
+                return Json(new { success = false, message = $"An unexpected error occurred while deleting the bill: {ex.Message}" });
+            }
+        }
+
+        // New AJAX Action: GetAppointmentInfo
+        // This action will provide details of a selected appointment to the frontend.
+        [HttpGet]
+        public async Task<IActionResult> GetAppointmentInfo(int appointmentId)
+        {
+            Debug.WriteLine($"GetAppointmentInfo called for AppointmentId: {appointmentId}");
+
+            if (appointmentId <= 0)
+            {
+                Debug.WriteLine("Invalid AppointmentId provided for GetAppointmentInfo.");
+                // Return a JSON error object
+                return Json(new { success = false, message = "Invalid appointment ID." });
+            }
+
+            try
+            {
+                var appointment = await _context.Appointments
+                                                .Include(a => a.Patient)
+                                                .Include(a => a.Doctor)
+                                                .Where(a => a.Id == appointmentId)
+                                                .Select(a => new
+                                                {
+                                                    a.Id,
+                                                    a.AppointmentDateTime,
+                                                    a.Reason,
+                                                    a.Status,
+                                                    PatientId = a.Patient.PatientId,
+                                                    PatientName = a.Patient.Name,
+                                                    DoctorId = a.Doctor.Id,
+                                                    DoctorName = a.Doctor.Name,
+                                                    DoctorSpecialization = a.Doctor.Specialization
+                                                })
+                                                .FirstOrDefaultAsync();
+
+                if (appointment == null)
+                {
+                    Debug.WriteLine($"Appointment with ID {appointmentId} not found.");
+                    return Json(new { success = false, message = "Appointment details not found." });
+                }
+
+                Debug.WriteLine($"Found appointment: {appointment.PatientName} with {appointment.DoctorName} on {appointment.AppointmentDateTime}");
+                return Json(new { success = true, data = appointment });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error in GetAppointmentInfo: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                Response.StatusCode = 500; // Internal Server Error
+                return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+            }
+        }
+
+        // NEW STRIPE INTEGRATION ACTIONS:
+
+        // POST: Bill/CreateCheckoutSession
+        // This action creates a Stripe Checkout Session and returns its ID to the frontend.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCheckoutSession(int billId)
+        {
+            Debug.WriteLine($"CreateCheckoutSession called for BillId: {billId}");
+
+            if (!IsLoggedIn())
+            {
+                return Json(new { success = false, message = "You must be logged in to initiate payment." });
+            }
+
+            var bill = await _context.Bills
+                                     .Include(b => b.Patient)
+                                     .Include(b => b.BillItems)
+                                     .FirstOrDefaultAsync(b => b.BillId == billId);
+
+            if (bill == null)
+            {
+                Debug.WriteLine($"Bill with ID {billId} not found for checkout session.");
                 return Json(new { success = false, message = "Bill not found." });
             }
 
-            // Doctor can only mark their own bills as paid
-            if (IsDoctor() && (GetDoctorIdFromSession() != bill.DoctorId && (bill.Appointment != null && GetDoctorIdFromSession() != bill.Appointment.DoctorId)))
+            // Authorization: Only the patient who owns the bill or an Admin can initiate payment.
+            bool isAuthorized = (IsPatient() && GetPatientIdFromSession() == bill.PatientId) || IsAdmin();
+            if (!isAuthorized)
             {
-                return Json(new { success = false, message = "Doctors can only mark their associated bills as paid." });
+                Debug.WriteLine($"Unauthorized attempt to create checkout session for bill ID {billId}.");
+                return Json(new { success = false, message = "You are not authorized to pay this bill." });
             }
 
             if (bill.Status == "Paid")
             {
-                return Json(new { success = false, message = "Bill is already paid." });
+                Debug.WriteLine($"Bill ID {billId} is already paid.");
+                return Json(new { success = false, message = "This bill has already been paid." });
             }
 
-            bill.Status = "Paid";
             try
             {
-                _context.Update(bill);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Bill marked as paid successfully." });
+                var lineItems = new List<SessionLineItemOptions>();
+
+                // Add each bill item as a line item in Stripe (Stripe expects amount in smallest currency unit, e.g., cents)
+                foreach (var item in bill.BillItems)
+                {
+                    lineItems.Add(new SessionLineItemOptions
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            Currency = "inr", // Use your desired currency (e.g., "usd", "eur", "inr")
+                            UnitAmount = (long)(item.Amount * 100), // Amount in cents/smallest unit
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = item.ItemName,
+                            },
+                        },
+                        Quantity = 1, // Stripe expects quantity of this price unit. For total per item, quantity is 1 here.
+                                      // If you want to break down by original quantity, you'd adjust this.
+                                      // For simplicity, we'll send each BillItem as one unit.
+                    });
+                }
+
+                // If no specific bill items, use the total amount as a single line item
+                if (!lineItems.Any())
+                {
+                    lineItems.Add(new SessionLineItemOptions
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            Currency = "inr", // Currency
+                            UnitAmount = (long)(bill.TotalAmount * 100), // Convert to smallest currency unit (e.g., cents)
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = $"Bill #{bill.BillId} Payment",
+                                Description = "Payment for hospital services."
+                            },
+                        },
+                        Quantity = 1,
+                    });
+                }
+
+                var options = new SessionCreateOptions
+                {
+                    LineItems = lineItems,
+                    Mode = "payment",
+                    // These URLs are where Stripe redirects the user after payment success/cancellation
+                    // You MUST replace "https://localhost:7284" with your actual domain in production!
+                    SuccessUrl = Url.Action("PaymentSuccess", "Bill", new { billId = bill.BillId }, Request.Scheme),
+                    CancelUrl = Url.Action("PaymentCancel", "Bill", new { billId = bill.BillId }, Request.Scheme),
+                    Metadata = new Dictionary<string, string>
+                    {
+                        { "bill_id", bill.BillId.ToString() } // Store bill ID in Stripe metadata for later retrieval
+                    }
+                };
+
+                var service = new SessionService();
+                Session session = service.Create(options);
+
+                Debug.WriteLine($"Stripe Checkout Session created: {session.Id}");
+                return Json(new { success = true, sessionId = session.Id, publishableKey = StripePublishableKey });
+            }
+            catch (StripeException ex)
+            {
+                Debug.WriteLine($"Stripe API Error creating checkout session: {ex.Message}");
+                return Json(new { success = false, message = $"Payment error: {ex.Message}" });
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error marking bill as paid: {ex.Message}");
-                return Json(new { success = false, message = $"Error marking bill as paid: {ex.Message}" });
+                Debug.WriteLine($"General error creating checkout session: {ex.Message}");
+                return Json(new { success = false, message = $"An unexpected error occurred: {ex.Message}" });
             }
         }
 
-        // POST: Bill/Delete/5 (AJAX endpoint, only for Admin)
-        [HttpPost]
-        public async Task<IActionResult> Delete(int id)
+        // GET: Bill/PaymentSuccess
+        // Handles redirect from Stripe after successful payment
+        [HttpGet]
+        public async Task<IActionResult> PaymentSuccess(int billId)
         {
-            if (!IsLoggedIn() || !IsAdmin()) // Only admin can delete bills
-            {
-                return Json(new { success = false, message = "Unauthorized to delete bills." });
-            }
+            Debug.WriteLine($"PaymentSuccess callback for BillId: {billId}");
 
-            var bill = await _context.Bills.Include(b => b.BillItems).FirstOrDefaultAsync(b => b.BillId == id);
+            // Note: For a robust production system, you should use Stripe Webhooks
+            // to confirm payment rather than relying solely on the success URL,
+            // as users might close their browser before redirection.
+            // This is a simplified approach for demonstration.
+
+            var bill = await _context.Bills.FirstOrDefaultAsync(b => b.BillId == billId);
+
             if (bill == null)
             {
-                return Json(new { success = false, message = "Bill not found." });
+                TempData["ErrorMessage"] = "Payment successful, but the associated bill was not found in our system.";
+                return RedirectToAction("MyBills", "Bill"); // Or a generic success page
             }
 
-            try
+            if (bill.Status != "Paid") // Only update if not already paid (e.g., via webhook already)
             {
-                _context.BillItems.RemoveRange(bill.BillItems); // Remove child items first
-                _context.Bills.Remove(bill);
+                bill.Status = "Paid";
+                // Optionally add a PaidDate field to your Bill model and set it here:
+                // bill.PaidDate = DateTime.Now; 
+                _context.Update(bill);
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Bill deleted successfully!" });
+                TempData["SuccessMessage"] = $"Bill #{bill.BillId} successfully marked as Paid!";
+                Debug.WriteLine($"Bill #{bill.BillId} status updated to Paid.");
             }
-            catch (Exception ex)
+            else
             {
-                Debug.WriteLine($"Error deleting bill: {ex.Message}");
-                return Json(new { success = false, message = $"Error deleting bill: {ex.Message}" });
+                TempData["InfoMessage"] = $"Bill #{bill.BillId} was already marked as Paid.";
+                Debug.WriteLine($"Bill #{bill.BillId} was already Paid, no update needed.");
             }
+
+            return RedirectToAction("MyBills", "Bill"); // Redirect to the MyBills page
         }
 
-        private bool BillExists(int id)
+        // GET: Bill/PaymentCancel
+        // Handles redirect from Stripe if payment is cancelled or fails
+        [HttpGet]
+        public IActionResult PaymentCancel(int billId)
         {
-            return _context.Bills.Any(e => e.BillId == id);
+            Debug.WriteLine($"PaymentCancel callback for BillId: {billId}");
+            TempData["InfoMessage"] = $"Payment for Bill #{billId} was cancelled or did not complete.";
+            return RedirectToAction("MyBills", "Bill"); // Redirect back to MyBills
         }
     }
 }

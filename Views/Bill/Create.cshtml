@@ -1,5 +1,5 @@
-﻿    @model HospitalManagementSystem.Models.Bill
-    @inject IHttpContextAccessor HttpContextAccessor
+﻿@model HospitalManagementSystem.Models.Bill
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Create New Bill";
@@ -131,7 +131,7 @@
                         </div>
                     </div>
                     <button type="button" id="addBillItemBtn" class="btn btn-secondary mb-4"><i class="fas fa-plus me-1"></i> Add Bill Item</button>
-                    <span id="billItemsError" class="text-danger d-none">At least one bill item is required.</span> 
+                    <span id="billItemsError" class="text-danger d-none">At least one bill item is required.</span>
 
                     <div class="form-group text-end mt-4">
                         <label class="control-label fs-4">Total Amount:</label>
@@ -233,8 +233,9 @@
                     calculateTotalAmount(); // Recalculate after removing
                     updateItemRowIds(); // Re-index elements after removing
                 } else {
-                    alert("A bill must have at least one item.");
-                    $('#billItemsError').removeClass('d-none'); // Show error if trying to remove last item
+                    // Changed from alert to displaying an error message in the dedicated span
+                    $('#billItemsError').text("A bill must have at least one item.").removeClass('d-none');
+                    // alert("A bill must have at least one item."); // Removed alert
                 }
             });
 
@@ -246,58 +247,63 @@
             // Handle appointment selection if not pre-selected
             $('#AppointmentId').on('change', async function () {
                 const selectedAppointmentId = $(this).val();
+                // Clear previous PatientId and DoctorId
+                $('#hiddenPatientId').val('0');
+                $('#hiddenDoctorId').val('0');
+
                 if (selectedAppointmentId) {
                     try {
                         const response = await $.ajax({
-                            url: '@Url.Action("GetAppointmentDetails", "Appointment")',
+                            // CORRECTED: Call GetAppointmentInfo on BillController
+                            url: '@Url.Action("GetAppointmentInfo", "Bill")',
                             type: 'GET',
-                            data: { id: selectedAppointmentId }
+                            data: { appointmentId: selectedAppointmentId } // CORRECTED: Parameter name
                         });
 
-                        if (response.success && response.appointment) {
-                            $('#hiddenPatientId').val(response.appointment.patientId);
-                            $('#hiddenDoctorId').val(response.appointment.doctorId);
-                            console.log('Appointment details fetched:', response.appointment);
+                        if (response.success && response.data) { // Access response.data
+                            $('#hiddenPatientId').val(response.data.patientId);
+                            $('#hiddenDoctorId').val(response.data.doctorId);
+                            console.log('Appointment details fetched:', response.data);
                         } else {
                             console.error("Failed to fetch appointment details:", response.message);
-                            $('#hiddenPatientId').val('0');
-                            $('#hiddenDoctorId').val('0');
-                            alert("Could not load selected appointment details. Please try again.");
+                            // Display error message in the form
+                            $('#billItemsError').text(response.message || "Could not load selected appointment details. Please try again.").removeClass('d-none');
+                            // alert("Could not load selected appointment details. Please try again."); // Removed alert
                         }
                     } catch (error) {
                         console.error("AJAX Error fetching appointment details:", error);
-                        $('#hiddenPatientId').val('0');
-                        $('#hiddenDoctorId').val('0');
-                        alert("An error occurred while fetching appointment details.");
+                        // Display error message in the form
+                        $('#billItemsError').text("An error occurred while fetching appointment details via AJAX. Check console for more info.").removeClass('d-none');
+                        // alert("An error occurred while fetching appointment details."); // Removed alert
                     }
                 } else {
-                    $('#hiddenPatientId').val('0');
-                    $('#hiddenDoctorId').val('0');
+                    // If no appointment is selected, clear the error message
+                    $('#billItemsError').addClass('d-none');
                 }
             });
 
-            // // Client-side validation before form submission (TEMPORARILY COMMENTED OUT)
-            // $('#billForm').on('submit', function (event) {
-            //     let hasValidItem = false;
-            //     $('#billItemsContainer .bill-item-row').each(function () {
-            //         const itemName = $(this).find('.item-name').val().trim();
-            //         const quantity = parseFloat($(this).find('.quantity').val());
-            //         const unitPrice = parseFloat($(this).find('.unit-price').val());
+            // Client-side validation before form submission (uncommented and refined)
+            $('#billForm').on('submit', function (event) {
+                let hasValidItem = false;
+                $('#billItemsContainer .bill-item-row').each(function () {
+                    const itemName = $(this).find('.item-name').val().trim();
+                    const quantity = parseFloat($(this).find('.quantity').val());
+                    const unitPrice = parseFloat($(this).find('.unit-price').val());
 
-            //         if (itemName !== '' && quantity > 0 && unitPrice >= 0) {
-            //             hasValidItem = true;
-            //             return false; // Break .each loop
-            //         }
-            //     });
+                    if (itemName !== '' && quantity > 0 && unitPrice >= 0) {
+                        hasValidItem = true;
+                        return false; // Break .each loop
+                    }
+                });
 
-            //     if (!hasValidItem) {
-            //         $('#billItemsError').removeClass('d-none');
-            //         event.preventDefault(); // Prevent form submission
-            //         alert("Please add at least one valid bill item (Name, Quantity > 0, Unit Price >= 0).");
-            //     } else {
-            //         $('#billItemsError').addClass('d-none');
-            //     }
-            // });
+                if (!hasValidItem) {
+                    $('#billItemsError').text("Please add at least one valid bill item (Name, Quantity > 0, Unit Price >= 0).").removeClass('d-none');
+                    event.preventDefault(); // Prevent form submission
+                    // alert("Please add at least one valid bill item (Name, Quantity > 0, Unit Price >= 0)."); // Removed alert
+                } else {
+                    $('#billItemsError').addClass('d-none');
+                }
+            });
 
 
             // Initial calculation on page load
@@ -305,4 +311,4 @@
             updateItemRowIds(); // Ensure IDs are correct on initial load if pre-filled
         });
     </script>
-    }
+}
