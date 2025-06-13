@@ -64,16 +64,28 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRcRmVhdHVyZTIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Appointment/Success.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRcU3VjY2Vzcy5jc2h0bWw=
+[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Bill/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbFxDcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Billing/Create.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbGluZ1xDcmVhdGUuY3NodG1s
+[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Bill/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbFxEZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Billing/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbGluZ1xJbmRleC5jc2h0bWw=
+[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Bill/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbFxFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Bill/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Bill/MyBills.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbFxNeUJpbGxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Bill/Success.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbFxTdWNjZXNzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Doctor/Billing.cshtml]
@@ -114,10 +126,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Doctor/Schedule.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG9jdG9yXFNjaGVkdWxlLmNzaHRtbA==
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Doctor/_ViewStart.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG9jdG9yXF9WaWV3U3RhcnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/2406634/OneDrive - Cognizant/Desktop/Project2/Proj2.3/Views/Home/Index.cshtml]

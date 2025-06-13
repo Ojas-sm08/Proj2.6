@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/AppointmentController.cs
+using Microsoft.AspNetCore.Mvc;
 using HospitalManagementSystem.Models;
 using System.Linq;
 using System.Threading.Tasks;
@@ -91,11 +92,11 @@ namespace HospitalManagementSystem.Controllers
             }
 
             var patientAppointments = await _context.Appointments
-                                                    .Include(a => a.Doctor)
-                                                    .Include(a => a.Patient)
-                                                    .Where(a => a.PatientId == patientId.Value)
-                                                    .OrderByDescending(a => a.AppointmentDateTime)
-                                                    .ToListAsync();
+                                                     .Include(a => a.Doctor)
+                                                     .Include(a => a.Patient)
+                                                     .Where(a => a.PatientId == patientId.Value)
+                                                     .OrderByDescending(a => a.AppointmentDateTime)
+                                                     .ToListAsync();
 
             ViewData["Title"] = "My Appointments";
             return View(patientAppointments);
@@ -293,10 +294,10 @@ namespace HospitalManagementSystem.Controllers
             if (id != appointment.Id) return NotFound();
 
             var existingAppointment = await _context.Appointments
-                                                    .AsNoTracking()
-                                                    .Include(a => a.Patient)
-                                                    .Include(a => a.Doctor)
-                                                    .FirstOrDefaultAsync(a => a.Id == id);
+                                                     .AsNoTracking()
+                                                     .Include(a => a.Patient)
+                                                     .Include(a => a.Doctor)
+                                                     .FirstOrDefaultAsync(a => a.Id == id);
 
             if (existingAppointment == null)
             {
@@ -364,8 +365,8 @@ namespace HospitalManagementSystem.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"An error occurred while updating the appointment: {ex.Message}";
                 Debug.WriteLine($"Error updating appointment: {ex.Message}");
+                TempData["ErrorMessage"] = $"An error occurred while updating the appointment: {ex.Message}";
                 ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name ?? "Unnamed Patient" }).ToListAsync();
                 ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name ?? "Unnamed Doctor" }).ToListAsync();
                 ViewData["Title"] = "Edit Appointment";
@@ -463,7 +464,10 @@ namespace HospitalManagementSystem.Controllers
 
             try
             {
+                // With OnDelete(DeleteBehavior.Cascade) configured for Appointment to Bill,
+                // EF Core will handle the deletion of associated Bills and their BillItems automatically.
                 var appointment = await _context.Appointments.FindAsync(id);
+
                 if (appointment == null)
                 {
                     return Json(new { success = false, message = "Appointment not found." });
@@ -476,13 +480,18 @@ namespace HospitalManagementSystem.Controllers
                 }
 
                 _context.Appointments.Remove(appointment);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // This will trigger cascade delete in the database
                 return Json(new { success = true, message = "Appointment deleted successfully!" });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error deleting appointment: {ex.Message}");
-                return Json(new { success = false, message = $"Error deleting appointment: {ex.Message}" });
+                string errorMessage = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $" Inner exception: {ex.InnerException.Message}";
+                }
+                return Json(new { success = false, message = $"Error deleting appointment: {errorMessage}" });
             }
         }
 
@@ -544,6 +553,35 @@ namespace HospitalManagementSystem.Controllers
             }
         }
 
+        // NEW: AJAX endpoint to get Appointment details for Bill Creation
+        [HttpGet]
+        public async Task<IActionResult> GetAppointmentDetails(int id)
+        {
+            if (!IsLoggedIn())
+            {
+                return Json(new { success = false, message = "Unauthorized access." });
+            }
+
+            var appointment = await _context.Appointments
+                                            .Include(a => a.Patient)
+                                            .Include(a => a.Doctor)
+                                            .Select(a => new { a.Id, a.PatientId, a.DoctorId, PatientName = a.Patient.Name, DoctorName = a.Doctor.Name, AppointmentDateTime = a.AppointmentDateTime.ToString("yyyy-MM-dd hh:mm tt") })
+                                            .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null)
+            {
+                return Json(new { success = false, message = "Appointment not found." });
+            }
+
+            // Basic authorization check: Doctor can only get details for their own appointments, Admin for any
+            if (IsDoctor() && GetDoctorIdFromSession() != appointment.DoctorId && !IsAdmin())
+            {
+                return Json(new { success = false, message = "You are not authorized to view details for this appointment." });
+            }
+
+            return Json(new { success = true, appointment = appointment });
+        }
+
 
         // GET: Appointment/CheckAvailability (renders Views/Appointment/Feature2.cshtml)
         [HttpGet]
@@ -556,9 +594,9 @@ namespace HospitalManagementSystem.Controllers
             }
 
             var doctors = await _context.Doctors
-                                        .OrderBy(d => d.Name)
-                                        .Select(d => new Doctor { Id = d.Id, Name = d.Name ?? "Unnamed Doctor", Specialization = d.Specialization ?? "N/A" })
-                                        .ToListAsync();
+                                         .OrderBy(d => d.Name)
+                                         .Select(d => new Doctor { Id = d.Id, Name = d.Name ?? "Unnamed Doctor", Specialization = d.Specialization ?? "N/A" })
+                                         .ToListAsync();
 
             var viewModel = new DoctorAvailabilityViewModel
             {
@@ -596,9 +634,8 @@ namespace HospitalManagementSystem.Controllers
 
                     var bookedAppointments = await _context.Appointments
                                                             .Where(a => a.DoctorId == selectedDoctorId.Value
-                                                                     && a.AppointmentDateTime.Date == viewModel.SelectedDate.Date
-                                                                     && a.Status != "Cancelled"
-                                                                     && a.Status != "Completed")
+                                                                   && a.AppointmentDateTime.Date == viewModel.SelectedDate.Date
+                                                                   && a.Status != "Cancelled" && a.Status != "Completed")
                                                             .Select(a => a.AppointmentDateTime.TimeOfDay)
                                                             .ToListAsync();
 
@@ -653,19 +690,22 @@ namespace HospitalManagementSystem.Controllers
                     EndTime = new TimeSpan(17, 0, 0),
                     LunchStartTime = new TimeSpan(12, 0, 0),
                     LunchEndTime = new TimeSpan(13, 0, 0),
+                    DoctorId = doctorId,
+                    Date = selectedDate.Date,
+                    Location = "General Clinic"
                 };
             }
 
             var bookedAppointments = await _context.Appointments
                                                     .Where(a => a.DoctorId == doctorId
-                                                             && a.AppointmentDateTime.Date == selectedDate.Date
-                                                              && a.Status != "Cancelled"
-                                                              && a.Status != "Completed")
+                                                           && a.AppointmentDateTime.Date == selectedDate.Date
+                                                           && a.Status != "Cancelled"
+                                                           && a.Status != "Completed")
                                                     .Select(a => a.AppointmentDateTime.TimeOfDay)
                                                     .ToListAsync();
 
             TimeSpan slotDuration = TimeSpan.FromMinutes(30);
-            List<string> availableSlotsFormatted = new List<string>();
+            List<object> availableSlots = new List<object>();
 
             for (TimeSpan time = doctorSchedule.StartTime; time < doctorSchedule.EndTime; time = time.Add(slotDuration))
             {
@@ -677,11 +717,11 @@ namespace HospitalManagementSystem.Controllers
 
                 if (!bookedAppointments.Contains(time))
                 {
-                    availableSlotsFormatted.Add(new DateTime().Add(time).ToString(@"hh\:mm tt"));
+                    availableSlots.Add(new { Time = time.ToString(@"hh\:mm"), DateTime = selectedDate.Date.Add(time).ToString("o") }); // Add DateTime for easier handling
                 }
             }
 
-            return Json(new { success = true, slots = availableSlotsFormatted });
+            return Json(new { success = true, availableSlots = availableSlots });
         }
     }
 }

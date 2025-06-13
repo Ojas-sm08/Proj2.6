@@ -32,5 +32,7 @@ namespace HospitalManagementSystem.Models
 
         [StringLength(50)] // Added StringLength for Status
         public string Status { get; set; } = "Scheduled"; // Default status for new appointments
+
+        public ICollection<Bill>? Bills { get; set; } = new List<Bill>();
     }
 }

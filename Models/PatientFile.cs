@@ -9,9 +9,11 @@ namespace HospitalManagementSystem.Models
         [Key]
         public int Id { get; set; }
 
+        // Make PatientId non-nullable as a file must belong to a patient
+        [Required] // Explicitly mark as required
         [ForeignKey("Patient")]
         public int PatientId { get; set; }
-        public Patient? Patient { get; set; } // Navigation property
+        public Patient Patient { get; set; } = null!; // Navigation property - make non-nullable
 
         [Required]
         [StringLength(255)]

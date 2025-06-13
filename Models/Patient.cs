@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic; // Added for ICollection
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -38,7 +39,13 @@ namespace HospitalManagementSystem.Models
         [Display(Name = "Medical History")]
         public string? MedicalHistory { get; set; }
 
-        // Navigation properties (if needed for relationships, e.g., Appointments)
+        // Navigation properties
         public ICollection<Appointment>? Appointments { get; set; }
+
+        // NEW: Navigation property for Bills
+        public ICollection<Bill> Bills { get; set; } = new List<Bill>(); // Initialize to prevent null reference
+
+        // NEW: Navigation property for PatientFiles
+        public ICollection<PatientFile>? PatientFiles { get; set; } // Patient can have many files
     }
 }

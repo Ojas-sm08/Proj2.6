@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital_Management_System.Migrations
 {
     [DbContext(typeof(HospitalDbContext))]
-    [Migration("20250612031808_first")]
-    partial class first
+    [Migration("20250613041104_NNeeww")]
+    partial class NNeeww
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,67 @@ namespace Hospital_Management_System.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("BillItem", b =>
+                {
+                    b.Property<int>("BillItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BillItemId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<int>("BillId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.HasKey("BillItemId");
+
+                    b.HasIndex("BillId");
+
+                    b.ToTable("BillItems");
+
+                    b.HasData(
+                        new
+                        {
+                            BillItemId = 1,
+                            Amount = 50.00m,
+                            BillId = 1,
+                            ItemName = "Consultation Fee",
+                            Quantity = 1m,
+                            UnitPrice = 50.00m
+                        },
+                        new
+                        {
+                            BillItemId = 2,
+                            Amount = 25.00m,
+                            BillId = 1,
+                            ItemName = "Basic Blood Work",
+                            Quantity = 1m,
+                            UnitPrice = 25.00m
+                        },
+                        new
+                        {
+                            BillItemId = 3,
+                            Amount = 50.00m,
+                            BillId = 2,
+                            ItemName = "Consultation Fee",
+                            Quantity = 1m,
+                            UnitPrice = 50.00m
+                        });
+                });
 
             modelBuilder.Entity("HospitalManagementSystem.Models.Appointment", b =>
                 {
@@ -72,7 +133,7 @@ namespace Hospital_Management_System.Migrations
                             Location = "Room 101",
                             PatientId = 1,
                             Reason = "Annual Checkup",
-                            Status = "Scheduled"
+                            Status = "Completed"
                         },
                         new
                         {
@@ -83,6 +144,85 @@ namespace Hospital_Management_System.Migrations
                             PatientId = 2,
                             Reason = "Pediatric Consultation",
                             Status = "Scheduled"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            AppointmentDateTime = new DateTime(2025, 6, 12, 11, 0, 0, 0, DateTimeKind.Unspecified),
+                            DoctorId = 1,
+                            Location = "Room 101",
+                            PatientId = 3,
+                            Reason = "Follow-up",
+                            Status = "Completed"
+                        });
+                });
+
+            modelBuilder.Entity("HospitalManagementSystem.Models.Bill", b =>
+                {
+                    b.Property<int>("BillId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BillId"));
+
+                    b.Property<int>("AppointmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("BillDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18, 2)");
+
+                    b.HasKey("BillId");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique();
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("Bills");
+
+                    b.HasData(
+                        new
+                        {
+                            BillId = 1,
+                            AppointmentId = 1,
+                            BillDate = new DateTime(2025, 6, 13, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DoctorId = 1,
+                            Notes = "Routine checkup and basic tests.",
+                            PatientId = 1,
+                            Status = "Paid",
+                            TotalAmount = 75.00m
+                        },
+                        new
+                        {
+                            BillId = 2,
+                            AppointmentId = 3,
+                            BillDate = new DateTime(2025, 6, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DoctorId = 1,
+                            Notes = "Follow-up consultation.",
+                            PatientId = 3,
+                            Status = "Pending",
+                            TotalAmount = 50.00m
                         });
                 });
 
@@ -308,11 +448,16 @@ namespace Hospital_Management_System.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DoctorId");
 
                     b.HasIndex("PatientId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notifications");
                 });
@@ -510,6 +655,17 @@ namespace Hospital_Management_System.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BillItem", b =>
+                {
+                    b.HasOne("HospitalManagementSystem.Models.Bill", "Bill")
+                        .WithMany("BillItems")
+                        .HasForeignKey("BillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bill");
+                });
+
             modelBuilder.Entity("HospitalManagementSystem.Models.Appointment", b =>
                 {
                     b.HasOne("HospitalManagementSystem.Models.Doctor", "Doctor")
@@ -523,6 +679,32 @@ namespace Hospital_Management_System.Migrations
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HospitalManagementSystem.Models.Bill", b =>
+                {
+                    b.HasOne("HospitalManagementSystem.Models.Appointment", "Appointment")
+                        .WithOne()
+                        .HasForeignKey("HospitalManagementSystem.Models.Bill", "AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HospitalManagementSystem.Models.Doctor", "Doctor")
+                        .WithMany("Bills")
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("HospitalManagementSystem.Models.Patient", "Patient")
+                        .WithMany("Bills")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Appointment");
 
                     b.Navigation("Doctor");
 
@@ -569,15 +751,22 @@ namespace Hospital_Management_System.Migrations
                         .WithMany()
                         .HasForeignKey("PatientId");
 
+                    b.HasOne("HospitalManagementSystem.Models.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HospitalManagementSystem.Models.PatientFile", b =>
                 {
                     b.HasOne("HospitalManagementSystem.Models.Patient", "Patient")
-                        .WithMany()
+                        .WithMany("PatientFiles")
                         .HasForeignKey("PatientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -605,9 +794,16 @@ namespace Hospital_Management_System.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("HospitalManagementSystem.Models.Bill", b =>
+                {
+                    b.Navigation("BillItems");
+                });
+
             modelBuilder.Entity("HospitalManagementSystem.Models.Doctor", b =>
                 {
                     b.Navigation("Appointments");
+
+                    b.Navigation("Bills");
 
                     b.Navigation("Reviews");
 
@@ -617,6 +813,15 @@ namespace Hospital_Management_System.Migrations
             modelBuilder.Entity("HospitalManagementSystem.Models.Patient", b =>
                 {
                     b.Navigation("Appointments");
+
+                    b.Navigation("Bills");
+
+                    b.Navigation("PatientFiles");
+                });
+
+            modelBuilder.Entity("HospitalManagementSystem.Models.User", b =>
+                {
+                    b.Navigation("Notifications");
                 });
 #pragma warning restore 612, 618
         }

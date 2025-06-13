@@ -29,5 +29,7 @@ namespace HospitalManagementSystem.Models
         [ForeignKey("Doctor")]
         public int? DoctorId { get; set; }
         public Doctor? Doctor { get; set; }
+
+        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

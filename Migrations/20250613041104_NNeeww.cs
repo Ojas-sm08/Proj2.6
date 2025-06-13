@@ -5,7 +5,7 @@
 namespace Hospital_Management_System.Migrations
 {
     /// <inheritdoc />
-    public partial class third : Migration
+    public partial class NNeeww : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

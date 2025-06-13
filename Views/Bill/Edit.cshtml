@@ -1,0 +1,244 @@
+﻿@model HospitalManagementSystem.Models.Bill
+
+@{
+    ViewData["Title"] = "Edit Bill";
+    var patients = ViewBag.Patients as List<dynamic>;
+    var doctors = ViewBag.Doctors as List<dynamic>;
+    var selectedAppointment = ViewBag.SelectedAppointment as HospitalManagementSystem.Models.Appointment;
+}
+
+<h2 class="text-3xl font-semibold text-gray-800 mb-6">@ViewData["Title"]</h2>
+
+<div class="bg-white p-6 rounded-lg shadow-md mb-8">
+    <form asp-action="Edit" method="post" id="billForm">
+        <div asp-validation-summary="ModelOnly" class="text-red-600 mb-4 font-medium"></div>
+        <input type="hidden" asp-for="BillId" />
+        <input type="hidden" asp-for="AppointmentId" /> @* Keep AppointmentId as hidden, it's tied to the bill *@
+        <input type="hidden" asp-for="BillDate" /> @* BillDate is typically set on creation or determined by system *@
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label asp-for="PatientId" class="block text-sm font-medium text-gray-700">Patient</label>
+                <select asp-for="PatientId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-100" disabled>
+                    @if (selectedAppointment != null)
+                    {
+                        <option value="@selectedAppointment.PatientId">@selectedAppointment.Patient?.Name</option>
+                    }
+                    else if (Model.Patient != null)
+                    {
+                        <option value="@Model.PatientId">@Model.Patient.Name</option>
+                    }
+                    else if (patients != null && patients.Any())
+                    {
+                        <option value="">-- Select Patient --</option>
+                        @foreach (var patient in patients)
+                        {
+                            <option value="@patient.Value" @@(patient.Value == Model.PatientId ? "selected" : null)>@patient.Text</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="PatientId" class="text-red-600 text-sm"></span>
+            </div>
+
+            <div>
+                <label asp-for="DoctorId" class="block text-sm font-medium text-gray-700">Doctor</label>
+                <select asp-for="DoctorId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md @(User.IsInRole("Admin") ? "" : "bg-gray-100")" @@(User.IsInRole("Admin") ? "" : "disabled")>
+                    <option value="">-- Select Doctor --</option>
+                    @if (doctors != null)
+                    {
+                        @foreach (var doctor in doctors)
+                        {
+                            <option value="@doctor.Value" @@(doctor.Value == Model.DoctorId ? "selected" : null)>@doctor.Text</option>
+                        }
+                    }
+                </select>
+                <span asp-validation-for="DoctorId" class="text-red-600 text-sm"></span>
+                @if (!User.IsInRole("Admin") && Model.DoctorId.HasValue)
+                {
+                    <input type="hidden" asp-for="DoctorId" value="@Model.DoctorId" />
+                }
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label for="billDateDisplay" class="block text-sm font-medium text-gray-700">Bill Date</label>
+                <input type="text" id="billDateDisplay" value="@Model.BillDate.ToString("yyyy-MM-dd")" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm bg-gray-100" readonly />
+            </div>
+            <div>
+                <label asp-for="Status" class="block text-sm font-medium text-gray-700">Status</label>
+                <select asp-for="Status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                    <option value="Pending">Pending</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Partially Paid">Partially Paid</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+                <span asp-validation-for="Status" class="text-red-600 text-sm"></span>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label asp-for="Notes" class="block text-sm font-medium text-gray-700">Notes</label>
+            <textarea asp-for="Notes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></textarea>
+            <span asp-validation-for="Notes" class="text-red-600 text-sm"></span>
+        </div>
+
+        <h3 class="text-xl font-medium text-gray-800 mb-4">Bill Items</h3>
+        <div id="billItemsContainer" class="space-y-4 mb-6">
+            @if (Model.BillItems != null && Model.BillItems.Any())
+            {
+                var billItemsList = Model.BillItems.ToList();
+                for (int i = 0; i < billItemsList.Count; i++)
+                {
+                    <div class="bill-item flex flex-wrap items-center gap-3 p-3 border border-gray-200 rounded-md bg-gray-50 border-b pb-4"> @* Added border-b and pb-4 for separation *@
+                        <input type="hidden" name="billItemIds[@i]" value="@billItemsList[i].BillItemId" />
+                        <div class="flex-1 min-w-[150px] md:min-w-[200px]"> @* Increased min-width for item name *@
+                            <label class="block text-sm font-medium text-gray-700">Item Name</label>
+                            <input type="text" name="itemNames[@i]" value="@billItemsList[i].ItemName" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1" />
+                        </div>
+                        <div class="w-28 md:w-32"> @* Adjusted width for quantity *@
+                            <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                            <input type="number" name="quantities[@i]" value="@billItemsList[i].Quantity" step="0.01" min="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1 calculate-amount" />
+                        </div>
+                        <div class="w-28 md:w-32"> @* Adjusted width for unit price *@
+                            <label class="block text-sm font-medium text-gray-700">Unit Price</label>
+                            <input type="number" name="unitPrices[@i]" value="@billItemsList[i].UnitPrice" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1 calculate-amount" />
+                        </div>
+                        <div class="w-28 md:w-32"> @* Adjusted width for amount *@
+                            <label class="block text-sm font-medium text-gray-700">Amount</label>
+                            <input type="text" name="amounts[@i]" value="@billItemsList[i].Amount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1 bg-gray-100" readonly />
+                        </div>
+                        <button type="button" class="remove-item-btn ml-auto p-2 text-red-600 hover:text-red-800 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <svg class="h-5 w-5 inline-block align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m14 0H5m-1 0V4a1 1 0 011-1h4a1 1 0 011 1v3m0 0h6m-6 0h.01"></path></svg>
+                        </button>
+                    </div>
+                }
+            }
+        </div>
+        <button type="button" id="addBillItemBtn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            Add Bill Item
+        </button>
+
+        <div class="mt-8 text-right">
+            <label class="block text-xl font-bold text-gray-800">Total Amount: <span id="totalAmountDisplay">@Model.TotalAmount.ToString("C")</span></label>
+            <input type="hidden" asp-for="TotalAmount" id="totalAmountHidden" />
+        </div>
+
+        <div class="mt-8 flex justify-end gap-4">
+            <a asp-action="Details" asp-route-id="@Model.BillId" class="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Back to Details</a>
+            <button type="submit" class="px-6 py-2 border border-transparent rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 font-semibold">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script src="https://cdn.tailwindcss.com"></script> @* Ensure Tailwind is loaded if not globally *@
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Apply Inter font globally if not already applied by main layout
+            document.body.classList.add('font-sans', 'font-inter');
+
+            let itemIndex = document.querySelectorAll('.bill-item').length;
+
+            function updateItemAmounts() {
+                const billItems = document.querySelectorAll('.bill-item');
+                let overallTotal = 0;
+
+                billItems.forEach(item => {
+                    const quantityInput = item.querySelector('input[name^="quantities"]');
+                    const unitPriceInput = item.querySelector('input[name^="unitPrices"]');
+                    const amountInput = item.querySelector('input[name^="amounts"]');
+
+                    if (quantityInput && unitPriceInput && amountInput) {
+                        const quantity = parseFloat(quantityInput.value) || 0;
+                        const unitPrice = parseFloat(unitPriceInput.value) || 0;
+                        const itemAmount = quantity * unitPrice;
+                        amountInput.value = itemAmount.toFixed(2);
+                        overallTotal += itemAmount;
+                    }
+                });
+
+                document.getElementById('totalAmountDisplay').textContent = overallTotal.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+                document.getElementById('totalAmountHidden').value = overallTotal.toFixed(2);
+            }
+
+            function addBillItemRow() {
+                const container = document.getElementById('billItemsContainer');
+                const newRow = document.createElement('div');
+                // Use a template literal for cleaner HTML generation
+                newRow.classList.add('bill-item', 'flex', 'flex-wrap', 'items-center', 'gap-3', 'p-3', 'border', 'border-gray-200', 'rounded-md', 'bg-gray-50', 'border-b', 'pb-4');
+                newRow.innerHTML = `
+                    <input type="hidden" name="billItemIds[${itemIndex}]" value="0" />
+                    <div class="flex-1 min-w-[150px] md:min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700">Item Name</label>
+                        <input type="text" name="itemNames[${itemIndex}]" value="" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1" />
+                    </div>
+                    <div class="w-28 md:w-32">
+                        <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                        <input type="number" name="quantities[${itemIndex}]" value="" step="0.01" min="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1 calculate-amount" />
+                    </div>
+                    <div class="w-28 md:w-32">
+                        <label class="block text-sm font-medium text-gray-700">Unit Price</label>
+                        <input type="number" name="unitPrices[${itemIndex}]" value="" step="0.01" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1 calculate-amount" />
+                    </div>
+                    <div class="w-28 md:w-32">
+                        <label class="block text-sm font-medium text-gray-700">Amount</label>
+                        <input type="text" name="amounts[${itemIndex}]" value="0.00" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm px-2 py-1 bg-gray-100" readonly />
+                    </div>
+                    <button type="button" class="remove-item-btn ml-auto p-2 text-red-600 hover:text-red-800 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <svg class="h-5 w-5 inline-block align-middle" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m14 0H5m-1 0V4a1 1 0 011-1h4a1 1 0 011 1v3m0 0h6m-6 0h.01"></path></svg>
+                    </button>
+                `;
+                container.appendChild(newRow);
+
+                // Add event listeners to the new inputs
+                newRow.querySelectorAll('.calculate-amount').forEach(input => {
+                    input.addEventListener('input', updateItemAmounts);
+                });
+                newRow.querySelector('.remove-item-btn').addEventListener('click', function() {
+                    newRow.remove();
+                    updateItemAmounts();
+                    updateItemIndices();
+                });
+
+                updateItemAmounts();
+                itemIndex++;
+            }
+
+            function updateItemIndices() {
+                const billItems = document.querySelectorAll('.bill-item');
+                itemIndex = 0;
+                billItems.forEach((item) => {
+                    // Update the 'name' attribute for existing items
+                    item.querySelector('input[name^="billItemIds"]').name = `billItemIds[${itemIndex}]`;
+                    item.querySelector('input[name^="itemNames"]').name = `itemNames[${itemIndex}]`;
+                    item.querySelector('input[name^="quantities"]').name = `quantities[${itemIndex}]`;
+                    item.querySelector('input[name^="unitPrices"]').name = `unitPrices[${itemIndex}]`;
+                    item.querySelector('input[name^="amounts"]').name = `amounts[${itemIndex}]`;
+                    itemIndex++;
+                });
+            }
+
+            document.getElementById('addBillItemBtn').addEventListener('click', function () {
+                addBillItemRow();
+            });
+
+            document.querySelectorAll('.bill-item').forEach(item => {
+                item.querySelectorAll('.calculate-amount').forEach(input => {
+                    input.addEventListener('input', updateItemAmounts);
+                });
+                item.querySelector('.remove-item-btn').addEventListener('click', function() {
+                    item.remove();
+                    updateItemAmounts();
+                    updateItemIndices();
+                });
+            });
+
+            updateItemAmounts();
+        });
+    </script>
+}

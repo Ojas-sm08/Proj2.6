@@ -1,0 +1,308 @@
+﻿    @model HospitalManagementSystem.Models.Bill
+    @inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Create New Bill";
+
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+    var isDoctor = (role == "Doctor");
+    var isAdmin = (role == "Admin");
+
+    // Determine layout based on user role
+    if (isDoctor)
+    {
+        Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
+    }
+    else if (isAdmin)
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml"; // Fallback
+    }
+
+    // Get the selected appointment from ViewBag if available
+    var selectedAppointment = ViewBag.SelectedAppointment as HospitalManagementSystem.Models.Appointment;
+}
+
+<h2 class="mb-4 text-center">💸 @ViewData["Title"]</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["InfoMessage"] != null)
+{
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        @TempData["InfoMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm p-4">
+            <div class="card-body">
+                <form asp-action="Create" method="post" id="billForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    @* Appointment Selection or Display *@
+                    @if (selectedAppointment != null)
+                    {
+                        <input type="hidden" asp-for="AppointmentId" value="@selectedAppointment.Id" />
+                        <input type="hidden" asp-for="PatientId" value="@selectedAppointment.PatientId" />
+                        <input type="hidden" asp-for="DoctorId" value="@selectedAppointment.DoctorId" />
+
+                        <div class="form-group mb-3">
+                            <label class="control-label">Associated Appointment</label>
+                            <input type="text" class="form-control" value="@(selectedAppointment.AppointmentDateTime.ToString("yyyy-MM-dd hh:mm tt")) - Patient: @selectedAppointment.Patient?.Name, Doctor: @selectedAppointment.Doctor?.Name" readonly />
+                            <small class="form-text text-muted">Bill for this completed appointment.</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-group mb-3">
+                            <label for="AppointmentId" class="control-label">Select Appointment</label>
+                            <select id="AppointmentId" asp-for="AppointmentId" class="form-control" asp-items="@(new SelectList(ViewBag.Appointments, "Value", "Text"))" required>
+                                <option value="">-- Select an Appointment to Bill --</option>
+                            </select>
+                            <span asp-validation-for="AppointmentId" class="text-danger"></span>
+                            <small class="form-text text-muted">Only Completed or Scheduled appointments without an existing bill are shown.</small>
+                        </div>
+
+                        <input type="hidden" asp-for="PatientId" id="hiddenPatientId" />
+                        <input type="hidden" asp-for="DoctorId" id="hiddenDoctorId" />
+                    }
+
+                    <div class="form-group mb-3">
+                        <label asp-for="BillDate" class="control-label"></label>
+                        <input asp-for="BillDate" type="date" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="BillDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Status" class="control-label"></label>
+                        <select asp-for="Status" class="form-control" required>
+                            <option value="Pending">Pending</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Partially Paid">Partially Paid</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Notes" class="control-label"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+
+                    <hr class="my-4" />
+                    <h4>Bill Items</h4>
+                    <div id="billItemsContainer">
+                        <div class="bill-item-row row g-4 mb-3 border p-4 rounded-md bg-light">
+                            <input type="hidden" name="billItemIds[]" value="0" />
+                            <div class="col-md-5">
+                                <label for="itemNames_0" class="form-label">Service/Item Name</label>
+                                <input type="text" name="itemNames[]" class="form-control item-name" id="itemNames_0" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="quantities_0" class="form-label">Quantity</label>
+                                <input type="number" name="quantities[]" class="form-control quantity" id="quantities_0" step="0.01" min="0.01" value="1" required />
+                            </div>
+                            <div class="col-md-3">
+                                <label for="unitPrices_0" class="form-label">Unit Price</label>
+                                <input type="number" name="unitPrices[]" class="form-control unit-price" id="unitPrices_0" step="0.01" min="0.00" value="0.00" required />
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger remove-item-btn w-100"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="addBillItemBtn" class="btn btn-secondary mb-4"><i class="fas fa-plus me-1"></i> Add Bill Item</button>
+                    <span id="billItemsError" class="text-danger d-none">At least one bill item is required.</span> 
+
+                    <div class="form-group text-end mt-4">
+                        <label class="control-label fs-4">Total Amount:</label>
+                        <span id="totalAmountDisplay" class="fs-4 fw-bold">0.00</span>
+                        <input type="hidden" asp-for="TotalAmount" id="hiddenTotalAmount" />
+                    </div>
+
+                    <div class="form-group d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-file-invoice me-2"></i> Generate Bill</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                @{
+                    string backAction = "Index";
+                    string backController = "Bill";
+                    if (isDoctor)
+                    {
+                        backAction = "Index"; // Doctors usually go back to their bill list or schedule
+                        backController = "Bill";
+                    }
+                    else if (isAdmin)
+                    {
+                        backAction = "Index"; // Admins go back to all bills
+                        backController = "Bill";
+                    }
+                }
+                <a asp-action="@backAction" asp-controller="@backController" class="btn btn-secondary mt-2"><i class="fas fa-arrow-left me-1"></i> Back to Bills List</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            let itemIndex = $('#billItemsContainer .bill-item-row').length > 0 ? $('#billItemsContainer .bill-item-row').length - 1 : 0;
+
+            // Function to calculate total amount
+            function calculateTotalAmount() {
+                let total = 0;
+                $('#billItemsContainer .bill-item-row').each(function () {
+                    const quantity = parseFloat($(this).find('.quantity').val()) || 0;
+                    const unitPrice = parseFloat($(this).find('.unit-price').val()) || 0;
+                    total += (quantity * unitPrice);
+                });
+                $('#totalAmountDisplay').text(total.toFixed(2));
+                $('#hiddenTotalAmount').val(total.toFixed(2));
+            }
+
+            // Function to update item row IDs for consistency if items are removed/added
+            function updateItemRowIds() {
+                $('#billItemsContainer .bill-item-row').each(function(i) {
+                    $(this).find('.item-name').attr('id', `itemNames_${i}`);
+                    $(this).find('.quantity').attr('id', `quantities_${i}`);
+                    $(this).find('.unit-price').attr('id', `unitPrices_${i}`);
+                });
+            }
+
+            // Add new bill item row
+            $('#addBillItemBtn').on('click', function () {
+                itemIndex++;
+                const newItemRow = `
+                    <div class="bill-item-row row g-3 mb-3 border p-3 rounded-md bg-light mt-3">
+                        <input type="hidden" name="billItemIds[]" value="0" />
+                        <div class="col-md-5">
+                            <label for="itemNames_${itemIndex}" class="form-label">Service/Item Name</label>
+                            <input type="text" name="itemNames[]" class="form-control item-name" id="itemNames_${itemIndex}" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label for="quantities_${itemIndex}" class="form-label">Quantity</label>
+                            <input type="number" name="quantities[]" class="form-control quantity" id="quantities_${itemIndex}" step="0.01" min="0.01" value="1" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label for="unitPrices_${itemIndex}" class="form-label">Unit Price</label>
+                            <input type="number" name="unitPrices[]" class="form-control unit-price" id="unitPrices_${itemIndex}" step="0.01" min="0.00" value="0.00" required />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger remove-item-btn w-100"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
+                `;
+                $('#billItemsContainer').append(newItemRow);
+                calculateTotalAmount(); // Recalculate after adding
+                $('#billItemsError').addClass('d-none'); // Hide error if adding items
+                updateItemRowIds(); // Re-index elements after adding
+            });
+
+            // Remove bill item row (event delegation for dynamically added elements)
+            $(document).on('click', '.remove-item-btn', function () {
+                if ($('#billItemsContainer .bill-item-row').length > 1) { // Ensure at least one item remains
+                    $(this).closest('.bill-item-row').remove();
+                    calculateTotalAmount(); // Recalculate after removing
+                    updateItemRowIds(); // Re-index elements after removing
+                } else {
+                    alert("A bill must have at least one item.");
+                    $('#billItemsError').removeClass('d-none'); // Show error if trying to remove last item
+                }
+            });
+
+            // Recalculate total on quantity or unit price change (event delegation)
+            $(document).on('input', '.quantity, .unit-price', function () {
+                calculateTotalAmount();
+            });
+
+            // Handle appointment selection if not pre-selected
+            $('#AppointmentId').on('change', async function () {
+                const selectedAppointmentId = $(this).val();
+                if (selectedAppointmentId) {
+                    try {
+                        const response = await $.ajax({
+                            url: '@Url.Action("GetAppointmentDetails", "Appointment")',
+                            type: 'GET',
+                            data: { id: selectedAppointmentId }
+                        });
+
+                        if (response.success && response.appointment) {
+                            $('#hiddenPatientId').val(response.appointment.patientId);
+                            $('#hiddenDoctorId').val(response.appointment.doctorId);
+                            console.log('Appointment details fetched:', response.appointment);
+                        } else {
+                            console.error("Failed to fetch appointment details:", response.message);
+                            $('#hiddenPatientId').val('0');
+                            $('#hiddenDoctorId').val('0');
+                            alert("Could not load selected appointment details. Please try again.");
+                        }
+                    } catch (error) {
+                        console.error("AJAX Error fetching appointment details:", error);
+                        $('#hiddenPatientId').val('0');
+                        $('#hiddenDoctorId').val('0');
+                        alert("An error occurred while fetching appointment details.");
+                    }
+                } else {
+                    $('#hiddenPatientId').val('0');
+                    $('#hiddenDoctorId').val('0');
+                }
+            });
+
+            // // Client-side validation before form submission (TEMPORARILY COMMENTED OUT)
+            // $('#billForm').on('submit', function (event) {
+            //     let hasValidItem = false;
+            //     $('#billItemsContainer .bill-item-row').each(function () {
+            //         const itemName = $(this).find('.item-name').val().trim();
+            //         const quantity = parseFloat($(this).find('.quantity').val());
+            //         const unitPrice = parseFloat($(this).find('.unit-price').val());
+
+            //         if (itemName !== '' && quantity > 0 && unitPrice >= 0) {
+            //             hasValidItem = true;
+            //             return false; // Break .each loop
+            //         }
+            //     });
+
+            //     if (!hasValidItem) {
+            //         $('#billItemsError').removeClass('d-none');
+            //         event.preventDefault(); // Prevent form submission
+            //         alert("Please add at least one valid bill item (Name, Quantity > 0, Unit Price >= 0).");
+            //     } else {
+            //         $('#billItemsError').addClass('d-none');
+            //     }
+            // });
+
+
+            // Initial calculation on page load
+            calculateTotalAmount();
+            updateItemRowIds(); // Ensure IDs are correct on initial load if pre-filled
+        });
+    </script>
+    }

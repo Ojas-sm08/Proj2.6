@@ -32,5 +32,9 @@ namespace HospitalManagementSystem.Models
         public ICollection<DoctorSchedule>? Schedules { get; set; } // Doctor can have multiple schedules
         public ICollection<DoctorReview>? Reviews { get; set; } // Optional: If you have a DoctorReview model
         public ICollection<Appointment>? Appointments { get; set; } // Optional: If you have an Appointment model
+
+        // NEW: Navigation property for Bills
+        // This links Doctor to the bills they create or are associated with.
+        public ICollection<Bill> Bills { get; set; } = new List<Bill>(); // Initialize to prevent null reference
     }
 }
