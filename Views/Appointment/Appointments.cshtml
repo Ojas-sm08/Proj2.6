@@ -1,33 +1,18 @@
 ﻿@model IEnumerable<HospitalManagementSystem.Models.Appointment>
-@inject IHttpContextAccessor HttpContextAccessor
+@inject IHttpContextAccessor HttpContextAccessor 
 
 @{
-    ViewData["Title"] = "All Hospital Appointments";
+    ViewData["Title"] = "My Appointments";
+    Layout = "~/Views/Shared/_Layout.Patient.cshtml";
 
     // Get the user's role from session
     var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
-    var isPatient = (role == "Patient"); // Not relevant for this view, but kept for consistency
-    var isDoctor = (role == "Doctor");
-    var isAdmin = (role == "Admin");
-
-    // Determine layout based on user role, with _Layout.cshtml as default fallback
-    if (isAdmin)
-    {
-        Layout = "~/Views/Shared/_Layout.cshtml";
-    }
-    else if (isDoctor)
-    {
-        Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
-        ViewData["Title"] = "My Appointments"; // Title for doctor's specific view
-    }
-    else
-    {
-        // Fallback for any other roles, or if session role is not set
-        Layout = "~/Views/Shared/_Layout.cshtml";
-    }
+    var isPatient = (role == "Patient");
+    var isDoctor = (role == "Doctor"); // Keep for other roles' visibility logic if applied elsewhere
+    var isAdmin = (role == "Admin");   // Keep for other roles' visibility logic if applied elsewhere
 }
 
-<h2 class="mb-4 text-center">🏥 @ViewData["Title"]</h2>
+<h2 class="mb-4 text-center">📅 My Appointments</h2>
 
 @if (TempData["SuccessMessage"] != null)
 {
@@ -51,16 +36,9 @@
     </div>
 }
 
+
 <div class="card shadow-sm p-4">
     <div class="card-body">
-        <p>
-            @* Allow booking new appointment for Admin and Doctors *@
-            @if (isAdmin || isDoctor)
-            {
-                <a asp-controller="Appointment" asp-action="Create" class="btn btn-success"><i class="fas fa-plus-circle me-1"></i> Book New Appointment</a>
-            }
-        </p>
-
         @if (Model != null && Model.Any())
         {
             <div class="table-responsive">
@@ -68,7 +46,6 @@
                     <thead class="table-light">
                         <tr>
                             <th>Appointment Date & Time</th>
-                            <th>Patient</th>
                             <th>Doctor</th>
                             <th>Reason</th>
                             <th>Location</th>
@@ -81,7 +58,6 @@
                         {
                             <tr id="appointment-row-@item.Id">
                                 <td>@item.AppointmentDateTime.ToString("yyyy-MM-dd hh:mm tt")</td>
-                                <td>@item.Patient?.Name</td>
                                 <td>@item.Doctor?.Name (@item.Doctor?.Specialization)</td>
                                 <td>@item.Reason</td>
                                 <td>@item.Location</td>
@@ -91,31 +67,21 @@
                                     </span>
                                 </td>
                                 <td>
-                                    @* Always show View Details button for Admin/Doctor/Patient (in their respective views) *@
                                     <a asp-controller="Appointment" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info" title="View Details"><i class="fas fa-eye"></i></a>
 
-                                    @if (isAdmin)
+
+                                    @if (!isPatient) 
                                     {
-                                        @* Admin can always Edit and Delete *@
-                                        <a asp-controller="Appointment" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning ms-1" title="Edit Appointment"><i class="fas fa-edit"></i></a>
-                                        <button type="button" class="btn btn-sm btn-danger ms-1 delete-appointment-btn" data-id="@item.Id" title="Delete Appointment"><i class="fas fa-trash"></i></button>
-                                    }
-                                    else if (isDoctor)
-                                    {
-                                        @* Doctor can only Edit/Cancel their own future scheduled appointments *@
-                                        @if (item.DoctorId == HttpContextAccessor.HttpContext.Session.GetInt32("DoctorId") && item.Status == "Scheduled" && item.AppointmentDateTime > DateTime.Now)
+                                        @if (item.Status == "Scheduled" && item.AppointmentDateTime > DateTime.Now)
                                         {
                                             <a asp-controller="Appointment" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning ms-1" title="Edit Appointment"><i class="fas fa-edit"></i></a>
                                             <button type="button" class="btn btn-sm btn-danger ms-1 cancel-appointment-btn" data-id="@item.Id" title="Cancel Appointment"><i class="fas fa-times-circle"></i></button>
                                         }
-                                        @* Doctor can potentially mark as completed if it's their appointment and scheduled/in progress *@
-                                        @if (item.DoctorId == HttpContextAccessor.HttpContext.Session.GetInt32("DoctorId") && item.Status == "Scheduled")
+                                        else if (isAdmin)
                                         {
-                                            <button type="button" class="btn btn-sm btn-success ms-1 mark-completed-btn" data-id="@item.Id" title="Mark as Completed"><i class="fas fa-check-circle"></i></button>
+                                            <button type="button" class="btn btn-sm btn-danger ms-1 delete-appointment-btn" data-id="@item.Id" title="Delete Appointment"><i class="fas fa-trash"></i></button>
                                         }
                                     }
-                                    @* No buttons for patients are rendered in this AllAppointments view, as it's not their primary view.
-                                       Their specific view (Appointments.cshtml) handles their restricted actions. *@
                                 </td>
                             </tr>
                         }
@@ -126,21 +92,28 @@
         else
         {
             <div class="alert alert-info text-center" role="alert">
-                No appointments found.
+                You have no upcoming or past appointments.
             </div>
         }
+    </div>
+    <div class="card-footer text-center">
+        <a asp-controller="Appointment" asp-action="Create" class="btn btn-success"><i class="fas fa-plus-circle me-1"></i> Book New Appointment</a>
     </div>
 </div>
 
 @section Scripts {
+    {{-- Removed @{await Html.RenderPartialAsync("_ValidationScriptsPartial");} as it's not typically needed here --}}
+    <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
 
     <script>
         $(document).ready(function () {
-            // Functionality for "Cancel Appointment" button (for Doctors on their schedule, etc.)
+            // Event listener for "Cancel Appointment" button.
+            // This button will only be visible to non-patients as per Razor logic.
             $('.cancel-appointment-btn').on('click', function () {
                 const appointmentId = $(this).data('id');
+                // Use a custom modal for confirmation instead of browser's alert/confirm if possible
                 if (confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
                     $.ajax({
                         url: '@Url.Action("Cancel", "Appointment")',
@@ -151,9 +124,12 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                alert(response.message);
-                                location.reload();
+                                // Fade out the row and then reload to show updated list and message
+                                $('#appointment-row-' + appointmentId).fadeOut(500, function() {
+                                    location.reload();
+                                });
                             } else {
+                                // Display error message from the server
                                 alert(response.message);
                             }
                         },
@@ -165,12 +141,13 @@
                 }
             });
 
-            // Functionality for "Delete Appointment" button (only visible for Admin)
+            // Event listener for "Delete Appointment" button.
+            // This button will only be visible to Admins as per Razor logic.
             $('.delete-appointment-btn').on('click', function () {
                 const appointmentId = $(this).data('id');
                 if (confirm('Are you sure you want to PERMANENTLY delete this appointment? This cannot be undone.')) {
                     $.ajax({
-                        url: '@Url.Action("Delete", "Appointment")',
+                        url: '@Url.Action("Delete", "Appointment")', // Make sure your Delete action is set up to handle POST and return JSON
                         type: 'POST',
                         data: { id: appointmentId },
                         headers: {
@@ -178,44 +155,18 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                alert(response.message);
+                                // Fade out the row and then reload to show updated list and message
                                 $('#appointment-row-' + appointmentId).fadeOut(500, function() {
                                     location.reload();
                                 });
                             } else {
+                                // Display error message from the server
                                 alert(response.message);
                             }
                         },
                         error: function (xhr, status, error) {
                             console.error("AJAX Error:", status, error, xhr.responseText);
                             alert('An error occurred while deleting the appointment. Please try again.');
-                        }
-                    });
-                }
-            });
-
-            // Functionality for "Mark as Completed" button (for Doctors/Admins)
-            $('.mark-completed-btn').on('click', function () {
-                const appointmentId = $(this).data('id');
-                if (confirm('Are you sure you want to mark this appointment as COMPLETED?')) {
-                    $.ajax({
-                        url: '@Url.Action("MarkAsCompleted", "Appointment")',
-                        type: 'POST',
-                        data: { id: appointmentId },
-                        headers: {
-                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                alert(response.message);
-                                location.reload(); // Reload to reflect status change
-                            } else {
-                                alert(response.message);
-                            }
-                        },
-                        error: function (xhr, status, error) {
-                            console.error("AJAX Error:", status, error, xhr.responseText);
-                            alert('An error occurred while marking the appointment as completed. Please try again.');
                         }
                     });
                 }

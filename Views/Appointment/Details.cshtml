@@ -1,0 +1,115 @@
+﻿@model HospitalManagementSystem.Models.Appointment
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Appointment Details";
+
+    // Determine layout based on user role
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+    if (role == "Patient")
+    {
+        Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    }
+    else if (role == "Doctor")
+    {
+        Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
+    }
+    else if (role == "Admin")
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml"; // Default fallback
+    }
+}
+
+<h2 class="mb-4 text-center">📋 Appointment Details</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm p-4">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Id)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.Id)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Patient)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.Patient.Name)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Doctor)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.Doctor.Name) (@Html.DisplayFor(model => model.Doctor.Specialization))
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.AppointmentDateTime)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.AppointmentDateTime)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Reason)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.Reason)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Location)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.Location)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.Status)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.Status)
+                    </dd>
+                </dl>
+            </div>
+            <div class="card-footer text-center">
+                
+                @if (Model.Status == "Scheduled" && Model.AppointmentDateTime > DateTime.Now)
+                {
+                    @* Only show edit if not completed/cancelled and in future *@
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning me-2"><i class="fas fa-edit me-1"></i> Edit</a>
+                }
+
+                
+                @{
+                    string backAction = "Appointments"; // Default for patient
+                    string backController = "Appointment";
+                    if (role == "Doctor")
+                    {
+                        backAction = "Schedule"; // Doctor goes to their schedule
+                        backController = "Doctor";
+                    }
+                    else if (role == "Admin")
+                    {
+                        backAction = "AllAppointments"; // Admin goes to all appointments
+                        backController = "Appointment";
+                    }
+                }
+                <a asp-action="@backAction" asp-controller="@backController" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Back to List</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+}

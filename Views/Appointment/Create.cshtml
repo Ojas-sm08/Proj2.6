@@ -1,8 +1,22 @@
 ﻿@model HospitalManagementSystem.Models.Appointment
+@inject IHttpContextAccessor HttpContextAccessor 
+@* Inject to access session for role check *@
 
 @{
     ViewData["Title"] = "Book New Appointment";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this uses your main layout
+
+    // Get the user's role from session
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+
+    // Dynamically set the layout based on the user's role
+    if (role == "Patient")
+    {
+        Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    }
+    else // Default for Admin, Doctor, or unauthenticated users
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
 }
 
 <h2 class="mb-4 text-center">📅 Book New Appointment</h2>

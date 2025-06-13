@@ -99,8 +99,8 @@
                                 <i class="fas fa-calendar-alt me-1"></i> Appointments
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="appointmentsDropdown">
-                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="Create">Make Appointment</a></li>
-                                <li><a class="dropdown-item" asp-controller="Patient" asp-action="Appointments">My Schedule</a></li>
+                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Create">Make Appointment</a></li>
+                                <li><a class="dropdown-item" asp-controller="Appointment" asp-action="Appointments">My Schedule</a></li>
                             </ul>
                         </li>
 
@@ -165,6 +165,7 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+    @RenderSection("Scripts", required: false)
 </body>
 </html>

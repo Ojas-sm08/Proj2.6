@@ -32,10 +32,24 @@
 <div class="card shadow-sm p-4">
     <div class="card-body">
         <form asp-action="Patients" method="get" class="mb-3">
-            <div class="input-group">
-                <input type="text" name="searchString" class="form-control" placeholder="Search patients by name, contact, or email..." value="@ViewData["CurrentFilter"]" />
-                <button type="submit" class="btn btn-primary"><i class="fas fa-search me-2"></i> Search</button>
-                <a asp-action="Patients" class="btn btn-outline-secondary"><i class="fas fa-redo me-2"></i> Reset</a>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="searchString" class="form-label visually-hidden">Search</label>
+                    <input type="text" name="searchString" class="form-control" placeholder="Search patients by name, contact, or email..." value="@ViewData["CurrentFilter"]" />
+                </div>
+                <div class="col-md-3">
+                    <label for="genderFilter" class="form-label visually-hidden">Filter by Gender</label>
+                    <select name="genderFilter" class="form-select">
+                        <option value="All" selected="@("All" == ViewData["CurrentGenderFilter"]?.ToString())">All Genders</option>
+                        <option value="Male" selected="@("Male" == ViewData["CurrentGenderFilter"]?.ToString())">Male</option>
+                        <option value="Female" selected="@("Female" == ViewData["CurrentGenderFilter"]?.ToString())">Female</option>
+                        <option value="Other" selected="@("Other" == ViewData["CurrentGenderFilter"]?.ToString())">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100 mb-2"><i class="fas fa-search me-2"></i> Search</button>
+                    <a asp-action="Patients" class="btn btn-outline-secondary w-100"><i class="fas fa-redo me-2"></i> Reset</a>
+                </div>
             </div>
         </form>
 
@@ -70,7 +84,7 @@
                                 </td>
                                 <td>
                                     <a asp-controller="Patient" asp-action="Details" asp-route-id="@patientDisplay.PatientId" class="btn btn-sm btn-info" title="View Patient Details"><i class="fas fa-eye"></i></a>
-                                    <a href="#" class="btn btn-sm btn-success ms-1" title="Schedule New Appointment"><i class="fas fa-calendar-plus"></i></a>
+                                    <a asp-controller="Appointment" asp-action="Create" asp-route-patientId="@patientDisplay.PatientId" asp-route-doctorId="@Model.Doctor?.Id" class="btn btn-sm btn-success ms-1" title="Schedule New Appointment"><i class="fas fa-calendar-plus"></i></a>
                                 </td>
                             </tr>
                         }
@@ -81,7 +95,7 @@
         else
         {
             <div class="alert alert-info text-center mt-3" role="alert">
-                You currently have no patients associated with your appointments or no patients found matching your search.
+                You currently have no patients associated with your appointments or no patients found matching your search and filter criteria.
             </div>
         }
     </div>

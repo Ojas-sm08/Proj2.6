@@ -9,6 +9,7 @@ using System.Collections.Generic; // For List
 using System.Diagnostics; // For Debug.WriteLine
 using System; // For Exception
 using System.IO; // For MemoryStream
+using System.Globalization; // For CultureInfo and DateTimeStyles (if still needed for appointments)
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -202,9 +203,6 @@ namespace HospitalManagementSystem.Controllers
                     }
                 }
 
-                // Redirect after successful edit:
-                // If the current user is a Patient, redirect them to their profile preview.
-                // If the current user is an Admin, redirect them to the patient management list.
                 if (currentUserRole == "Patient")
                 {
                     Debug.WriteLine($"PatientController.Edit (POST): Patient '{patient.Name}' edited their profile, redirecting to ProfilePreview.");
@@ -462,6 +460,49 @@ namespace HospitalManagementSystem.Controllers
             ViewData["Title"] = "My Info"; // Set the title for the view
             return View(viewModel); // Pass the ViewModel to the ProfilePreview.cshtml view
         }
+
+        // MODIFIED ACTION: Get all doctors for Patient to view (and Admin to manage)
+        [HttpGet]
+        public async Task<IActionResult> DoctorList(string searchString, string specialization)
+        {
+            // Authorization: Allow all logged-in users to view, but only Admin to manage.
+            if (!IsLoggedIn())
+            {
+                TempData["ErrorMessage"] = "You must be logged in to view doctors.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            // Set dynamic title based on role for clarity
+            ViewData["Title"] = IsAdmin() ? "Manage Doctors" : "Our Doctors";
+
+            IQueryable<Doctor> doctors = _context.Doctors;
+
+            // Apply search filter if present
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                doctors = doctors.Where(d => d.Name.Contains(searchString) || d.Contact.Contains(searchString));
+            }
+
+            // Apply specialization filter if present and not "All Specializations"
+            if (!string.IsNullOrEmpty(specialization))
+            {
+                doctors = doctors.Where(d => d.Specialization == specialization);
+            }
+
+            // Populate ViewBag.Specializations for the dropdown filter
+            ViewBag.Specializations = await _context.Doctors
+                                                    .Select(d => d.Specialization)
+                                                    .Where(s => !string.IsNullOrEmpty(s)) // Exclude null/empty specializations
+                                                    .Distinct() // Get only unique specializations
+                                                    .OrderBy(s => s) // Sort alphabetically
+                                                    .ToListAsync();
+
+            ViewBag.CurrentSearchString = searchString;
+            ViewBag.CurrentSpecialization = specialization; // Pass the selected specialization back to the view
+
+            return View(await doctors.ToListAsync());
+        }
+
 
         // NEW ACTION: DownloadProfilePdf
         [HttpGet]

@@ -1,42 +1,51 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using HospitalManagementSystem.Data;
 using HospitalManagementSystem.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http; // For HttpContext.Session
-using Microsoft.EntityFrameworkCore; // For Entity Framework Core operations
-using HospitalManagementSystem.Data; // Assuming your DbContext is here
-using System.Diagnostics; // For Debug.WriteLine
-using System; // For Exception
-using System.Collections.Generic; // For List
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System;
+using System.Globalization;
 
 namespace HospitalManagementSystem.Controllers
 {
     public class DoctorController : Controller
     {
         private readonly HospitalDbContext _context;
-        private readonly Random _random; // For generating random times
 
         public DoctorController(HospitalDbContext context)
         {
             _context = context;
-            _random = new Random(); // Initialize Random
         }
 
         // Helper methods for session/role checks
         private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
         private bool IsAdmin() => HttpContext.Session.GetString("Role") == "Admin";
         private bool IsDoctor() => HttpContext.Session.GetString("Role") == "Doctor";
+        private bool IsPatient() => HttpContext.Session.GetString("Role") == "Patient";
 
-        // GET: Doctor/Index (Public Doctor Directory for Patients/Anyone)
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        // GET: Doctor/Dashboard
+        public IActionResult Dashboard()
         {
-            ViewData["Title"] = "Doctor Directory";
-            var doctors = await _context.Doctors.OrderBy(d => d.Name).ToListAsync();
-            return View(doctors);
+            var username = HttpContext.Session.GetString("Username");
+            var role = HttpContext.Session.GetString("Role");
+
+            if (string.IsNullOrEmpty(username) || role != "Doctor")
+            {
+                TempData["ErrorMessage"] = "You must be logged in as a doctor to access the dashboard.";
+                return RedirectToAction("Login", "Account", new { role = "Doctor" });
+            }
+
+            ViewData["Title"] = "Doctor Dashboard";
+            ViewBag.Username = username?.Replace("dr.", ""); // Display without prefix
+            Debug.WriteLine($"DoctorController.Dashboard: User '{username}' ({role}) accessed dashboard.");
+            return View();
         }
 
-        // GET: Doctor/Manage (Admin View to Manage Doctors)
+        // GET: Doctor/Manage (Admin View)
         [HttpGet]
         public async Task<IActionResult> Manage(string searchString, string specialization)
         {
@@ -54,21 +63,25 @@ namespace HospitalManagementSystem.Controllers
                 doctors = doctors.Where(d => d.Name.Contains(searchString) || d.Contact.Contains(searchString));
             }
 
-            if (!string.IsNullOrEmpty(specialization) && specialization != "All")
+            if (!string.IsNullOrEmpty(specialization))
             {
                 doctors = doctors.Where(d => d.Specialization == specialization);
             }
 
             ViewBag.Specializations = await _context.Doctors
                                                     .Select(d => d.Specialization)
+                                                    .Where(s => !string.IsNullOrEmpty(s))
                                                     .Distinct()
                                                     .OrderBy(s => s)
                                                     .ToListAsync();
 
+            ViewBag.CurrentSearchString = searchString;
+            ViewBag.CurrentSpecialization = specialization;
+
             return View(await doctors.ToListAsync());
         }
 
-        // GET: Doctor/Create
+        // GET: Doctor/Create (Admin)
         [HttpGet]
         public IActionResult Create()
         {
@@ -81,10 +94,10 @@ namespace HospitalManagementSystem.Controllers
             return View();
         }
 
-        // POST: Doctor/Create
+        // POST: Doctor/Create (Admin)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Name,Specialization,Description,Contact,Location")] Doctor doctor, string username, string password)
+        public async Task<IActionResult> Create([Bind("Name,Specialization,Description,Contact,Location")] Doctor doctor)
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
@@ -92,58 +105,38 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (await _context.Users.AnyAsync(u => u.Username == username))
-            {
-                ModelState.AddModelError("username", "A login account with this username already exists.");
-                TempData["ErrorMessage"] = $"Login account '{username}' already exists. Please choose a different name for the doctor or delete the existing user.";
-                ViewData["Title"] = "Add New Doctor";
-                return View(doctor);
-            }
-
             if (ModelState.IsValid)
             {
-                using (var transaction = _context.Database.BeginTransaction())
+                _context.Add(doctor);
+                await _context.SaveChangesAsync();
+
+                var doctorUsername = $"dr.{doctor.Name.Replace(" ", "").ToLower()}";
+
+                var newDoctorUser = new User
                 {
-                    try
-                    {
-                        _context.Add(doctor);
-                        await _context.SaveChangesAsync();
+                    Username = doctorUsername,
+                    PasswordHash = doctorUsername,
+                    Role = "Doctor",
+                    DoctorId = doctor.Id
+                };
+                _context.Add(newDoctorUser);
+                await _context.SaveChangesAsync();
 
-                        var user = new User
-                        {
-                            Username = username,
-                            PasswordHash = password,
-                            Role = "Doctor",
-                            DoctorId = doctor.Id
-                        };
-                        _context.Add(user);
-                        await _context.SaveChangesAsync();
-
-                        transaction.Commit();
-                        TempData["SuccessMessage"] = $"Dr. {doctor.Name} added successfully and login account '{username}' created.";
-                        return RedirectToAction(nameof(Manage));
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        TempData["ErrorMessage"] = $"Error adding doctor and user: {ex.Message}";
-                        Debug.WriteLine($"Error adding doctor and user: {ex.Message}");
-                        ViewData["Title"] = "Add New Doctor";
-                        return View(doctor);
-                    }
-                }
+                TempData["SuccessMessage"] = $"Doctor {doctor.Name} added successfully!";
+                TempData["NewDoctorLoginInfo"] = $"New doctor user created: Username: {newDoctorUser.Username}, Password: {newDoctorUser.PasswordHash} (Please change this in a real application!)";
+                return RedirectToAction(nameof(Manage));
             }
             ViewData["Title"] = "Add New Doctor";
             return View(doctor);
         }
 
-        // GET: Doctor/Edit/5
+        // GET: Doctor/Edit/5 (Admin or Doctor editing their own profile)
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (!IsLoggedIn() || !IsAdmin())
+            if (!IsLoggedIn())
             {
-                TempData["ErrorMessage"] = "You are not authorized to edit doctors.";
+                TempData["ErrorMessage"] = "You must be logged in to edit doctor profiles.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -152,117 +145,111 @@ namespace HospitalManagementSystem.Controllers
             var doctor = await _context.Doctors.FindAsync(id);
             if (doctor == null) return NotFound();
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.DoctorId == doctor.Id);
-            ViewBag.Username = user?.Username;
+            var currentUserId = HttpContext.Session.GetInt32("DoctorId");
+            var currentUserRole = HttpContext.Session.GetString("Role");
 
-            ViewData["Title"] = $"Edit Dr. {doctor.Name}";
+            if (currentUserRole == "Admin")
+            {
+                // Admin can edit any doctor
+            }
+            else if (currentUserRole == "Doctor")
+            {
+                if (id != currentUserId)
+                {
+                    TempData["ErrorMessage"] = "You are not authorized to edit this doctor's profile.";
+                    return RedirectToAction("Dashboard", "Doctor");
+                }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "You are not authorized to edit doctor profiles.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewData["Title"] = $"Edit Doctor: {doctor.Name}";
             return View(doctor);
         }
 
         // POST: Doctor/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Specialization,Description,Contact,Location")] Doctor doctor, string username, string password)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Specialization,Description,Contact,Location")] Doctor doctor)
         {
-            if (!IsLoggedIn() || !IsAdmin())
+            if (!IsLoggedIn())
             {
-                TempData["ErrorMessage"] = "You are not authorized to edit doctors.";
+                TempData["ErrorMessage"] = "You must be logged in to edit doctor profiles.";
                 return RedirectToAction("Login", "Account");
             }
 
             if (id != doctor.Id) return NotFound();
 
-            if (username != null)
+            var currentUserId = HttpContext.Session.GetInt32("DoctorId");
+            var currentUserRole = HttpContext.Session.GetString("Role");
+
+            if (currentUserRole == "Admin")
             {
-                var existingUserWithUsername = await _context.Users.FirstOrDefaultAsync(u => u.Username == username && u.DoctorId != doctor.Id);
-                if (existingUserWithUsername != null)
+                // Admin can edit any doctor
+            }
+            else if (currentUserRole == "Doctor")
+            {
+                if (id != currentUserId)
                 {
-                    ModelState.AddModelError("username", "A login account with this username already exists for another user.");
-                    TempData["ErrorMessage"] = $"Login account '{username}' already exists for another user. Changes rolled back.";
-                    ViewBag.Username = username;
-                    ViewData["Title"] = $"Edit Dr. {doctor.Name}";
-                    return View(doctor);
+                    TempData["ErrorMessage"] = "You are not authorized to edit this doctor's profile.";
+                    return RedirectToAction("Dashboard", "Doctor");
                 }
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "You are not authorized to edit doctor profiles.";
+                return RedirectToAction("Login", "Account");
             }
 
             if (ModelState.IsValid)
             {
-                using (var transaction = _context.Database.BeginTransaction())
+                try
                 {
-                    try
+                    _context.Update(doctor);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = $"Doctor {doctor.Name} updated successfully!";
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!DoctorExists(doctor.Id))
                     {
-                        _context.Update(doctor);
-                        await _context.SaveChangesAsync();
-
-                        var user = await _context.Users.FirstOrDefaultAsync(u => u.DoctorId == doctor.Id);
-                        if (user != null)
-                        {
-                            user.Username = username;
-                            if (!string.IsNullOrEmpty(password))
-                            {
-                                user.PasswordHash = password;
-                            }
-                            _context.Update(user);
-                            await _context.SaveChangesAsync();
-                        }
-                        else
-                        {
-                            var newUser = new User
-                            {
-                                Username = username,
-                                PasswordHash = !string.IsNullOrEmpty(password) ? password : "DefaultSecurePassword",
-                                Role = "Doctor",
-                                DoctorId = doctor.Id
-                            };
-                            _context.Users.Add(newUser);
-                            await _context.SaveChangesAsync();
-                            Debug.WriteLine($"Created new user for doctor ID: {doctor.Id} during edit. Username: {username}");
-                        }
-
-                        transaction.Commit();
-                        TempData["SuccessMessage"] = $"Dr. {doctor.Name} updated successfully!";
-                        return RedirectToAction(nameof(Manage));
+                        return NotFound();
                     }
-                    catch (DbUpdateConcurrencyException)
+                    else
                     {
-                        if (!DoctorExists(doctor.Id))
-                        {
-                            transaction.Rollback();
-                            return NotFound();
-                        }
-                        else
-                        {
-                            throw;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        TempData["ErrorMessage"] = $"Error updating doctor: {ex.Message}";
-                        Debug.WriteLine($"Error updating doctor and/or user: {ex.Message}");
-                        ViewBag.Username = username;
-                        ViewData["Title"] = $"Edit Dr. {doctor.Name}";
-                        return View(doctor);
+                        throw;
                     }
                 }
+                return RedirectToAction(nameof(Manage));
             }
-            ViewBag.Username = username;
-            ViewData["Title"] = $"Edit Dr. {doctor.Name}";
+            ViewData["Title"] = $"Edit Doctor: {doctor.Name}";
             return View(doctor);
         }
 
-        // GET: Doctor/Details/5 (Optional: displays doctor details)
+        // GET: Doctor/Details/5 (Admin, Doctor, or Patient viewing details)
         [HttpGet]
         public async Task<IActionResult> Details(int? id)
         {
+            if (!IsLoggedIn())
+            {
+                TempData["ErrorMessage"] = "You must be logged in to view doctor details.";
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null) return NotFound();
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(m => m.Id == id);
+
+            var doctor = await _context.Doctors
+                                     .FirstOrDefaultAsync(m => m.Id == id);
             if (doctor == null) return NotFound();
-            ViewData["Title"] = $"Details of Dr. {doctor.Name}";
+
+            ViewData["Title"] = $"Doctor Details: {doctor.Name}";
             return View(doctor);
         }
 
-        // GET: Doctor/Delete/5
+        // GET: Doctor/Delete/5 (Admin)
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -275,14 +262,14 @@ namespace HospitalManagementSystem.Controllers
             if (id == null) return NotFound();
 
             var doctor = await _context.Doctors
-                                        .FirstOrDefaultAsync(m => m.Id == id);
+                                     .FirstOrDefaultAsync(m => m.Id == id);
             if (doctor == null) return NotFound();
 
-            ViewData["Title"] = $"Delete Dr. {doctor.Name}";
+            ViewData["Title"] = $"Delete Doctor: {doctor.Name}";
             return View(doctor);
         }
 
-        // POST: Doctor/Delete/5 (Handles both Doctor and associated User deletion)
+        // POST: Doctor/Delete/5 (Admin)
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -302,15 +289,35 @@ namespace HospitalManagementSystem.Controllers
                         return Json(new { success = false, message = "Doctor not found." });
                     }
 
+                    // Check for associated appointments
                     var appointments = await _context.Appointments
                                                      .Where(a => a.DoctorId == doctor.Id)
                                                      .ToListAsync();
                     if (appointments.Any())
                     {
                         transaction.Rollback();
-                        return Json(new { success = false, message = $"Cannot delete Dr. {doctor.Name}. There are {appointments.Count} existing appointments linked to this doctor. Please delete or reassign appointments first." });
+                        return Json(new { success = false, message = $"Cannot delete doctor {doctor.Name}. There are {appointments.Count} existing appointments linked to this doctor. Please delete or reassign appointments first." });
                     }
 
+                    // Delete associated schedules
+                    var schedules = await _context.DoctorSchedules.Where(ds => ds.DoctorId == doctor.Id).ToListAsync();
+                    if (schedules.Any())
+                    {
+                        _context.DoctorSchedules.RemoveRange(schedules);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"Deleted {schedules.Count} schedules for doctor ID: {id}");
+                    }
+
+                    // Delete associated reviews
+                    var reviews = await _context.DoctorReviews.Where(dr => dr.DoctorId == doctor.Id).ToListAsync();
+                    if (reviews.Any())
+                    {
+                        _context.DoctorReviews.RemoveRange(reviews);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"Deleted {reviews.Count} reviews for doctor ID: {id}");
+                    }
+
+                    // Delete associated user account
                     var user = await _context.Users.FirstOrDefaultAsync(u => u.DoctorId == doctor.Id);
                     if (user != null)
                     {
@@ -327,258 +334,163 @@ namespace HospitalManagementSystem.Controllers
                     await _context.SaveChangesAsync();
 
                     transaction.Commit();
-                    return Json(new { success = true, message = $"Dr. {doctor.Name} and associated user account deleted successfully!" });
+                    return Json(new { success = true, message = $"Doctor {doctor.Name} and associated data deleted successfully!" });
                 }
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Debug.WriteLine($"Error deleting doctor and/or user: {ex.Message}");
+                    Debug.WriteLine($"Error deleting doctor: {ex.Message}");
                     return Json(new { success = false, message = $"Error deleting doctor: {ex.Message}" });
                 }
             }
         }
 
-        // GET: Doctor/Dashboard
+        // UPDATED: GET: Doctor/Schedule (Doctor's Own Schedule with Date Filter)
         [HttpGet]
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Schedule(DateTime? selectedDate) // Added nullable DateTime parameter
         {
             if (!IsLoggedIn() || !IsDoctor())
             {
-                TempData["ErrorMessage"] = "You are not authorized to view the doctor dashboard.";
+                TempData["ErrorMessage"] = "You must be logged in as a doctor to view your schedule.";
                 return RedirectToAction("Login", "Account");
             }
 
-            ViewData["Title"] = "Doctor Dashboard";
-            return View();
-        }
-
-        // GET: Doctor/Schedule
-        [HttpGet]
-        public async Task<IActionResult> Schedule(string selectedDate)
-        {
-            if (!IsLoggedIn() || !IsDoctor())
+            int? doctorId = HttpContext.Session.GetInt32("DoctorId");
+            if (!doctorId.HasValue || doctorId.Value == 0)
             {
-                TempData["ErrorMessage"] = "You are not authorized to view the doctor schedule.";
+                TempData["ErrorMessage"] = "Doctor ID not found in session. Please log in again.";
                 return RedirectToAction("Login", "Account");
             }
 
-            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == HttpContext.Session.GetString("Username"));
-            int doctorId = 0;
-
-            if (currentUser != null && currentUser.DoctorId.HasValue)
-            {
-                doctorId = currentUser.DoctorId.Value;
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Your doctor profile could not be found or is incomplete. Please contact support or log in again.";
-                return RedirectToAction("Login", "Account");
-            }
-
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId);
+            var doctor = await _context.Doctors.FindAsync(doctorId.Value);
             if (doctor == null)
             {
-                TempData["ErrorMessage"] = "Associated doctor profile not found in the Doctors table. Please contact support.";
-                return RedirectToAction("Login", "Account");
+                TempData["ErrorMessage"] = "Doctor profile not found.";
+                return RedirectToAction("Dashboard", "Doctor");
             }
 
-            DateTime dateToDisplay;
-            if (!DateTime.TryParse(selectedDate, out dateToDisplay))
-            {
-                dateToDisplay = DateTime.Today;
-            }
-            ViewData["SelectedDate"] = dateToDisplay.ToString("yyyy-MM-dd");
+            // If selectedDate is null, default to today
+            DateTime dateToView = selectedDate?.Date ?? DateTime.Today.Date;
 
+            // Fetch the doctor's schedule for the selected date (or default if not set)
             var doctorSchedule = await _context.DoctorSchedules
-                                            .FirstOrDefaultAsync(s => s.DoctorId == doctorId && s.Date.Date == dateToDisplay.Date);
+                                                .FirstOrDefaultAsync(ds => ds.DoctorId == doctorId.Value && ds.Date.Date == dateToView.Date);
 
-            if (doctorSchedule == null)
-            {
-                var startHour = _random.Next(8, 11);
-                var startTime = new TimeSpan(startHour, _random.Next(0, 60), 0);
+            // Fetch appointments for the logged-in doctor for the selected date
+            var appointmentsForDate = await _context.Appointments
+                                                    .Include(a => a.Patient)
+                                                    .Where(a => a.DoctorId == doctorId.Value && a.AppointmentDateTime.Date == dateToView.Date)
+                                                    .OrderBy(a => a.AppointmentDateTime)
+                                                    .ToListAsync();
 
-                var minEndHour = Math.Max(startTime.Hours + 6, 16);
-                var maxEndHour = 18;
-                var endHour = _random.Next(minEndHour, maxEndHour + 1);
-                var endTime = new TimeSpan(endHour, _random.Next(0, 60), 0);
-
-                var lunchStartHour = _random.Next(12, 15);
-                var lunchStartTime = new TimeSpan(lunchStartHour, _random.Next(0, 60), 0);
-                var lunchEndTime = lunchStartTime.Add(new TimeSpan(1, 0, 0));
-
-                string locationBase = doctor.Specialization?.Replace(" ", "") ?? "Clinic";
-                string doctorInitials = "DR";
-
-                if (!string.IsNullOrEmpty(doctor.Name))
-                {
-                    Debug.WriteLine($"Debugging Initials for Doctor ID {doctor.Id}: Name = '{doctor.Name}'");
-                    var nameParts = doctor.Name.Trim().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    var filteredParts = nameParts.Where(s => !string.IsNullOrEmpty(s));
-
-                    if (filteredParts.Any())
-                    {
-                        doctorInitials = string.Concat(filteredParts.Select(s => s.First())).ToUpper();
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"WARNING: After splitting and filtering, no parts found for doctor ID {doctor.Id}, name '{doctor.Name}'. Using default initials 'DR'.");
-                    }
-                }
-                else
-                {
-                    Debug.WriteLine($"WARNING: Doctor Name is null or whitespace for ID {doctor.Id}. Using default initials 'DR'.");
-                }
-
-                string generatedLocation = $"{locationBase} Unit {doctorId % 10 + 1} - Dr. {doctorInitials}";
-
-                doctorSchedule = new DoctorSchedule
-                {
-                    DoctorId = doctorId,
-                    Date = dateToDisplay.Date,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    LunchStartTime = lunchStartTime,
-                    LunchEndTime = lunchEndTime,
-                    Location = generatedLocation,
-                    IsAvailable = true,
-                    MinWorkTime = new TimeSpan(8, 0, 0),
-                    MaxWorkTime = new TimeSpan(17, 0, 0)
-                };
-
-                _context.DoctorSchedules.Add(doctorSchedule);
-                await _context.SaveChangesAsync();
-                TempData["InfoMessage"] = $"No specific working schedule was found for {dateToDisplay.ToLongDateString()}. A new default schedule has been generated and saved.";
-            }
-
-            var todaysAppointments = await _context.Appointments
-                                                .Include(a => a.Patient)
-                                                .Where(a => a.DoctorId == doctorId && a.AppointmentDateTime.Date == dateToDisplay.Date)
-                                                .OrderBy(a => a.AppointmentDateTime)
-                                                .ToListAsync();
+            ViewData["Title"] = "My Schedule";
+            ViewData["CurrentSelectedDate"] = dateToView.ToString("yyyy-MM-dd"); // Pass selected date to view for date picker value
 
             var viewModel = new DoctorScheduleViewModel
             {
                 Doctor = doctor,
                 DoctorSchedule = doctorSchedule,
-                TodaysAppointments = todaysAppointments,
-                DailyActivities = new List<string>()
+                TodaysAppointments = appointmentsForDate, // Renamed to be more general
+                DailyActivities = new List<string> { "Morning Rounds", "Patient Consultations", "Admin Work" }
             };
-
-            if (viewModel.DoctorSchedule == null)
-            {
-                TempData["InfoMessage"] = $"No specific working schedule defined for {dateToDisplay.ToLongDateString()}. Displaying general activities.";
-                viewModel.DailyActivities.Add("Review pending lab results");
-                viewModel.DailyActivities.Add("Prepare for ward rounds");
-                viewModel.DailyActivities.Add("Follow up on patient cases");
-            }
-            else
-            {
-                if (!viewModel.DailyActivities.Any())
-                {
-                    viewModel.DailyActivities.Add("Morning consultations & rounds");
-                    viewModel.DailyActivities.Add("Administrative tasks & paperwork");
-                    viewModel.DailyActivities.Add("Patient follow-ups");
-                }
-            }
 
             return View(viewModel);
         }
 
-        // GET: Doctor/Patients
+
+        // GET: Doctor/Patients (Implemented with data fetching and Gender Filter)
         [HttpGet]
-        public async Task<IActionResult> Patients(string searchString)
+        public async Task<IActionResult> Patients(string searchString, string genderFilter)
         {
             if (!IsLoggedIn() || !IsDoctor())
             {
-                TempData["ErrorMessage"] = "You are not authorized to view patient lists.";
+                TempData["ErrorMessage"] = "You are not authorized to view this page.";
                 return RedirectToAction("Login", "Account");
             }
 
-            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == HttpContext.Session.GetString("Username"));
-            int doctorId = 0;
-
-            if (currentUser != null && currentUser.DoctorId.HasValue)
+            int? doctorId = HttpContext.Session.GetInt32("DoctorId");
+            if (!doctorId.HasValue || doctorId.Value == 0)
             {
-                doctorId = currentUser.DoctorId.Value;
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Your doctor profile could not be found or is incomplete. Please log in again.";
+                TempData["ErrorMessage"] = "Doctor ID not found in session. Please log in again.";
                 return RedirectToAction("Login", "Account");
             }
 
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId);
+            var doctor = await _context.Doctors.FindAsync(doctorId.Value);
             if (doctor == null)
             {
-                TempData["ErrorMessage"] = "Associated doctor profile not found in the Doctors table. Please contact support.";
-                return RedirectToAction("Login", "Account");
+                TempData["ErrorMessage"] = "Doctor profile not found.";
+                return RedirectToAction("Dashboard", "Doctor");
             }
 
-            // Fetch distinct patient IDs associated with this doctor through appointments
-            var patientIds = await _context.Appointments
-                                           .Where(a => a.DoctorId == doctorId)
-                                           .Select(a => a.PatientId)
-                                           .Distinct()
-                                           .ToListAsync();
+            var patientIdsForDoctor = await _context.Appointments
+                                                    .Where(a => a.DoctorId == doctorId.Value)
+                                                    .Select(a => a.PatientId)
+                                                    .Distinct()
+                                                    .ToListAsync();
 
             IQueryable<Patient> patientsQuery = _context.Patients
-                                                        .Where(p => patientIds.Contains(p.PatientId));
+                                                        .Where(p => patientIdsForDoctor.Contains(p.PatientId));
 
-            // Apply search filter if provided
             if (!string.IsNullOrEmpty(searchString))
             {
-                patientsQuery = patientsQuery.Where(p => p.Name.Contains(searchString) ||
-                                                         p.ContactNumber.Contains(searchString) ||
-                                                         (p.Email != null && p.Email.Contains(searchString)));
+                patientsQuery = patientsQuery.Where(p => (p.Name != null && p.Name.Contains(searchString)) ||
+                                                        (p.ContactNumber != null && p.ContactNumber.Contains(searchString)) ||
+                                                        (p.Email != null && p.Email.Contains(searchString)));
             }
 
-            var patientsFromDb = await patientsQuery.OrderBy(p => p.Name).ToListAsync();
-
-            // Populate the new PatientDisplayViewModel list
-            var patientsForDisplay = new List<PatientDisplayViewModel>();
-            foreach (var patient in patientsFromDb)
+            if (!string.IsNullOrEmpty(genderFilter) && genderFilter != "All")
             {
-                // Fetch the most recent appointment for this patient with this specific doctor
+                patientsQuery = patientsQuery.Where(p => p.Gender == genderFilter);
+            }
+
+            var patients = await patientsQuery.OrderBy(p => p.Name).ToListAsync();
+
+            var patientDisplayList = new List<PatientDisplayViewModel>();
+            foreach (var patient in patients)
+            {
                 var lastAppointment = await _context.Appointments
-                                                    .Where(a => a.DoctorId == doctorId && a.PatientId == patient.PatientId && a.AppointmentDateTime < DateTime.Now)
+                                                    .Where(a => a.PatientId == patient.PatientId && a.DoctorId == doctorId.Value)
                                                     .OrderByDescending(a => a.AppointmentDateTime)
                                                     .FirstOrDefaultAsync();
 
-                patientsForDisplay.Add(new PatientDisplayViewModel
+                patientDisplayList.Add(new PatientDisplayViewModel
                 {
                     PatientId = patient.PatientId,
-                    Name = patient.Name,
+                    Name = patient.Name ?? "N/A",
                     DateOfBirth = patient.DateOfBirth,
-                    Gender = patient.Gender,
-                    ContactNumber = patient.ContactNumber,
+                    Gender = patient.Gender ?? "N/A",
+                    ContactNumber = patient.ContactNumber ?? "N/A",
                     Email = patient.Email,
-                    LastAppointmentDateTime = lastAppointment?.AppointmentDateTime // Will be null if no past appointment
+                    LastAppointmentDateTime = lastAppointment?.AppointmentDateTime
                 });
             }
 
             var viewModel = new DoctorPatientsViewModel
             {
                 Doctor = doctor,
-                Patients = patientsForDisplay // Pass the list of PatientDisplayViewModel
+                Patients = patientDisplayList
             };
 
-            ViewData["Title"] = $"{doctor.Name}'s Patients";
+            ViewData["Title"] = viewModel.Doctor?.Name != null ? $"{viewModel.Doctor.Name}'s Patients" : "My Patients";
             ViewData["CurrentFilter"] = searchString;
+            ViewData["CurrentGenderFilter"] = genderFilter;
+
             return View(viewModel);
         }
 
-        // GET: Doctor/Billing (Example for a doctor to view their billing)
+        // GET: Doctor/Billing (Placeholder for Doctor's Billing)
         [HttpGet]
         public IActionResult Billing()
         {
             if (!IsLoggedIn() || !IsDoctor())
             {
-                TempData["ErrorMessage"] = "You are not authorized to view billing information.";
+                TempData["ErrorMessage"] = "You are not authorized to view this page.";
                 return RedirectToAction("Login", "Account");
             }
-            ViewData["Title"] = "My Billing";
+            ViewData["Title"] = "Doctor Billing";
             return View();
         }
+
 
         private bool DoctorExists(int id)
         {

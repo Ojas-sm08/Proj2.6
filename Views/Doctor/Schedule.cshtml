@@ -1,9 +1,20 @@
 ﻿@model HospitalManagementSystem.Models.DoctorScheduleViewModel
+@using System.Globalization @* This is needed for CultureInfo.InvariantCulture if you use it for formatting dates/times. *@
 
 @{
-    string selectedDate = ViewData["SelectedDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
-    string pageTitleDate = DateTime.Parse(selectedDate).ToLongDateString();
-    ViewData["Title"] = Model.Doctor != null ? $"{Model.Doctor.Name}'s Daily Schedule - {pageTitleDate}" : $"Doctor Schedule - {pageTitleDate}";
+    // Retrieve the selected date from ViewData, defaulting to today if not set.
+    // The controller should be setting "CurrentSelectedDate" in "yyyy-MM-dd" format.
+    string selectedDateForInput = ViewData["CurrentSelectedDate"] as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    // Parse the date string into a DateTime object for display formatting.
+    // Use InvariantCulture to ensure consistent parsing, especially important if the string format is strict.
+    DateTime displayDate = DateTime.Parse(selectedDateForInput, CultureInfo.InvariantCulture);
+
+    // Set the ViewData["Title"] based on the doctor's name and the selected date.
+    ViewData["Title"] = Model.Doctor?.Name != null
+        ? $"{Model.Doctor.Name}'s Daily Schedule - {displayDate.ToLongDateString()}"
+        : $"Doctor Schedule - {displayDate.ToLongDateString()}";
+
     Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
 }
 
@@ -29,7 +40,8 @@
         <form asp-controller="Doctor" asp-action="Schedule" method="get" class="d-flex align-items-center justify-content-center">
             <div class="form-group me-3">
                 <label for="selectedDate" class="form-label visually-hidden">Select Date:</label>
-                <input type="date" id="selectedDate" name="selectedDate" class="form-control form-control-lg rounded-pill shadow-sm" value="@selectedDate" />
+                
+                <input type="date" id="selectedDate" name="selectedDate" class="form-control form-control-lg rounded-pill shadow-sm" value="@selectedDateForInput" />
             </div>
             <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm px-4">View Schedule</button>
         </form>
@@ -47,13 +59,13 @@
                 {
                     <p class="fs-6 mb-2">
                         <strong><i class="far fa-clock me-1 text-info"></i> Work Hours:</strong>
-                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.StartTime).ToString(@"hh\:mm tt"))</span> -
-                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.EndTime).ToString(@"hh\:mm tt"))</span>
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.StartTime).ToString(@"hh\:mm tt", CultureInfo.InvariantCulture))</span> -
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.EndTime).ToString(@"hh\:mm tt", CultureInfo.InvariantCulture))</span>
                     </p>
                     <p class="fs-6 mb-2">
                         <strong><i class="fas fa-mug-hot me-1 text-warning"></i> Lunch Break:</strong>
-                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.LunchStartTime).ToString(@"hh\:mm tt"))</span> -
-                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.LunchEndTime).ToString(@"hh\:mm tt"))</span>
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.LunchStartTime).ToString(@"hh\:mm tt", CultureInfo.InvariantCulture))</span> -
+                        <span class="fw-bold">@((new DateTime() + Model.DoctorSchedule.LunchEndTime).ToString(@"hh\:mm tt", CultureInfo.InvariantCulture))</span>
                     </p>
                     <p class="fs-6 mb-4"><strong><i class="fas fa-map-marker-alt me-1 text-danger"></i> Location:</strong> @Model.DoctorSchedule.Location</p>
 
@@ -109,7 +121,7 @@
                         {
                             <li class="list-group-item d-flex flex-column align-items-start py-3 px-0 border-bottom" id="appointment-@appointment.Id">
                                 <div class="d-flex w-100 justify-content-between align-items-center">
-                                    <span class="fw-bold fs-5 text-primary">@appointment.AppointmentDateTime.ToString(@"hh\:mm tt")</span>
+                                    <span class="fw-bold fs-5 text-primary">@appointment.AppointmentDateTime.ToString(@"hh\:mm tt", CultureInfo.InvariantCulture)</span>
                                     <div>
                                         <span class="badge @(appointment.Status == "Completed" ? "bg-success" : appointment.Status == "Cancelled" ? "bg-danger" : "bg-info") fs-6 rounded-pill px-3 py-2">@appointment.Status</span>
                                         @if (appointment.Status != "Completed" && appointment.Status != "Cancelled")
@@ -191,6 +203,7 @@
                                     location.reload(); // Reload the page to refetch and display consistent state
                                 });
                             } else {
+                                // Replace with a custom modal if possible
                                 alert('Error: ' + response.message);
                             }
                         },

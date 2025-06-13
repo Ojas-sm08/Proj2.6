@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace HospitalManagementSystem.Models
 {
     // ViewModel to hold patient details specifically for display in the doctor's patient list
+    // This class is now a top-level class within the Models namespace
     public class PatientDisplayViewModel
     {
         public int PatientId { get; set; }
@@ -19,6 +20,7 @@ namespace HospitalManagementSystem.Models
     public class DoctorPatientsViewModel
     {
         public Doctor? Doctor { get; set; } // The logged-in doctor
+        // Now references the top-level PatientDisplayViewModel
         public List<PatientDisplayViewModel>? Patients { get; set; } = new List<PatientDisplayViewModel>(); // List of patients for display
     }
 }

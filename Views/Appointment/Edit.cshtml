@@ -1,8 +1,35 @@
 ﻿@model HospitalManagementSystem.Models.Appointment
+@inject IHttpContextAccessor HttpContextAccessor 
 
 @{
     ViewData["Title"] = "Edit Appointment";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    // Get the user's role from session
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+    var isPatient = (role == "Patient");
+    var isDoctor = (role == "Doctor");
+    var isAdmin = (role == "Admin");
+
+    // Determine layout based on user role
+    if (isPatient)
+    {
+        Layout = "~/Views/Shared/_Layout.Patient.cshtml";
+    }
+    else if (isDoctor)
+    {
+        Layout = "~/Views/Shared/_Layout.Doctor.cshtml";
+    }
+    else if (isAdmin)
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml"; // Default fallback
+    }
+
+    // Get today's date in yyyy-MM-DD format for the min attribute
+    string today = DateTime.Today.ToString("yyyy-MM-dd");
 }
 
 <h2 class="mb-4 text-center">✏️ Edit Appointment</h2>
@@ -13,26 +40,67 @@
             <div class="card-body">
                 <form asp-action="Edit">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-                    <input type="hidden" asp-for="Id" />
-                    <input type="hidden" asp-for="PatientId" /> 
+                    <input type="hidden" asp-for="Id" /> 
 
-                    <div class="form-group mb-3">
-                        <label class="control-label">Patient Name</label>
-                       
-                        <input type="text" value="@(((IEnumerable<dynamic>)ViewBag.Patients).FirstOrDefault(p => p.Value.ToString() == Model.PatientId.ToString())?.Text ?? "N/A")" class="form-control" readonly />
-                    </div>
+                    @* Patient Display - Admin gets a dropdown, others get read-only name *@
+                    @if (isAdmin)
+                    {
+                        <div class="form-group mb-3">
+                            <label asp-for="PatientId" class="control-label">Patient</label>
+                            
+                            <select asp-for="PatientId" class="form-control" asp-items="@(new SelectList(ViewBag.Patients, "PatientId", "Name", Model.PatientId))">
+                                <option value="">-- Select Patient --</option>
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-group mb-3">
+                            <label class="control-label">Patient Name</label>
+                            {{-- Safely display patient name using Model.Patient?.Name --}}
+                            <input type="text" class="form-control" value="@(Model.Patient?.Name ?? "N/A")" readonly />
+                            <input type="hidden" asp-for="PatientId" /> {{-- Keep PatientId for binding --}}
+                        </div>
+                    }
 
                     <div class="form-group mb-3">
                         <label asp-for="DoctorId" class="control-label">Doctor</label>
-                        
-                        <select asp-for="DoctorId" class="form-control" asp-items="@(new SelectList(ViewBag.Doctors, "Value", "Text"))"></select>
+
+                        <select id="doctorSelect" asp-for="DoctorId" class="form-control" asp-items="@(new SelectList(ViewBag.Doctors, "Id", "Name", Model.DoctorId))">
+                            <option value="">-- Select Doctor --</option>
+                        </select>
                         <span asp-validation-for="DoctorId" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label asp-for="AppointmentDateTime" class="control-label">Appointment Date & Time</label>
-                        <input asp-for="AppointmentDateTime" type="datetime-local" class="form-control" />
+                        <label for="appointmentDate" class="control-label">Appointment Date</label>
+
+                        <input type="date" id="appointmentDate" name="AppointmentDateTime_Date" class="form-control"
+                               value="@(Model.AppointmentDateTime.ToString("yyyy-MM-dd"))" min="@today" />
                         <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="availableSlots" class="control-label">Available Time Slots</label>
+                        <select id="availableSlots" name="AppointmentDateTime_Time" class="form-control" disabled>
+                            {{-- Pre-fill the current time slot for display. The JS will populate this. --}}
+                            <option value="@(Model.AppointmentDateTime.ToString("HH:mm"))">
+                                @(Model.AppointmentDateTime.ToString("hh:mm tt")) (Current)
+                            </option>
+                        </select>
+                        <span id="slotLoadingMessage" class="text-info d-none">Loading slots...</span>
+                        <span class="text-danger" id="slotErrorMessage"></span>
+                    </div>
+
+                    
+                    <input type="hidden" asp-for="AppointmentDateTime" id="finalAppointmentDateTime" />
+
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="Location" class="control-label">Location</label>
+                        <input asp-for="Location" class="form-control" />
+                        <span asp-validation-for="Location" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
@@ -47,7 +115,7 @@
                             <option value="Scheduled">Scheduled</option>
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
-                            <option value="No Show">No Show</option> 
+                            <option value="No Show">No Show</option>
                         </select>
                         <span asp-validation-for="Status" class="text-danger"></span>
                     </div>
@@ -57,6 +125,23 @@
                     </div>
                 </form>
             </div>
+            <div class="card-footer text-center">
+                @{
+                    string backAction = "Appointments"; // Default for patient
+                    string backController = "Appointment";
+                    if (isDoctor)
+                    {
+                        backAction = "Schedule"; // Doctor goes to their schedule
+                        backController = "Doctor";
+                    }
+                    else if (isAdmin)
+                    {
+                        backAction = "AllAppointments"; // Admin goes to all appointments
+                        backController = "Appointment";
+                    }
+                }
+                <a asp-action="@backAction" asp-controller="@backController" class="btn btn-secondary mt-2"><i class="fas fa-arrow-left me-1"></i> Back to List</a>
+            </div>
         </div>
     </div>
 </div>
@@ -65,4 +150,100 @@
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            const doctorSelect = $('#doctorSelect');
+            const appointmentDateInput = $('#appointmentDate');
+            const availableSlotsSelect = $('#availableSlots');
+            const slotLoadingMessage = $('#slotLoadingMessage');
+            const slotErrorMessage = $('#slotErrorMessage');
+            const finalAppointmentDateTime = $('#finalAppointmentDateTime');
+
+            // Function to load available slots
+            function loadAvailableSlots() {
+                const doctorId = doctorSelect.val();
+                const selectedDate = appointmentDateInput.val(); // yyyy-MM-dd format
+
+                // Clear previous slots and messages
+                availableSlotsSelect.empty().append('<option value="">-- Loading Slots --</option>').prop('disabled', true);
+                slotErrorMessage.text('').addClass('d-none');
+                slotLoadingMessage.removeClass('d-none');
+
+                if (doctorId && selectedDate) {
+                    $.ajax({
+                        url: '@Url.Action("GetAvailableSlots", "Appointment")',
+                        type: 'GET',
+                        data: {
+                            doctorId: doctorId,
+                            selectedDate: selectedDate
+                        },
+                        success: function (response) {
+                            slotLoadingMessage.addClass('d-none');
+                            if (response.success && response.slots.length > 0) {
+                                availableSlotsSelect.empty();
+                                availableSlotsSelect.append('<option value="">-- Select Time Slot --</option>');
+                                $.each(response.slots, function (index, slot) {
+                                    const timeOnly = slot.split(' ')[0]; // Extract HH:mm part (e.g., "09:00")
+                                    availableSlotsSelect.append($('<option></option>').val(timeOnly).text(slot));
+                                });
+                                availableSlotsSelect.prop('disabled', false);
+
+                                // Pre-select the current time slot if it exists in the newly loaded list
+                                const currentAppointmentTime = '@(Model.AppointmentDateTime.ToString("HH:mm"))'; // From C# model
+                                if (availableSlotsSelect.find('option[value="' + currentAppointmentTime + '"]').length) {
+                                    availableSlotsSelect.val(currentAppointmentTime);
+                                } else {
+                                    // If the current appointment time is not in the available slots (e.g., already booked, past)
+                                    console.warn("Current appointment time not found in available slots for selected doctor and date.");
+                                }
+                            } else {
+                                availableSlotsSelect.empty().append('<option value="">-- No Slots Available --</option>');
+                                slotErrorMessage.text(response.message || "No slots found for this date and doctor.").removeClass('d-none');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            slotLoadingMessage.addClass('d-none');
+                            availableSlotsSelect.empty().append('<option value="">-- Error Loading Slots --</option>');
+                            slotErrorMessage.text('Error loading slots. Please try again.').removeClass('d-none');
+                            console.error("AJAX Error:", status, error, xhr.responseText);
+                        }
+                    });
+                } else {
+                    slotLoadingMessage.addClass('d-none');
+                    availableSlotsSelect.empty().append('<option value="">-- Select Doctor and Date --</option>');
+                    availableSlotsSelect.prop('disabled', true);
+                }
+            }
+
+            // Combine date and time before form submission
+            $('form').on('submit', function () {
+                const datePart = appointmentDateInput.val();
+                const timePart = availableSlotsSelect.val();
+
+                if (!timePart) {
+                    alert("Please select an available time slot.");
+                    return false; // Prevent form submission
+                }
+
+                if (datePart && timePart) {
+                    finalAppointmentDateTime.val(`${datePart}T${timePart}:00`); // Format as YYYY-MM-DDTHH:mm:00
+                } else {
+                    alert("Please ensure both doctor, date, and time slot are selected.");
+                    return false; // Prevent form submission
+                }
+            });
+
+            // Attach event listeners
+            doctorSelect.on('change', loadAvailableSlots);
+            appointmentDateInput.on('change', loadAvailableSlots);
+
+            // Initial load for pre-filled data (very important for Edit view)
+            // This ensures that when the page loads, available slots are fetched for the initially selected doctor and date.
+            if (doctorSelect.val() && appointmentDateInput.val()) {
+                loadAvailableSlots();
+            }
+        });
+    </script>
 }
