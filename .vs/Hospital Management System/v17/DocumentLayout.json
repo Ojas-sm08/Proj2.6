@@ -201,8 +201,7 @@
               "ViewState": "AgIAACACAAAAAAAAAAAUwNoBAAAQAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-10T02:50:20.926Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -488,8 +487,7 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACgAAAByAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-13T07:03:20.05Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -572,7 +570,7 @@
               "RelativeDocumentMoniker": "Models\\Appointment.cs",
               "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Models\\Appointment.cs",
               "RelativeToolTip": "Models\\Appointment.cs",
-              "ViewState": "AgIAABsAAAAAAAAAAAAgwAsAAAASAAAAAAAAAA==",
+              "ViewState": "AgIAABsAAAAAAAAAAAA3wAsAAAASAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-12T08:28:09.989Z",
               "EditorCaption": ""
