@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital_Management_System.Migrations
 {
     [DbContext(typeof(HospitalDbContext))]
-    [Migration("20250613122050_Prefinal10")]
-    partial class Prefinal10
+    [Migration("20250616043436_AddUsernameAndPasswordHashToDoctor")]
+    partial class AddUsernameAndPasswordHashToDoctor
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,6 +46,9 @@ namespace Hospital_Management_System.Migrations
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18, 2)");
+
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -71,6 +74,7 @@ namespace Hospital_Management_System.Migrations
                             DoctorId = 1,
                             Location = "Room 101",
                             PatientId = 1,
+                            Price = 0.00m,
                             Reason = "Annual Checkup",
                             Status = "Completed"
                         },
@@ -81,6 +85,7 @@ namespace Hospital_Management_System.Migrations
                             DoctorId = 2,
                             Location = "Room 202",
                             PatientId = 2,
+                            Price = 0.00m,
                             Reason = "Pediatric Consultation",
                             Status = "Scheduled"
                         },
@@ -91,6 +96,7 @@ namespace Hospital_Management_System.Migrations
                             DoctorId = 1,
                             Location = "Room 101",
                             PatientId = 3,
+                            Price = 0.00m,
                             Reason = "Follow-up",
                             Status = "Completed"
                         });
@@ -249,10 +255,21 @@ namespace Hospital_Management_System.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
                     b.Property<string>("Specialization")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Username")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -266,7 +283,9 @@ namespace Hospital_Management_System.Migrations
                             Description = "Expert in heart conditions.",
                             Location = "Cardio Wing A101",
                             Name = "Dr. Smith",
-                            Specialization = "Cardiology"
+                            PasswordHash = "",
+                            Specialization = "Cardiology",
+                            Username = ""
                         },
                         new
                         {
@@ -275,7 +294,9 @@ namespace Hospital_Management_System.Migrations
                             Description = "Specializes in child health.",
                             Location = "Pediatric Ward C303",
                             Name = "Dr. Jones",
-                            Specialization = "Pediatrics"
+                            PasswordHash = "",
+                            Specialization = "Pediatrics",
+                            Username = ""
                         });
                 });
 

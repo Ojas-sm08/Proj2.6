@@ -131,7 +131,8 @@ namespace HospitalManagementSystem.Controllers
                 PatientId = patientId ?? 0,
                 DoctorId = doctorId ?? 0,
                 AppointmentDateTime = DateTime.Now.AddHours(1).Date.AddHours(9), // Suggests a default future date/time
-                Status = "Scheduled"
+                Status = "Scheduled",
+                Price = 0.00m // Initialize price for the form
             };
 
             ViewData["Title"] = "Book New Appointment";
@@ -141,8 +142,11 @@ namespace HospitalManagementSystem.Controllers
         // POST: Appointment/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("PatientId,DoctorId,AppointmentDateTime,Reason,Location,Status")] Appointment appointment)
+        public async Task<IActionResult> Create([Bind("PatientId,DoctorId,AppointmentDateTime,Reason,Location,Status,Price")] Appointment appointment)
         {
+            // Debugging the incoming appointment price
+            Debug.WriteLine($"Attempting to create appointment with Price: {appointment.Price}");
+
             if (!IsLoggedIn())
             {
                 TempData["ErrorMessage"] = "You must be logged in to book an appointment.";
@@ -172,6 +176,22 @@ namespace HospitalManagementSystem.Controllers
                 TempData["ErrorMessage"] = "Unauthorized access to appointment booking.";
                 return RedirectToAction("Login", "Account");
             }
+
+            // Manually add price validation if not handled by default model binding attributes
+            if (appointment.Price < 0)
+            {
+                ModelState.AddModelError("Price", "Price cannot be negative.");
+            }
+            // For now, let's set a default price if it's 0 or not set, as per user's request for automatic billing.
+            // In a real app, this should come from user input or a price lookup.
+            if (appointment.Price == 0.00m)
+            {
+                // This is a placeholder. You should replace this with actual pricing logic
+                // e.g., fetching a price based on doctor, service, or pre-defined rates.
+                appointment.Price = 100.00m; // Example: Set a default price of 100.00
+                Debug.WriteLine($"Appointment price was 0 or not set, defaulting to: {appointment.Price}");
+            }
+
 
             if (ModelState.IsValid)
             {
@@ -203,9 +223,45 @@ namespace HospitalManagementSystem.Controllers
                     return View(appointment);
                 }
 
+                // --- Begin: Automatic Bill Creation Logic ---
+                // Add the appointment first to get its ID, which is needed for the bill
                 _context.Add(appointment);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Appointment booked successfully!";
+                await _context.SaveChangesAsync(); // Save appointment to get its ID
+
+                Debug.WriteLine($"Appointment {appointment.Id} booked successfully for Patient {appointment.PatientId} with Doctor {appointment.DoctorId}. Price: {appointment.Price}");
+
+                // Create a new Bill
+                var newBill = new Bill
+                {
+                    AppointmentId = appointment.Id, // Link to the newly created appointment
+                    PatientId = appointment.PatientId,
+                    DoctorId = appointment.DoctorId,
+                    BillDate = DateTime.Today,
+                    Status = "Pending", // Initial status for a new bill
+                    TotalAmount = appointment.Price, // Initial total amount from appointment price
+                    Notes = $"Bill for Appointment #{appointment.Id} - {appointment.Reason}"
+                };
+
+                // Create a BillItem for the appointment fee
+                var appointmentFeeItem = new BillItem
+                {
+                    ItemName = "Appointment Fee", // Or "Consultation Fee"
+                    Quantity = 1,
+                    UnitPrice = appointment.Price,
+                    Amount = appointment.Price,
+                    Bill = newBill // Link the bill item to the new bill
+                };
+
+                newBill.BillItems = new List<BillItem> { appointmentFeeItem }; // Add the item to the bill's collection
+
+                _context.Bills.Add(newBill);
+                await _context.SaveChangesAsync(); // Save the bill and its item
+
+                Debug.WriteLine($"Bill {newBill.BillId} created for Appointment {appointment.Id} with Total Amount: {newBill.TotalAmount}");
+                // --- End: Automatic Bill Creation Logic ---
+
+
+                TempData["SuccessMessage"] = "Appointment booked and bill generated successfully!";
 
                 if (IsPatient())
                 {
@@ -221,6 +277,7 @@ namespace HospitalManagementSystem.Controllers
                 }
             }
 
+            // If ModelState is not valid, re-populate ViewBags and return to view
             ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name ?? "Unnamed Patient" }).ToListAsync();
             ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name ?? "Unnamed Doctor" }).ToListAsync();
             ViewData["Title"] = "Book New Appointment";
@@ -276,7 +333,7 @@ namespace HospitalManagementSystem.Controllers
         // POST: Appointment/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,PatientId,DoctorId,AppointmentDateTime,Reason,Location,Status")] Appointment appointment)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,PatientId,DoctorId,AppointmentDateTime,Reason,Location,Status,Price")] Appointment appointment)
         {
             if (!IsLoggedIn())
             {
@@ -305,12 +362,18 @@ namespace HospitalManagementSystem.Controllers
                 return NotFound();
             }
 
-            // Authorization: Admin, or Doctor if it's their appointment
+            // Authorization: Admin, or Doctor (if it's their appointment)
             if (!(IsAdmin() || (IsDoctor() && GetDoctorIdFromSession() == existingAppointment.DoctorId)))
             {
                 TempData["ErrorMessage"] = "You are not authorized to edit this appointment.";
                 if (IsDoctor()) return RedirectToAction("Schedule", "Doctor");
                 return RedirectToAction("Login", "Account");
+            }
+
+            // Manually add price validation
+            if (appointment.Price < 0)
+            {
+                ModelState.AddModelError("Price", "Price cannot be negative.");
             }
 
             if (!ModelState.IsValid)
@@ -459,7 +522,9 @@ namespace HospitalManagementSystem.Controllers
 
             try
             {
-                var appointment = await _context.Appointments.FindAsync(id);
+                var appointment = await _context.Appointments
+                                                .Include(a => a.Bills) // Include bills to handle cascading deletion
+                                                .FirstOrDefaultAsync(a => a.Id == id);
                 if (appointment == null)
                 {
                     return Json(new { success = false, message = "Appointment not found." });
@@ -471,75 +536,52 @@ namespace HospitalManagementSystem.Controllers
                     return Json(new { success = false, message = "Doctors can only delete their own appointments." });
                 }
 
+                // Before deleting the appointment, ensure associated bills are handled.
+                // Option 1: Delete associated bills and their items (Cascade Delete)
+                if (appointment.Bills != null && appointment.Bills.Any())
+                {
+                    foreach (var bill in appointment.Bills.ToList()) // ToList() to avoid modification during enumeration
+                    {
+                        if (bill.BillItems != null && bill.BillItems.Any())
+                        {
+                            _context.BillItems.RemoveRange(bill.BillItems);
+                        }
+                        _context.Bills.Remove(bill);
+                    }
+                }
+                // Option 2: Set AppointmentId in associated bills to null (if AppointmentId in Bill model is nullable)
+                // var associatedBills = await _context.Bills.Where(b => b.AppointmentId == id).ToListAsync();
+                // foreach (var bill in associatedBills)
+                // {
+                //     bill.AppointmentId = null; // Requires AppointmentId to be nullable in Bill model
+                //     _context.Entry(bill).State = EntityState.Modified;
+                // }
+
+
                 _context.Appointments.Remove(appointment);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Appointment deleted successfully!";
                 return Json(new { success = true, message = "Appointment deleted successfully!" });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                Debug.WriteLine($"DbUpdateException while deleting appointment {id}: {dbEx.Message}");
+                if (dbEx.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception (DbUpdateException): {dbEx.InnerException.Message}");
+                }
+                return Json(new { success = false, message = $"Database error: The appointment could not be deleted due to related records. Please ensure any associated bills are deleted first." });
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error deleting appointment: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 return Json(new { success = false, message = $"Error deleting appointment: {ex.Message}" });
             }
         }
-
-        // POST: Appointment/Cancel (Patient can cancel their own, Doctor/Admin can cancel)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Cancel(int id)
-        {
-            if (!IsLoggedIn() || (!IsPatient() && !IsAdmin() && !IsDoctor())) // Any logged-in user can initiate a cancel.
-            {
-                return Json(new { success = false, message = "You are not authorized to cancel appointments." });
-            }
-
-            var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment == null)
-            {
-                return Json(new { success = false, message = "Appointment not found." });
-            }
-
-            // Authorization check for patients: can only cancel their own.
-            if (IsPatient())
-            {
-                int? patientId = GetPatientIdFromSession();
-                if (!patientId.HasValue || patientId.Value != appointment.PatientId)
-                {
-                    return Json(new { success = false, message = "You can only cancel your own appointments." });
-                }
-            }
-            // Authorization check for doctors: can only cancel their own appointments.
-            else if (IsDoctor())
-            {
-                int? doctorId = GetDoctorIdFromSession();
-                if (!doctorId.HasValue || doctorId.Value != appointment.DoctorId)
-                {
-                    return Json(new { success = false, message = "Doctors can only cancel their own appointments." });
-                }
-            }
-
-            if (appointment.Status == "Cancelled")
-            {
-                return Json(new { success = false, message = "Appointment is already cancelled." });
-            }
-            if (appointment.Status == "Completed")
-            {
-                return Json(new { success = false, message = "Completed appointments cannot be cancelled." });
-            }
-
-            appointment.Status = "Cancelled";
-            try
-            {
-                _context.Update(appointment);
-                await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Appointment cancelled successfully." });
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Error cancelling appointment: {ex.Message}");
-                return Json(new { success = false, message = $"Error cancelling appointment: {ex.Message}" });
-            }
-        }
-
 
         // GET: Appointment/CheckAvailability (renders Views/Appointment/Feature2.cshtml)
         // This action might not be directly related to the "Create" form's slot selection,

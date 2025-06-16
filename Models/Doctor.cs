@@ -36,5 +36,23 @@ namespace HospitalManagementSystem.Models
         // NEW: Navigation property for Bills
         // This links Doctor to the bills they create or are associated with.
         public ICollection<Bill> Bills { get; set; } = new List<Bill>(); // Initialize to prevent null reference
+
+        [Required(ErrorMessage = "Username is required.")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters.")]
+        [ConcurrencyCheck] // Add ConcurrencyCheck for optimistic concurrency on username
+        public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Password hash is required.")]
+        [StringLength(128)] // SHA256 produces 64 hex characters (256 bits), 128 for safety/future hashes
+        public string PasswordHash { get; set; } = string.Empty;
+
+        // NotMapped property for password input (not stored in DB directly)
+        [NotMapped]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long.")]
+        [DataType(DataType.Password)]
+        [Display(Name = "New Password")]
+        // This is used for input only, not stored.
+        // It's nullable because the user might not always change their password on edit.
+        public string? NewPassword { get; set; }
     }
 }

@@ -78,7 +78,24 @@
                         <span asp-validation-for="Reason" class="text-danger"></span>
                     </div>
 
-
+                    @* NEW: Price input for the appointment *@
+                    @if (Context.Session != null && (Context.Session.GetString("Role") == "Admin" || Context.Session.GetString("Role") == "Doctor"))
+                    {
+                        <div class="form-group mb-3">
+                            <label asp-for="Price" class="control-label">Appointment Price</label>
+                            <input asp-for="Price" type="number" step="0.01" min="0.00" class="form-control" />
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Hidden price input for patients, can be used to display a default or calculated price if desired -->
+                        <input type="hidden" asp-for="Price" value="@Model.Price" />
+                        @if (Model.Price > 0)
+                        {
+                            <p class="mb-3 text-muted">Estimated Appointment Price: <strong>₹@Model.Price.ToString("F2")</strong></p>
+                        }
+                    }
 
                     <div class="form-group d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-plus-circle me-2"></i> Book Appointment</button>
@@ -90,9 +107,7 @@
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -199,7 +214,13 @@
                 } else {
                     // If no valid time slot is selected, clear the hidden field and prevent submission
                     finalAppointmentDateTime.val('');
-                    alert("Please select an available time slot before booking."); // Use a custom modal instead of alert
+                    // Use a custom modal instead of alert for better UX
+                    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                    document.getElementById('confirmationModalLabel').innerText = 'Selection Required';
+                    document.getElementById('modalMessage').innerText = 'Please select an available time slot before booking.';
+                    $('#confirmActionButton').hide(); // Hide confirm button for this message
+                    modal.show();
+
                     return false; // Prevent form submission
                 }
             });

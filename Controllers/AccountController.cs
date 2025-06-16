@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using HospitalManagementSystem.Data;
 using System.Diagnostics;
 using System;
+using HospitalManagementSystem.Utility; // Added: Import the PasswordHasher utility
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -45,7 +46,7 @@ namespace HospitalManagementSystem.Controllers
             {
                 var sessionRole = HttpContext.Session.GetString("Role");
                 if (sessionRole == "Admin")
-                    return RedirectToAction("Index", "Admin"); // Corrected: Admin goes to Admin/Index
+                    return RedirectToAction("Index", "Admin");
                 else if (sessionRole == "Doctor")
                     return RedirectToAction("Dashboard", "Doctor");
                 else if (sessionRole == "Patient")
@@ -78,11 +79,10 @@ namespace HospitalManagementSystem.Controllers
             }
 
             // Include Patient and Doctor navigation properties if available on User model
-            // This ensures PatientId/DoctorId are loaded directly with the user
             var user = await _context.Users
-                                    .Include(u => u.Patient) // Assuming navigation property exists
-                                    .Include(u => u.Doctor)  // Assuming navigation property exists
-                                    .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+                                     .Include(u => u.Patient)
+                                     .Include(u => u.Doctor)
+                                     .FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
 
             if (user == null)
             {
@@ -91,9 +91,8 @@ namespace HospitalManagementSystem.Controllers
                 return View();
             }
 
-            // REMINDER: In a real application, you MUST hash and verify passwords securely.
-            // Do NOT store plain text passwords or compare them directly like this.
-            if (user.PasswordHash != password)
+            // Modified: Use PasswordHasher to verify the entered password against the stored hash
+            if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
                 TempData["ErrorMessage"] = "Invalid password. Please enter a valid password.";
                 Debug.WriteLine($"AccountController.Login (POST): Invalid password for user '{username}'.");
@@ -121,12 +120,11 @@ namespace HospitalManagementSystem.Controllers
                 }
                 else
                 {
-                    // This scenario suggests a user with "Patient" role but no linked PatientId or invalid ID
-                    HttpContext.Session.SetInt32("PatientId", 0); // Set to 0 or null if you prefer
+                    HttpContext.Session.SetInt32("PatientId", 0);
                     TempData["ErrorMessage"] += " Could not find matching patient profile for this user. Please contact support.";
                     Debug.WriteLine($"AccountController.Login (POST): User '{user.Username}' has Patient role but no valid PatientId. PatientId set to 0.");
                 }
-                HttpContext.Session.Remove("DoctorId"); // Clear DoctorId if patient logs in
+                HttpContext.Session.Remove("DoctorId");
             }
             else if (user.Role == "Doctor")
             {
@@ -137,16 +135,14 @@ namespace HospitalManagementSystem.Controllers
                 }
                 else
                 {
-                    // This scenario suggests a user with "Doctor" role but no linked DoctorId or invalid ID
-                    HttpContext.Session.SetInt32("DoctorId", 0); // Set to 0 or null
+                    HttpContext.Session.SetInt32("DoctorId", 0);
                     TempData["ErrorMessage"] += " Could not find matching doctor profile for this user. Please contact support.";
                     Debug.WriteLine($"AccountController.Login (POST): User '{user.Username}' has Doctor role but no valid DoctorId. DoctorId set to 0.");
                 }
-                HttpContext.Session.Remove("PatientId"); // Clear PatientId if doctor logs in
+                HttpContext.Session.Remove("PatientId");
             }
             else // Admin or other roles
             {
-                // For admin, no PatientId or DoctorId is typically needed in session
                 HttpContext.Session.Remove("PatientId");
                 HttpContext.Session.Remove("DoctorId");
                 Debug.WriteLine($"AccountController.Login (POST): Admin/Other role '{user.Username}' logged in. PatientId/DoctorId removed from session.");
@@ -159,7 +155,7 @@ namespace HospitalManagementSystem.Controllers
             if (user.Role == "Admin")
             {
                 Debug.WriteLine("AccountController.Login (POST): Redirecting to Admin/Index for Admin.");
-                return RedirectToAction("Index", "Admin"); // FIX: Corrected redirect for Admin
+                return RedirectToAction("Index", "Admin");
             }
             else if (user.Role == "Patient")
             {
@@ -219,8 +215,8 @@ namespace HospitalManagementSystem.Controllers
                 Debug.WriteLine($"Patient created: {newPatient.Name}, ID: {newPatient.PatientId}");
 
                 string baseUsername = "pat." + model.Name.ToLower()
-                                                       .Replace(" ", "")
-                                                       .Replace(".", "");
+                                                         .Replace(" ", "")
+                                                         .Replace(".", "");
                 string generatedUsername = baseUsername;
                 int counter = 1;
                 while (await _context.Users.AnyAsync(u => u.Username == generatedUsername))
@@ -229,13 +225,15 @@ namespace HospitalManagementSystem.Controllers
                     counter++;
                 }
 
-                string generatedPassword = generatedUsername; // Set password same as username - REMINDER: HASH THIS!
-                Debug.WriteLine($"Generated Username: {generatedUsername}, Password: {generatedPassword}");
+                // Modified: Hash the generated password before storing
+                string generatedPasswordPlain = generatedUsername; // The password is the username
+                string generatedPasswordHash = PasswordHasher.HashPassword(generatedPasswordPlain);
+                Debug.WriteLine($"Generated Username: {generatedUsername}, Hashed Password: {generatedPasswordHash}");
 
                 var newUser = new User
                 {
                     Username = generatedUsername,
-                    PasswordHash = generatedPassword, // REMINDER: Hash this in a real app!
+                    PasswordHash = generatedPasswordHash, // Store the hashed password
                     Role = "Patient",
                     PatientId = newPatient.PatientId // Link the user to the newly created patient
                 };
@@ -247,10 +245,11 @@ namespace HospitalManagementSystem.Controllers
                 // After successful registration, log the new user in
                 HttpContext.Session.SetString("Username", newUser.Username);
                 HttpContext.Session.SetString("Role", newUser.Role);
-                HttpContext.Session.SetInt32("PatientId", newUser.PatientId.Value); // newUser.PatientId is nullable, so use .Value
-                HttpContext.Session.Remove("DoctorId"); // Ensure DoctorId is not set for a patient
+                HttpContext.Session.SetInt32("PatientId", newUser.PatientId.Value);
+                HttpContext.Session.Remove("DoctorId");
 
-                TempData["SuccessMessage"] = $"Registration successful! Your Username is: {newUser.Username} and Password is: {generatedPassword}. Please remember these for future logins.";
+                // Modified: Do not display plain text password in TempData for security
+                TempData["SuccessMessage"] = $"Registration successful! Your Username is: {newUser.Username}. Your password is the same as your username. Please remember these for future logins.";
                 Debug.WriteLine($"Patient '{newUser.Username}' successfully registered and logged in.");
 
                 return RedirectToAction("Dashboard", "Patient");

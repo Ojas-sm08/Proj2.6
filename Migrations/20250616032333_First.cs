@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Hospital_Management_System.Migrations
 {
     /// <inheritdoc />
-    public partial class FinalDatabaseSchemaComplete : Migration
+    public partial class First : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -88,7 +88,8 @@ namespace Hospital_Management_System.Migrations
                     AppointmentDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Location = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -206,7 +207,7 @@ namespace Hospital_Management_System.Migrations
                     BillDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                    Notes = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -216,7 +217,7 @@ namespace Hospital_Management_System.Migrations
                         column: x => x.AppointmentId,
                         principalTable: "Appointments",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Bills_Doctors_DoctorId",
                         column: x => x.DoctorId,
@@ -322,12 +323,12 @@ namespace Hospital_Management_System.Migrations
 
             migrationBuilder.InsertData(
                 table: "Appointments",
-                columns: new[] { "Id", "AppointmentDateTime", "DoctorId", "Location", "PatientId", "Reason", "Status" },
+                columns: new[] { "Id", "AppointmentDateTime", "DoctorId", "Location", "PatientId", "Price", "Reason", "Status" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2025, 6, 13, 10, 0, 0, 0, DateTimeKind.Unspecified), 1, "Room 101", 1, "Annual Checkup", "Completed" },
-                    { 2, new DateTime(2025, 6, 16, 14, 30, 0, 0, DateTimeKind.Unspecified), 2, "Room 202", 2, "Pediatric Consultation", "Scheduled" },
-                    { 3, new DateTime(2025, 6, 12, 11, 0, 0, 0, DateTimeKind.Unspecified), 1, "Room 101", 3, "Follow-up", "Completed" }
+                    { 1, new DateTime(2025, 6, 13, 10, 0, 0, 0, DateTimeKind.Unspecified), 1, "Room 101", 1, 0.00m, "Annual Checkup", "Completed" },
+                    { 2, new DateTime(2025, 6, 16, 14, 30, 0, 0, DateTimeKind.Unspecified), 2, "Room 202", 2, 0.00m, "Pediatric Consultation", "Scheduled" },
+                    { 3, new DateTime(2025, 6, 12, 11, 0, 0, 0, DateTimeKind.Unspecified), 1, "Room 101", 3, 0.00m, "Follow-up", "Completed" }
                 });
 
             migrationBuilder.InsertData(
@@ -394,8 +395,7 @@ namespace Hospital_Management_System.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Bills_AppointmentId",
                 table: "Bills",
-                column: "AppointmentId",
-                unique: true);
+                column: "AppointmentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bills_DoctorId",
