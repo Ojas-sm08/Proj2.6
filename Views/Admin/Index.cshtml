@@ -1,40 +1,33 @@
-﻿@* Inject HttpContextAccessor to get session data *@
-@inject IHttpContextAccessor HttpContextAccessor
+﻿@inject IHttpContextAccessor HttpContextAccessor
 
 @{
-    ViewData["Title"] = "Home Page"; // Default title
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Use the main layout
+    ViewData["Title"] = "Home Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";
     var username = HttpContextAccessor.HttpContext?.Session.GetString("Username");
     var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
 }
 
 @if (role == "Admin" && !string.IsNullOrEmpty(username))
 {
-    // Admin dashboard content when logged in as Admin
     <style>
-        /* CSS specific to the Admin Dashboard view in Home/Index */
-        /* This div will be placed inside the <main> tag of _Layout.cshtml. */
-        /* Adjust min-height based on your _Layout.cshtml's header and footer height
-                   to make it fill the remaining viewport space effectively. */
         .admin-dashboard-full-height {
-            min-height: calc(100vh - 120px); /* Example: 120px for header/footer combined */
+            min-height: calc(100vh - 120px);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-image: url('/images/adminback.jpg'); /* !!! ENSURE IMAGE IS IN wwwroot/images/ !!! */
+            background-image: url('/images/adminback.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            color: white; /* Text color over background */
-            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7); /* Text shadow for readability */
-            position: relative; /* For the overlay */
-            overflow: hidden; /* Important for border-radius */
-            border-radius: 0.75rem; /* Consistent rounded corners */
-            padding: 20px; /* Internal padding */
+            color: white;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            padding: 20px;
         }
 
-            /* Overlay for better text readability */
             .admin-dashboard-full-height::before {
                 content: '';
                 position: absolute;
@@ -42,18 +35,20 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background-color: rgba(0, 0, 0, 0.45); /* Darker overlay for better text contrast */
+                background-color: rgba(0, 0, 0, 0.45);
                 z-index: 1;
-                border-radius: 0.75rem; /* Match parent border-radius */
+                border-radius: 0.75rem;
             }
 
         .admin-welcome-content {
-            z-index: 2; /* Ensure content is above the overlay */
+            z-index: 2;
             text-align: center;
+            animation: slideInUp 1s ease-out forwards;
+            opacity: 0;
         }
 
             .admin-welcome-content h1 {
-                font-size: 3rem; /* Slightly smaller welcome message */
+                font-size: 3rem;
                 font-weight: bold;
                 margin-bottom: 1rem;
             }
@@ -65,21 +60,38 @@
                 margin-bottom: 0.5rem;
             }
 
-        /* Responsive adjustments for Admin Dashboard view */
+        @@keyframes slideInUp {
+            0%
+
+        {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
         @@media (max-width: 768px) {
-            .admin-dashboard-full-height {
-                min-height: calc(100vh - 100px); /* Adjusted for smaller header/footer on mobile */
-                padding: 15px;
-            }
+            .admin-dashboard-full-height
 
-            .admin-welcome-content h1 {
-                font-size: 2.2rem;
-            }
+        {
+            min-height: calc(100vh - 100px);
+            padding: 15px;
+        }
 
-            .admin-welcome-content p {
-                font-size: 1.1rem;
-                padding: 0 0.5rem;
-            }
+        .admin-welcome-content h1 {
+            font-size: 2.2rem;
+        }
+
+        .admin-welcome-content p {
+            font-size: 1.1rem;
+            padding: 0 0.5rem;
+        }
+
         }
     </style>
 
@@ -93,9 +105,7 @@
 }
 else
 {
-    // Original role selection content if not logged in or not Admin
     <style>
-        /* CSS specific to the Role Selection Cards */
         .role-card {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
@@ -106,7 +116,7 @@ else
             }
 
             .role-card .card-body {
-                min-height: 150px; /* Ensure consistent height for cards */
+                min-height: 150px;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;

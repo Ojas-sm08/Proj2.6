@@ -4,6 +4,96 @@
     ViewData["Title"] = "Manage Doctors";
     Layout = "~/Views/Shared/_Layout.cshtml"; // Admin uses the main layout
 }
+<style>
+    h2 {
+        font-weight: 600;
+        color: #343a40;
+    }
+
+    .card {
+        border: none;
+        border-radius: 1rem;
+        background-color: #ffffff;
+        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.075);
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    .table {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+    }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f9ff;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 0.375rem;
+        font-size: 0.92rem;
+    }
+
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 0.375rem;
+    }
+
+    .btn-sm i {
+        margin-right: 0.25rem;
+    }
+
+    .btn-primary,
+    .btn-info,
+    .btn-warning,
+    .btn-danger {
+        font-weight: 500;
+    }
+
+    .alert {
+        font-size: 0.92rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-group span.text-danger {
+        font-size: 0.85rem;
+    }
+
+    @@media (max-width: 768px) {
+        .card-body
+
+    {
+        padding: 1.5rem 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .d-flex.flex-wrap {
+        flex-direction: column;
+    }
+
+    }
+</style>
+
 
 <h2 class="mb-4 text-center">👨‍⚕️ Manage Doctors</h2>
 
