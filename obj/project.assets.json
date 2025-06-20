@@ -4848,11 +4848,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Hospital Management System.csproj",
+      "projectUniqueName": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Hospital Management System.csproj",
       "projectName": "Hospital Management System",
-      "projectPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Hospital Management System.csproj",
+      "projectPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Hospital Management System.csproj",
       "packagesPath": "C:\\Users\\2406634\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\obj\\",
+      "outputPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

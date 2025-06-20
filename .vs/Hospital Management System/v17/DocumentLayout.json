@@ -1,45 +1,129 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\",
+  "WorkspaceRootPath": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\patient\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\patient\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\doctorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\doctorcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\doctor\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\doctor\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\billcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\billcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\patient\\manage.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\patient\\manage.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\patient\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\patient\\delete.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\data\\hospitaldbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:data\\hospitaldbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\models\\appointment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:models\\appointment.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\shared\\_layout.doctor.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\shared\\_layout.doctor.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\doctor\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\doctor\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\patientcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\patientcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\admin\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\admin\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\account\\registerpatient.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\account\\registerpatient.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\appointment\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\appointment\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\utility\\passwordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:utility\\passwordhasher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\views\\appointment\\feature2.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\appointment\\feature2.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\bill\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\bill\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\patient\\profilepreview.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\patient\\profilepreview.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2\\proj2.3\\models\\doctoravailabilityviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\hospital management system.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:hospital management system.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:controllers\\homecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\account\\registerpatient.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\account\\registerpatient.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Migrations\\20250620053209_Newwest7.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Migrations\\20250620053209_Newwest7.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\patient\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\patient\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\doctor\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\doctor\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\patient\\manage.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\patient\\manage.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\appointment\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\appointment\\create.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\views\\appointment\\feature2.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:views\\appointment\\feature2.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|c:\\users\\2406634\\onedrive - cognizant\\desktop\\project2.1\\proj2.6\\models\\doctoravailabilityviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A603A83D-E30F-CB88-4355-1F0CAB6A08FB}|Hospital Management System.csproj|solutionrelative:models\\doctoravailabilityviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
@@ -54,13 +138,13 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 17,
               "Title": "AppointmentController.cs",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Controllers\\AppointmentController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\AppointmentController.cs",
               "RelativeDocumentMoniker": "Controllers\\AppointmentController.cs",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Controllers\\AppointmentController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\AppointmentController.cs",
               "RelativeToolTip": "Controllers\\AppointmentController.cs",
-              "ViewState": "AgIAAOwCAAAAAAAAAAAowBIDAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAFsBAAAAAAAAAAAmwGgBAAB3AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-17T03:21:19.287Z",
               "IsPinned": true,
@@ -69,10 +153,309 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "DoctorController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\DoctorController.cs",
+              "RelativeDocumentMoniker": "Controllers\\DoctorController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\DoctorController.cs",
+              "RelativeToolTip": "Controllers\\DoctorController.cs",
+              "ViewState": "AgIAAJgCAAAAAAAAAAAYwKICAAAgAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T09:03:48.026Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Delete.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\Delete.cshtml",
+              "RelativeDocumentMoniker": "Views\\Patient\\Delete.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\Delete.cshtml",
+              "RelativeToolTip": "Views\\Patient\\Delete.cshtml",
+              "ViewState": "AgIAABUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T09:00:40.465Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Dashboard.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Doctor\\Dashboard.cshtml",
+              "RelativeDocumentMoniker": "Views\\Doctor\\Dashboard.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Doctor\\Dashboard.cshtml",
+              "RelativeToolTip": "Views\\Doctor\\Dashboard.cshtml",
+              "ViewState": "AgIAAFcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T08:56:45.752Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "_Layout.Doctor.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Shared\\_Layout.Doctor.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.Doctor.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Shared\\_Layout.Doctor.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.Doctor.cshtml",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAAAFcAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T08:48:20.563Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AdminController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\AdminController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AdminController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\AdminController.cs",
+              "RelativeToolTip": "Controllers\\AdminController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:51:41.77Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BillController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\BillController.cs",
+              "RelativeDocumentMoniker": "Controllers\\BillController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\BillController.cs",
+              "RelativeToolTip": "Controllers\\BillController.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAA5wD8AAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:54:35.27Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAIcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T08:48:22.165Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Admin\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Admin\\Index.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Admin\\Index.cshtml",
+              "RelativeToolTip": "Views\\Admin\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAmAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T08:50:46.922Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "HospitalDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Data\\HospitalDbContext.cs",
+              "RelativeDocumentMoniker": "Data\\HospitalDbContext.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Data\\HospitalDbContext.cs",
+              "RelativeToolTip": "Data\\HospitalDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAOoAAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:36:44.437Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Appointment.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Models\\Appointment.cs",
+              "RelativeDocumentMoniker": "Models\\Appointment.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Models\\Appointment.cs",
+              "RelativeToolTip": "Models\\Appointment.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAIwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T08:23:52.065Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "ProfilePreview.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\ProfilePreview.cshtml",
+              "RelativeDocumentMoniker": "Views\\Patient\\ProfilePreview.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\ProfilePreview.cshtml",
+              "RelativeToolTip": "Views\\Patient\\ProfilePreview.cshtml",
+              "ViewState": "AgIAACEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T08:29:02.64Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Controllers\\AccountController.cs",
+              "ViewState": "AgIAAMMAAAAAAAAAAAAowLgAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:36:34.892Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "PatientController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\PatientController.cs",
+              "RelativeDocumentMoniker": "Controllers\\PatientController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\PatientController.cs",
+              "RelativeToolTip": "Controllers\\PatientController.cs",
+              "ViewState": "AgIAAN4BAAAAAAAAAAAgwM8BAABUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:56:06.949Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "Details.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Bill\\Details.cshtml",
+              "RelativeDocumentMoniker": "Views\\Bill\\Details.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Bill\\Details.cshtml",
+              "RelativeToolTip": "Views\\Bill\\Details.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-20T08:29:57.351Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Models\\User.cs",
+              "RelativeDocumentMoniker": "Models\\User.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Models\\User.cs",
+              "RelativeToolTip": "Models\\User.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAxwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T08:46:32.552Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "PasswordHasher.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Utility\\PasswordHasher.cs",
+              "RelativeDocumentMoniker": "Utility\\PasswordHasher.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Utility\\PasswordHasher.cs",
+              "RelativeToolTip": "Utility\\PasswordHasher.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:41:47.509Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "Views\\Account\\Login.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Account\\Login.cshtml",
+              "RelativeToolTip": "Views\\Account\\Login.cshtml",
+              "ViewState": "AgIAAHgAAAAAAAAAAAAAAKEAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-17T03:42:37.322Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "bootstrap.css",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+              "RelativeDocumentMoniker": "wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+              "RelativeToolTip": "wwwroot\\lib\\bootstrap\\dist\\css\\bootstrap.css",
+              "ViewState": "AgIAAB4aAAAAAAAAAAAEwCwaAAAMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2025-06-20T06:56:15.158Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAABAAAAAAAAAAAAAuwCEAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T06:55:31.984Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "Hospital Management System",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Hospital Management System.csproj",
+              "RelativeDocumentMoniker": "Hospital Management System.csproj",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Hospital Management System.csproj",
+              "RelativeToolTip": "Hospital Management System.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAABlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-06-20T06:38:42.227Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "HomeController.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\HomeController.cs",
+              "RelativeDocumentMoniker": "Controllers\\HomeController.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Controllers\\HomeController.cs",
+              "RelativeToolTip": "Controllers\\HomeController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T06:00:02.304Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "RegisterPatient.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Account\\RegisterPatient.cshtml",
+              "RelativeDocumentMoniker": "Views\\Account\\RegisterPatient.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Account\\RegisterPatient.cshtml",
+              "RelativeToolTip": "Views\\Account\\RegisterPatient.cshtml",
+              "ViewState": "AgIAAEgAAAAAAAAAAAArwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-06-17T03:42:45.569Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "20250620053209_Newwest7.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Migrations\\20250620053209_Newwest7.cs",
+              "RelativeDocumentMoniker": "Migrations\\20250620053209_Newwest7.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Migrations\\20250620053209_Newwest7.cs",
+              "RelativeToolTip": "Migrations\\20250620053209_Newwest7.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-20T05:32:10.057Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
               "Title": "Create.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Patient\\Create.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\Create.cshtml",
               "RelativeDocumentMoniker": "Views\\Patient\\Create.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Patient\\Create.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\Create.cshtml",
               "RelativeToolTip": "Views\\Patient\\Create.cshtml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
@@ -81,107 +464,75 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 25,
               "Title": "Create.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Doctor\\Create.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Doctor\\Create.cshtml",
               "RelativeDocumentMoniker": "Views\\Doctor\\Create.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Doctor\\Create.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Doctor\\Create.cshtml",
               "RelativeToolTip": "Views\\Doctor\\Create.cshtml",
               "ViewState": "AgIAAJYAAAAAAAAAAAAAAFgAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-17T03:50:00.7Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-17T03:50:00.7Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 26,
               "Title": "Manage.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Patient\\Manage.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\Manage.cshtml",
               "RelativeDocumentMoniker": "Views\\Patient\\Manage.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Patient\\Manage.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Patient\\Manage.cshtml",
               "RelativeToolTip": "Views\\Patient\\Manage.cshtml",
               "ViewState": "AgIAADsAAAAAAAAAAAAlwEsAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-17T03:47:34.23Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-17T03:47:34.23Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 27,
               "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\appsettings.json",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\appsettings.json",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-06-17T03:43:42.795Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-17T03:43:42.795Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "RegisterPatient.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Account\\RegisterPatient.cshtml",
-              "RelativeDocumentMoniker": "Views\\Account\\RegisterPatient.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Account\\RegisterPatient.cshtml",
-              "RelativeToolTip": "Views\\Account\\RegisterPatient.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-17T03:42:45.569Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "Login.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Account\\Login.cshtml",
-              "RelativeDocumentMoniker": "Views\\Account\\Login.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Account\\Login.cshtml",
-              "RelativeToolTip": "Views\\Account\\Login.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-17T03:42:37.322Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 28,
               "Title": "Create.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Appointment\\Create.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Appointment\\Create.cshtml",
               "RelativeDocumentMoniker": "Views\\Appointment\\Create.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Appointment\\Create.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Appointment\\Create.cshtml",
               "RelativeToolTip": "Views\\Appointment\\Create.cshtml",
               "ViewState": "AgIAANEAAAAAAAAAAAAUwPAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-17T03:41:08.924Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-17T03:41:08.924Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 30,
               "Title": "DoctorAvailabilityViewModel.cs",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Models\\DoctorAvailabilityViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Models\\DoctorAvailabilityViewModel.cs",
               "RelativeDocumentMoniker": "Models\\DoctorAvailabilityViewModel.cs",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Models\\DoctorAvailabilityViewModel.cs",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Models\\DoctorAvailabilityViewModel.cs",
               "RelativeToolTip": "Models\\DoctorAvailabilityViewModel.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-17T03:35:04.21Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-17T03:35:04.21Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 29,
               "Title": "Feature2.cshtml",
-              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Appointment\\Feature2.cshtml",
+              "DocumentMoniker": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Appointment\\Feature2.cshtml",
               "RelativeDocumentMoniker": "Views\\Appointment\\Feature2.cshtml",
-              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2\\Proj2.3\\Views\\Appointment\\Feature2.cshtml",
+              "ToolTip": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\Views\\Appointment\\Feature2.cshtml",
               "RelativeToolTip": "Views\\Appointment\\Feature2.cshtml",
               "ViewState": "AgIAAEkAAAAAAAAAAAAowFUAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-06-17T03:30:54.687Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-17T03:30:54.687Z"
             }
           ]
         },

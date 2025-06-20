@@ -210,7 +210,7 @@ namespace HospitalManagementSystem.Data
                  }
             );
 
-            // Seed data for DoctorReviews (STATIC DATES)
+            
             modelBuilder.Entity<DoctorReview>().HasData(
                 new DoctorReview
                 {
@@ -232,7 +232,7 @@ namespace HospitalManagementSystem.Data
                 }
             );
 
-            // Seed data for DoctorSchedules (STATIC DATES)
+            
             modelBuilder.Entity<DoctorSchedule>().HasData(
                 new DoctorSchedule
                 {
