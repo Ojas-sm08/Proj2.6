@@ -3,6 +3,7 @@ wwwroot\favicon.ico
 wwwroot\images\adminback.jpg
 wwwroot\images\doctorback.jpg
 wwwroot\images\patitentbackground.jpg
+wwwroot\images\v987-18a.jpg
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap.css
 wwwroot\lib\bootstrap\dist\css\bootstrap.css.map

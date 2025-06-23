@@ -11,6 +11,7 @@ using System;
 using System.Globalization;
 using HospitalManagementSystem.Utility; // Import the PasswordHasher utility
 using System.Text.Json; // Added for JsonSerializerOptions
+using System.Text.RegularExpressions; // Added for Regex.IsMatch
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -29,6 +30,8 @@ namespace HospitalManagementSystem.Controllers
         private bool IsDoctor() => HttpContext.Session.GetString("Role") == "Doctor";
         private bool IsPatient() => HttpContext.Session.GetString("Role") == "Patient";
         private int? GetDoctorIdFromSession() => HttpContext.Session.GetInt32("DoctorId");
+        private int? GetUserIdFromSession() => HttpContext.Session.GetInt32("UserId");
+
 
         // GET: Doctor/Dashboard
         public IActionResult Dashboard()
@@ -63,7 +66,8 @@ namespace HospitalManagementSystem.Controllers
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                doctors = doctors.Where(d => d.Name.Contains(searchString) || d.Contact.Contains(searchString) || d.Username.Contains(searchString));
+                // Search based on Doctor's Name or Contact. Username is now on User model.
+                doctors = doctors.Where(d => d.Name.Contains(searchString) || d.Contact.Contains(searchString));
             }
 
             if (!string.IsNullOrEmpty(specialization))
@@ -100,62 +104,27 @@ namespace HospitalManagementSystem.Controllers
         // POST: Doctor/Create (Admin)
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Removed 'username' and 'password' parameters. They will be generated internally.
         public async Task<IActionResult> Create(
-            [Bind("Name,Specialization,Description,Contact,Location")] Doctor doctor,
-            string username,
-            string password) // password is the plain text password from the form
+            [Bind("Name,Specialization,Description,Contact,Location")] Doctor doctor)
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
                 return BadRequest(new { success = false, message = "Unauthorized: You are not authorized to add new doctors." });
             }
 
-            ModelState.Clear(); // Clear any initial ModelState errors from default binding
+            // Clear ModelState to ensure re-validation after manual checks
+            ModelState.Clear();
 
-            // --- Manual Validation and Assignment for Username and PasswordHash ---
-            doctor.Username = username?.Trim();
+            // --- Manual Validation for Doctor's General Info (from Doctor Model) ---
+            if (string.IsNullOrWhiteSpace(doctor.Name)) ModelState.AddModelError("Name", "Doctor Name is required.");
+            if (string.IsNullOrWhiteSpace(doctor.Specialization)) ModelState.AddModelError("Specialization", "Specialization is required.");
+            if (string.IsNullOrWhiteSpace(doctor.Contact)) ModelState.AddModelError("Contact", "Contact information is required.");
+            if (string.IsNullOrWhiteSpace(doctor.Location)) ModelState.AddModelError("Location", "Location is required.");
+            if (string.IsNullOrEmpty(doctor.Description)) doctor.Description = null; // Allow null or empty for optional Description
 
-            // Username Validation
-            if (string.IsNullOrWhiteSpace(doctor.Username))
-            {
-                ModelState.AddModelError("Username", "Username is required.");
-            }
-            else if (doctor.Username.Length < 3 || doctor.Username.Length > 50)
-            {
-                ModelState.AddModelError("Username", "Username must be between 3 and 50 characters.");
-            }
-
-            // Password Validation and Hashing
-            if (string.IsNullOrWhiteSpace(password))
-            {
-                ModelState.AddModelError("Password", "Password is required.");
-            }
-            else if (password.Length < 6)
-            {
-                ModelState.AddModelError("Password", "Password must be at least 6 characters long.");
-            }
-            else
-            {
-                doctor.PasswordHash = PasswordHasher.HashPassword(password);
-            }
-
-            // Check for duplicate username (for both Doctor and User entities)
-            if (!string.IsNullOrEmpty(doctor.Username))
-            {
-                if (await _context.Doctors.AnyAsync(d => d.Username == doctor.Username))
-                {
-                    ModelState.AddModelError("Username", "This username is already taken by another doctor.");
-                }
-                // Also check in the general Users table if it's separate
-                if (await _context.Users.AnyAsync(u => u.Username == doctor.Username))
-                {
-                    ModelState.AddModelError("Username", "This username is already in use by another user account.");
-                }
-            }
-            // --- End Manual Validation and Assignment ---
-
-            // Now re-evaluate ModelState.IsValid AFTER all manual validations and assignments
-            if (!TryValidateModel(doctor) || !ModelState.IsValid)
+            // If initial doctor details fail validation, return early
+            if (!ModelState.IsValid)
             {
                 var errors = new Dictionary<string, List<string>>();
                 foreach (var state in ModelState)
@@ -165,49 +134,106 @@ namespace HospitalManagementSystem.Controllers
                         errors[state.Key] = state.Value.Errors.Select(e => e.ErrorMessage).ToList();
                     }
                 }
-                Debug.WriteLine($"DoctorController.Create: Model state invalid. Errors: {JsonSerializer.Serialize(errors)}");
-                return BadRequest(new { success = false, message = "Validation errors occurred.", errors = errors });
+                Debug.WriteLine($"DoctorController.Create: Model state invalid for Doctor details. Errors: {JsonSerializer.Serialize(errors)}");
+                TempData["ErrorMessage"] = "Please correct the errors in the form."; // General error for UI
+                return View(doctor); // Return the view with the Doctor model to re-display form and errors
             }
+
+            // --- AUTO-GENERATION OF USERNAME AND PASSWORD ---
+            string baseUsername = "doc." + doctor.Name.ToLower()
+                                                        .Replace(" ", "")
+                                                        .Replace(".", "")
+                                                        .Replace("-", "")
+                                                        .Trim();
+            string generatedUsername = baseUsername;
+            int counter = 1;
+            int maxUsernameLength = 50; // Ensure this matches your User.Username max length
+
+            // Ensure baseUsername fits within maxUsernameLength, leaving room for counter
+            if (baseUsername.Length > maxUsernameLength - 5) // Leave room for "_999" suffix
+            {
+                baseUsername = baseUsername.Substring(0, maxUsernameLength - 5);
+            }
+
+            // Loop to ensure unique username
+            generatedUsername = baseUsername;
+            while (await _context.Users.AnyAsync(u => u.Username == generatedUsername))
+            {
+                generatedUsername = $"{baseUsername}_{counter}";
+                // Re-check length if counter makes it too long
+                if (generatedUsername.Length > maxUsernameLength)
+                {
+                    generatedUsername = $"{baseUsername.Substring(0, Math.Min(baseUsername.Length, maxUsernameLength - counter.ToString().Length - 1))}_{counter}";
+                }
+                counter++;
+            }
+
+            // Password generation: For simplicity, use a portion of the generated username or a default.
+            // For production, you'd want a more robust random password generation.
+            string generatedPasswordPlain = generatedUsername; // Using username as password, or a default strong one
+            if (generatedPasswordPlain.Length < 6) // Ensure minimum password length for hashing
+            {
+                generatedPasswordPlain += "P@ss1"; // Append to meet minimum length
+            }
+            else if (generatedPasswordPlain.Length > 100) // Truncate if too long
+            {
+                generatedPasswordPlain = generatedPasswordPlain.Substring(0, 100);
+            }
+
+            string generatedPasswordHash = PasswordHasher.HashPassword(generatedPasswordPlain);
+            Debug.WriteLine($"Generated Username: {generatedUsername}, Generated Password (plain - partially shown): {generatedPasswordPlain.Substring(0, Math.Min(generatedPasswordPlain.Length, 1))}***, Hashed Password: {generatedPasswordHash.Substring(0, 5)}..."); // Censor sensitive data in logs
 
             try
             {
-                // Start a transaction to ensure atomicity
                 using (var transaction = await _context.Database.BeginTransactionAsync())
                 {
-                    _context.Add(doctor); // Add the doctor first
-                    await _context.SaveChangesAsync(); // Save to get the generated DoctorId
-
-                    // Now create the associated User record
+                    // 1. Create the User account with generated credentials
                     var newUser = new User
                     {
-                        Username = doctor.Username,
-                        PasswordHash = doctor.PasswordHash, // Use the hashed password
+                        Username = generatedUsername,
+                        PasswordHash = generatedPasswordHash,
                         Role = "Doctor",
-                        DoctorId = doctor.Id // Link to the newly created Doctor
+                        CreatedAt = DateTime.Now,
+                        LastLogin = DateTime.Now
                     };
+                    _context.Users.Add(newUser);
+                    await _context.SaveChangesAsync(); // Save user to get the generated User.Id
 
-                    _context.Add(newUser); // Add the user
-                    await _context.SaveChangesAsync(); // Save the user
+                    // 2. Link the new User to the Doctor
+                    doctor.UserId = newUser.Id; // Set the foreign key
+                    _context.Doctors.Add(doctor);
+                    await _context.SaveChangesAsync(); // Save doctor
 
-                    await transaction.CommitAsync(); // Commit the transaction
+                    // Also set the DoctorId on the User record for reverse navigation if needed
+                    newUser.DoctorId = doctor.Id;
+                    _context.Users.Update(newUser); // Update the user with the new DoctorId
+                    await _context.SaveChangesAsync(); // Save the updated user
 
+                    await transaction.CommitAsync();
+
+                    // Display the generated username and password in the success message
+                    TempData["SuccessMessage"] = $"Doctor {doctor.Name} created successfully! Their Username is: <span class='fw-bold'>{newUser.Username}</span> and Password is: <span class='fw-bold'>{generatedPasswordPlain}</span>. Please save these credentials.";
                     Debug.WriteLine($"Doctor {doctor.Name} and associated User '{newUser.Username}' added successfully!");
-                    return Json(new { success = true, message = $"Doctor {doctor.Name} added successfully! Username: {doctor.Username}", redirectToUrl = Url.Action(nameof(Manage)) });
+                    return RedirectToAction(nameof(Manage));
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error adding doctor and user: {ex.Message}");
-                return BadRequest(new { success = false, message = $"An error occurred while adding the doctor and user: {ex.Message}" });
+                TempData["ErrorMessage"] = $"An error occurred while adding the doctor and user: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                return View(doctor); // Return the view with the model to show errors
             }
         }
 
-        // GET: Doctor/Edit/5 (Admin Only for managing OTHER doctors)
-        // Doctor's own edit is via MyInfo
+        // GET: Doctor/Edit/5 (Admin Only for managing OTHER doctors' general details)
         [HttpGet]
         public async Task<IActionResult> Edit(int? id)
         {
-            if (!IsLoggedIn() || !IsAdmin()) // Only Admin can use this action
+            if (!IsLoggedIn() || !IsAdmin())
             {
                 TempData["ErrorMessage"] = "You are not authorized to edit other doctor's details.";
                 return RedirectToAction("Login", "Account");
@@ -222,64 +248,105 @@ namespace HospitalManagementSystem.Controllers
             return View(doctor);
         }
 
-        // POST: Doctor/Edit/5 (Admin Only for managing OTHER doctors)
+        // POST: Doctor/Edit/5 (Admin Only for managing OTHER doctors' general details)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Specialization,Description,Contact,Location,Username")] Doctor doctor)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Specialization,Description,Contact,Location")] Doctor doctor)
         {
-            if (!IsLoggedIn() || !IsAdmin()) // Only Admin can use this action
+            Debug.WriteLine($"[POST] Doctor/Edit (Admin) called for ID: {id}");
+            Debug.WriteLine($"Incoming Doctor object: Name={doctor.Name}, Specialization={doctor.Specialization}, Contact={doctor.Contact}");
+
+            if (!IsLoggedIn() || !IsAdmin())
             {
                 TempData["ErrorMessage"] = "You are not authorized to edit other doctor's details.";
+                Debug.WriteLine("Authorization failed for Admin Edit.");
                 return RedirectToAction("Login", "Account");
             }
 
-            if (id != doctor.Id) return NotFound();
-
-            // Get original doctor to handle concurrency and password hash (which is not changed via this form)
-            var originalDoctor = await _context.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
-            if (originalDoctor == null)
+            if (id != doctor.Id)
             {
-                TempData["ErrorMessage"] = "The doctor you are trying to edit was not found.";
+                Debug.WriteLine($"ID mismatch: Route ID={id}, Model ID={doctor.Id}");
                 return NotFound();
             }
 
-            // Check for duplicate username if changed by Admin
-            if (originalDoctor.Username != doctor.Username && await _context.Doctors.AnyAsync(d => d.Username == doctor.Username && d.Id != doctor.Id))
+            var existingDoctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == id);
+            if (existingDoctor == null)
             {
-                ModelState.AddModelError("Username", "This username is already taken by another doctor.");
+                TempData["ErrorMessage"] = "The doctor you are trying to edit was not found.";
+                Debug.WriteLine($"Doctor with ID {id} not found in DB.");
+                return NotFound();
             }
 
-            if (ModelState.IsValid)
+            existingDoctor.Name = doctor.Name;
+            existingDoctor.Specialization = doctor.Specialization;
+            existingDoctor.Description = doctor.Description;
+            existingDoctor.Contact = doctor.Contact;
+            existingDoctor.Location = doctor.Location;
+
+            ModelState.Clear();
+
+            if (string.IsNullOrWhiteSpace(existingDoctor.Name)) ModelState.AddModelError("Name", "Doctor Name is required.");
+            if (string.IsNullOrWhiteSpace(existingDoctor.Specialization)) ModelState.AddModelError("Specialization", "Specialization is required.");
+            if (string.IsNullOrWhiteSpace(existingDoctor.Contact)) ModelState.AddModelError("Contact", "Contact is required.");
+            if (string.IsNullOrWhiteSpace(existingDoctor.Location)) ModelState.AddModelError("Location", "Location is required.");
+            if (string.IsNullOrEmpty(existingDoctor.Description)) existingDoctor.Description = null;
+
+
+            Debug.WriteLine("--- ModelState Errors (Admin Doctor Edit) Before Final Save Attempt ---");
+            foreach (var state in ModelState)
             {
-                try
+                if (state.Value.Errors.Any())
                 {
-                    // Preserve the original password hash as it's not handled in this Admin-edit form
-                    doctor.PasswordHash = originalDoctor.PasswordHash;
-                    _context.Update(doctor);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Doctor details updated successfully!";
-                    return RedirectToAction(nameof(Manage)); // Redirect to manage page after Admin edit
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DoctorExists(doctor.Id))
+                    foreach (var error in state.Value.Errors)
                     {
-                        TempData["ErrorMessage"] = "The doctor record was deleted by another user. Cannot save changes.";
-                        return NotFound();
+                        Debug.WriteLine($"  ModelState Error - Key: {state.Key}, Error: {error.ErrorMessage}");
                     }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error updating doctor: {ex.Message}");
-                    TempData["ErrorMessage"] = $"An error occurred while updating the doctor: {ex.Message}";
                 }
             }
-            ViewData["Title"] = "Edit Doctor";
-            return View(doctor);
+            Debug.WriteLine("--- End ModelState Errors (Admin Doctor Edit) ---");
+
+
+            if (!ModelState.IsValid)
+            {
+                Debug.WriteLine("ModelState is INVALID for Admin Doctor Edit. Returning view with errors.");
+                TempData["ErrorMessage"] = "Please correct the errors in the form.";
+                ViewData["Title"] = "Edit Doctor";
+                return View(doctor);
+            }
+
+            Debug.WriteLine("ModelState is VALID for Admin Doctor Edit. Attempting to save changes...");
+            try
+            {
+                await _context.SaveChangesAsync();
+                Debug.WriteLine($"Changes saved successfully for Doctor ID: {id}");
+                TempData["SuccessMessage"] = "Doctor details updated successfully!";
+                return RedirectToAction(nameof(Manage));
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                Debug.WriteLine($"DbUpdateConcurrencyException for Doctor ID {id}: {ex.Message}");
+                TempData["ErrorMessage"] = "The doctor record was updated by another user or deleted. Please refresh and try again.";
+                if (!DoctorExists(doctor.Id))
+                {
+                    Debug.WriteLine("Doctor no longer exists in DB after concurrency exception.");
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"General Exception during save for Doctor ID {id}: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                TempData["ErrorMessage"] = $"An error occurred while updating the doctor: {ex.Message}";
+                ViewData["Title"] = "Edit Doctor";
+                return View(doctor);
+            }
         }
 
 
@@ -300,24 +367,28 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var doctor = await _context.Doctors.FindAsync(doctorId.Value);
+            var doctor = await _context.Doctors
+                                       .Include(d => d.User)
+                                       .FirstOrDefaultAsync(d => d.Id == doctorId.Value);
+
             if (doctor == null)
             {
                 TempData["ErrorMessage"] = "Your doctor profile could not be found.";
-                return RedirectToAction("Logout", "Account"); // Force logout if profile not found
+                return RedirectToAction("Logout", "Account");
             }
 
-            // Do not pass PasswordHash to the view directly.
-            // The NewPassword property on the model is used for input only.
+            ViewBag.Username = doctor.User?.Username;
+
             ViewData["Title"] = "My Profile";
             return View(doctor);
         }
 
-        // POST: Doctor/EditMyInfo (Doctor edits their own profile)
+        // POST: Doctor/EditMyInfo (Doctor edits their own profile, including login details)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditMyInfo(
-            [Bind("Id,Name,Specialization,Description,Contact,Location,Username,NewPassword")] Doctor doctor)
+            [Bind("Id,Name,Specialization,Description,Contact,Location,NewPassword")] Doctor doctor,
+            string username)
         {
             Debug.WriteLine("EditMyInfo POST action called.");
 
@@ -328,127 +399,119 @@ namespace HospitalManagementSystem.Controllers
             }
 
             int? sessionDoctorId = GetDoctorIdFromSession();
-            // Ensure the doctor is only editing their own profile
             if (!sessionDoctorId.HasValue || sessionDoctorId.Value == 0 || sessionDoctorId.Value != doctor.Id)
             {
                 Debug.WriteLine($"EditMyInfo: Unauthorized attempt to edit another doctor's profile. Session ID: {sessionDoctorId}, Doctor ID from form: {doctor.Id}");
                 return BadRequest(new { success = false, message = "Unauthorized attempt to edit another doctor's profile." });
             }
 
-            // Fetch the original doctor from the database to compare changes and get existing password hash
-            var originalDoctor = await _context.Doctors.AsNoTracking().FirstOrDefaultAsync(d => d.Id == doctor.Id);
+            var originalDoctor = await _context.Doctors
+                                               .Include(d => d.User)
+                                               .FirstOrDefaultAsync(d => d.Id == doctor.Id);
             if (originalDoctor == null)
             {
                 Debug.WriteLine($"EditMyInfo: Original doctor (ID: {doctor.Id}) not found in DB.");
-                return BadRequest(new { success = false, message = "Your doctor profile could not be found for update." });
+                TempData["ErrorMessage"] = "Your doctor profile could not be found for update.";
+                return View(doctor);
             }
 
-            // Clear ModelState to re-validate after manual assignments
+            originalDoctor.Name = doctor.Name;
+            originalDoctor.Specialization = doctor.Specialization;
+            originalDoctor.Description = doctor.Description;
+            originalDoctor.Contact = doctor.Contact;
+            originalDoctor.Location = doctor.Location;
+
             ModelState.Clear();
 
-            // --- Manual Validation and Assignment ---
-            // If the username is somehow changed in the UI, re-check for duplicates.
-            // Note: The UI currently displays username as readonly. If you enable editing, this is crucial.
-            if (originalDoctor.Username != doctor.Username)
-            {
-                if (await _context.Doctors.AnyAsync(d => d.Username == doctor.Username && d.Id != doctor.Id))
-                {
-                    ModelState.AddModelError("Username", "This username is already taken. Please choose a different one.");
-                }
-                // Also check in the general Users table if it's separate
-                if (await _context.Users.AnyAsync(u => u.Username == doctor.Username && u.DoctorId != doctor.Id && u.Role == "Doctor")) // Ensure it's not the same user's existing entry
-                {
-                    ModelState.AddModelError("Username", "This username is already in use by another user account.");
-                }
-            }
+            if (string.IsNullOrWhiteSpace(originalDoctor.Name)) ModelState.AddModelError("Name", "Doctor Name is required.");
+            if (string.IsNullOrWhiteSpace(originalDoctor.Specialization)) ModelState.AddModelError("Specialization", "Specialization is required.");
+            if (string.IsNullOrWhiteSpace(originalDoctor.Contact)) ModelState.AddModelError("Contact", "Contact information is required.");
+            if (string.IsNullOrWhiteSpace(originalDoctor.Location)) ModelState.AddModelError("Location", "Location is required.");
+            if (string.IsNullOrEmpty(originalDoctor.Description)) originalDoctor.Description = null;
 
-            // Password handling: Only update if a new password is provided
-            if (!string.IsNullOrEmpty(doctor.NewPassword))
+            if (originalDoctor.User != null)
             {
-                if (doctor.NewPassword.Length < 6)
+                var trimmedUsername = username?.Trim();
+                if (string.IsNullOrWhiteSpace(trimmedUsername))
                 {
-                    ModelState.AddModelError("NewPassword", "New password must be at least 6 characters long.");
+                    ModelState.AddModelError("username", "Username is required.");
                 }
-                else
+                else if (trimmedUsername.Length < 3 || trimmedUsername.Length > 50)
                 {
-                    doctor.PasswordHash = PasswordHasher.HashPassword(doctor.NewPassword); // Hash the new password
+                    ModelState.AddModelError("username", "Username must be between 3 and 50 characters.");
+                }
+                else if (originalDoctor.User.Username != trimmedUsername)
+                {
+                    if (await _context.Users.AnyAsync(u => u.Username == trimmedUsername && u.Id != originalDoctor.User.Id))
+                    {
+                        ModelState.AddModelError("username", "This username is already taken. Please choose another.");
+                    }
+                    else
+                    {
+                        originalDoctor.User.Username = trimmedUsername;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(doctor.NewPassword))
+                {
+                    if (doctor.NewPassword.Length < 6)
+                    {
+                        ModelState.AddModelError("NewPassword", "New password must be at least 6 characters long.");
+                    }
+                    else
+                    {
+                        originalDoctor.User.PasswordHash = PasswordHasher.HashPassword(doctor.NewPassword);
+                    }
                 }
             }
             else
             {
-                // If NewPassword is empty, retain the existing PasswordHash from the original doctor
-                doctor.PasswordHash = originalDoctor.PasswordHash;
+                ModelState.AddModelError("", "Associated user account not found for this doctor. Cannot update login details.");
+                Debug.WriteLine($"EditMyInfo: No associated User account found for doctor ID {doctor.Id}. This is an unusual state.");
             }
 
-            // Manual re-validation of required fields (even if they have [Required] attributes,
-            // sometimes explicit checks are needed for binding issues or clarity)
-            if (string.IsNullOrWhiteSpace(doctor.Name)) ModelState.AddModelError("Name", "Doctor Name is required.");
-            if (string.IsNullOrWhiteSpace(doctor.Specialization)) ModelState.AddModelError("Specialization", "Specialization is required.");
-            if (string.IsNullOrWhiteSpace(doctor.Contact)) ModelState.AddModelError("Contact", "Contact information is required.");
-            if (string.IsNullOrWhiteSpace(doctor.Location)) ModelState.AddModelError("Location", "Location is required.");
-            if (string.IsNullOrWhiteSpace(doctor.Username)) ModelState.AddModelError("Username", "Username is required.");
-            // --- End Manual Validation and Assignment ---
-
-            // Re-validate the model after manual assignments and additions to ModelState
-            if (!TryValidateModel(doctor) || !ModelState.IsValid)
+            Debug.WriteLine("--- ModelState Errors (Doctor MyInfo) Before Final Save Attempt ---");
+            foreach (var state in ModelState)
             {
-                Debug.WriteLine("EditMyInfo: ModelState is invalid after manual checks.");
-                var errors = new Dictionary<string, List<string>>();
-                foreach (var state in ModelState)
+                if (state.Value.Errors.Any())
                 {
-                    if (state.Value.Errors.Any())
+                    foreach (var error in state.Value.Errors)
                     {
-                        errors[state.Key] = state.Value.Errors.Select(e => e.ErrorMessage).ToList();
+                        Debug.WriteLine($"  ModelState Error - Key: {state.Key}, Error: {error.ErrorMessage}");
                     }
                 }
-                Debug.WriteLine($"EditMyInfo ModelState Errors: {JsonSerializer.Serialize(errors)}");
-                return BadRequest(new { success = false, message = "Validation errors occurred. Please check the form.", errors = errors });
+            }
+            Debug.WriteLine("--- End ModelState Errors (Doctor MyInfo) ---");
+
+            if (!ModelState.IsValid)
+            {
+                Debug.WriteLine("EditMyInfo: ModelState is INVALID. Returning view with errors.");
+                ViewBag.Username = username;
+                TempData["ErrorMessage"] = "Validation errors occurred. Please check the form.";
+                return View(originalDoctor);
             }
 
+            Debug.WriteLine("EditMyInfo: ModelState is VALID. Attempting to save changes...");
             try
             {
-                // Attach the original doctor entity and update its properties
-                // This ensures we're tracking an existing entity and only modifying allowed properties.
-                // It's safer than _context.Update(doctor) if 'doctor' comes from binding
-                // and might not have its full state (like navigation properties) attached.
-                _context.Doctors.Attach(originalDoctor);
-                _context.Entry(originalDoctor).CurrentValues.SetValues(doctor); // Update all scalar properties from 'doctor' to 'originalDoctor'
-
-                // If password was changed, also update in the Users table
-                if (!string.IsNullOrEmpty(doctor.NewPassword))
-                {
-                    var userAccount = await _context.Users.FirstOrDefaultAsync(u => u.DoctorId == originalDoctor.Id && u.Role == "Doctor");
-                    if (userAccount != null)
-                    {
-                        userAccount.PasswordHash = doctor.PasswordHash; // Use the newly hashed password
-                        _context.Users.Update(userAccount);
-                        Debug.WriteLine($"EditMyInfo: Updated password for user '{userAccount.Username}'.");
-                    }
-                    else
-                    {
-                        Debug.WriteLine($"EditMyInfo: No associated User account found for doctor ID {originalDoctor.Id} to update password.");
-                    }
-                }
-                // If the Doctor's name (which drives session username) was updated, update the session.
-                // This logic should ideally be based on a property that changes, like doctor.Name or originalDoctor.Username
-                // Assuming originalDoctor.Username is what's in session for the display username.
-                // If the name (Doctor.Name) is what should reflect in session, use that.
-                if (HttpContext.Session.GetString("Username") != doctor.Name) // Assuming session username stores doctor's display name
-                {
-                    HttpContext.Session.SetString("Username", doctor.Name);
-                    Debug.WriteLine($"EditMyInfo: Session username updated to '{doctor.Name}'.");
-                }
-
-
                 await _context.SaveChangesAsync();
-                Debug.WriteLine($"EditMyInfo: Doctor {doctor.Name} (ID: {doctor.Id}) updated successfully.");
-                return Json(new { success = true, message = "Your profile has been updated successfully!", redirectToUrl = Url.Action(nameof(Dashboard)) }); // CHANGED THIS LINE
+                Debug.WriteLine($"EditMyInfo: Doctor {originalDoctor.Name} (ID: {originalDoctor.Id}) and associated User updated successfully.");
+
+                if (HttpContext.Session.GetString("Username") != originalDoctor.User?.Username)
+                {
+                    HttpContext.Session.SetString("Username", originalDoctor.User?.Username);
+                    Debug.WriteLine($"EditMyInfo: Session username updated to '{originalDoctor.User?.Username}'.");
+                }
+
+                TempData["SuccessMessage"] = "Your profile has been updated successfully!";
+                return RedirectToAction(nameof(Dashboard));
             }
             catch (DbUpdateConcurrencyException ex)
             {
                 Debug.WriteLine($"EditMyInfo: Concurrency error updating doctor (ID: {doctor.Id}): {ex.Message}");
-                // Instead of RedirectToAction, return Json error for AJAX
-                return BadRequest(new { success = false, message = "A concurrency error occurred. Your profile might have been updated by someone else. Please try again." });
+                TempData["ErrorMessage"] = "A concurrency error occurred. Your profile might have been updated by someone else. Please try again.";
+                ViewBag.Username = username;
+                return View(originalDoctor);
             }
             catch (Exception ex)
             {
@@ -457,8 +520,9 @@ namespace HospitalManagementSystem.Controllers
                 {
                     Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                 }
-                // Instead of RedirectToAction, return Json error for AJAX
-                return BadRequest(new { success = false, message = $"An unexpected error occurred while updating your profile: {ex.Message}. Please check server logs." });
+                TempData["ErrorMessage"] = $"An unexpected error occurred while updating your profile: {ex.Message}. Please check server logs.";
+                ViewBag.Username = username;
+                return View(originalDoctor);
             }
         }
 
@@ -477,16 +541,15 @@ namespace HospitalManagementSystem.Controllers
             var doctor = await _context.Doctors.FirstOrDefaultAsync(m => m.Id == id);
             if (doctor == null) return NotFound();
 
-            // Authorization: Admin can see any doctor. Doctor can only see their own details via this action. Patient can see any doctor.
             bool isAuthorized = IsAdmin() ||
-                                 (IsDoctor() && GetDoctorIdFromSession() == doctor.Id) ||
-                                 IsPatient(); // Patients can view any doctor's public details
+                               (IsDoctor() && GetDoctorIdFromSession() == doctor.Id) ||
+                               IsPatient();
 
             if (!isAuthorized)
             {
                 TempData["ErrorMessage"] = "You are not authorized to view this doctor's details.";
-                if (IsDoctor()) return RedirectToAction("MyInfo"); // Doctor redirect to their own info
-                if (IsPatient()) return RedirectToAction("Search", "Doctor"); // Patient might go to a search page
+                if (IsDoctor()) return RedirectToAction("MyInfo");
+                if (IsPatient()) return RedirectToAction("Search", "Doctor");
                 return RedirectToAction("Login", "Account");
             }
 
@@ -498,7 +561,7 @@ namespace HospitalManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (!IsLoggedIn() || !IsAdmin()) // Only Admin can access Delete (GET)
+            if (!IsLoggedIn() || !IsAdmin())
             {
                 TempData["ErrorMessage"] = "You are not authorized to delete doctors.";
                 return RedirectToAction("Login", "Account");
@@ -518,7 +581,7 @@ namespace HospitalManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (!IsLoggedIn() || !IsAdmin()) // Only Admin can perform Delete (POST)
+            if (!IsLoggedIn() || !IsAdmin())
             {
                 return BadRequest(new { success = false, message = "Unauthorized to delete doctors." });
             }
@@ -527,13 +590,14 @@ namespace HospitalManagementSystem.Controllers
             {
                 try
                 {
-                    var doctor = await _context.Doctors.FindAsync(id);
+                    var doctor = await _context.Doctors
+                                               .Include(d => d.User)
+                                               .FirstOrDefaultAsync(d => d.Id == id);
                     if (doctor == null)
                     {
                         return BadRequest(new { success = false, message = "Doctor not found." });
                     }
 
-                    // Check for associated appointments
                     var appointments = await _context.Appointments
                                                      .Where(a => a.DoctorId == doctor.Id)
                                                      .ToListAsync();
@@ -543,39 +607,35 @@ namespace HospitalManagementSystem.Controllers
                         return BadRequest(new { success = false, message = $"Cannot delete doctor {doctor.Name}. There are {appointments.Count} existing appointments linked to this doctor. Please delete or reassign appointments first." });
                     }
 
-                    // Delete associated schedules
                     var schedules = await _context.DoctorSchedules.Where(ds => ds.DoctorId == doctor.Id).ToListAsync();
                     if (schedules.Any())
                     {
                         _context.DoctorSchedules.RemoveRange(schedules);
-                        await _context.SaveChangesAsync(); // Save changes for schedules within transaction
+                        await _context.SaveChangesAsync();
                         Debug.WriteLine($"Deleted {schedules.Count} schedules for doctor ID: {id}");
                     }
 
-                    // Delete associated reviews
                     var reviews = await _context.DoctorReviews.Where(dr => dr.DoctorId == doctor.Id).ToListAsync();
                     if (reviews.Any())
                     {
                         _context.DoctorReviews.RemoveRange(reviews);
-                        await _context.SaveChangesAsync(); // Save changes for reviews within transaction
+                        await _context.SaveChangesAsync();
                         Debug.WriteLine($"Deleted {reviews.Count} reviews for doctor ID: {id}");
                     }
 
-                    // Delete associated user account
-                    var user = await _context.Users.FirstOrDefaultAsync(u => u.DoctorId == doctor.Id && u.Role == "Doctor");
-                    if (user != null)
+                    if (doctor.User != null)
                     {
-                        _context.Users.Remove(user);
-                        await _context.SaveChangesAsync(); // Save changes for user within transaction
-                        Debug.WriteLine($"Deleted associated user for doctor ID: {id}, Username: {user.Username}");
+                        _context.Users.Remove(doctor.User);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"Deleted associated user '{doctor.User.Username}' for doctor ID: {id}.");
                     }
                     else
                     {
-                        Debug.WriteLine($"No associated User record found for doctor ID: {id} or role is not Doctor.");
+                        Debug.WriteLine($"No associated User record found for doctor ID: {id} or User navigation property is null.");
                     }
 
                     _context.Doctors.Remove(doctor);
-                    await _context.SaveChangesAsync(); // Save changes for doctor within transaction
+                    await _context.SaveChangesAsync();
 
                     transaction.Commit();
                     return Json(new { success = true, message = $"Doctor {doctor.Name} and associated data deleted successfully!" });
@@ -595,7 +655,7 @@ namespace HospitalManagementSystem.Controllers
 
         // GET: Doctor/Schedule (Doctor's Own Schedule with Date Filter)
         [HttpGet]
-        public async Task<IActionResult> Schedule(DateTime? selectedDate) // Added nullable DateTime parameter
+        public async Task<IActionResult> Schedule(DateTime? selectedDate)
         {
             if (!IsLoggedIn() || !IsDoctor())
             {
@@ -617,14 +677,11 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Dashboard", "Doctor");
             }
 
-            // If selectedDate is null, default to today
             DateTime dateToView = selectedDate?.Date ?? DateTime.Today.Date;
 
-            // Fetch the doctor's schedule for the selected date (or default if not set)
             var doctorSchedule = await _context.DoctorSchedules
                                                      .FirstOrDefaultAsync(ds => ds.DoctorId == doctorId.Value && ds.Date.Date == dateToView.Date);
 
-            // Fetch appointments for the logged-in doctor for the selected date
             var appointmentsForDate = await _context.Appointments
                                                      .Include(a => a.Patient)
                                                      .Where(a => a.DoctorId == doctorId.Value && a.AppointmentDateTime.Date == dateToView.Date)
@@ -632,19 +689,18 @@ namespace HospitalManagementSystem.Controllers
                                                      .ToListAsync();
 
             ViewData["Title"] = "My Schedule";
-            ViewData["CurrentSelectedDate"] = dateToView.ToString("yyyy-MM-dd"); // Pass selected date to view for date picker value
+            ViewData["CurrentSelectedDate"] = dateToView.ToString("yyyy-MM-dd");
 
             var viewModel = new DoctorScheduleViewModel
             {
                 Doctor = doctor,
                 DoctorSchedule = doctorSchedule,
-                TodaysAppointments = appointmentsForDate, // Renamed to be more general
+                TodaysAppointments = appointmentsForDate,
                 DailyActivities = new List<string> { "Morning Rounds", "Patient Consultations", "Admin Work" }
             };
 
             return View(viewModel);
         }
-
 
         // GET: Doctor/Patients (Implemented with data fetching and Gender Filter)
         [HttpGet]

@@ -1,124 +1,28 @@
 ﻿@model HospitalManagementSystem.Models.Doctor
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Add New Doctor";
-    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this uses your main layout
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+    var isAdmin = (role == "Admin");
+    Layout = isAdmin ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_Layout.cshtml";
 }
-<style>
-    body {
-        background-color: #f8f9fa;
-    }
 
-    h2 {
-        color: #343a40;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-
-    .card {
-        border: none;
-        border-radius: 1rem;
-        background-color: #ffffff;
-        box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.075);
-    }
-
-    .card-body {
-        padding: 1.5rem 2rem;
-    }
-
-    label.control-label {
-        font-weight: 500;
-        color: #495057;
-    }
-
-    .form-control,
-    .form-control-plaintext {
-        border-radius: 0.375rem;
-        font-size: 0.95rem;
-        padding: 0.6rem 0.75rem;
-        box-shadow: none !important;
-    }
-
-    .form-control-plaintext {
-        background-color: #f8f9fa;
-        border: 1px solid #ced4da;
-    }
-
-    .form-control:focus {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
-    }
-
-    .form-group {
-        margin-bottom: 1rem;
-    }
-
-        .form-group span.text-danger {
-            font-size: 0.85rem;
-        }
-
-    .btn-lg {
-        font-size: 1.05rem;
-        padding: 0.65rem 1.25rem;
-        font-weight: 500;
-    }
-
-    .btn-outline-secondary {
-        font-weight: 500;
-        border-radius: 0.375rem;
-    }
-
-    .text-info {
-        font-weight: 500;
-        font-size: 1.05rem;
-    }
-
-    .form-text {
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
-
-    #messageContainer .alert {
-        font-size: 0.95rem;
-    }
-
-    .text-center.mt-3 .btn {
-        padding: 0.5rem 1.25rem;
-    }
-
-    @@media (max-width: 768px) {
-        .card-body
-
-    {
-        padding: 1.25rem 1rem;
-    }
-
-    h2 {
-        font-size: 1.65rem;
-    }
-
-    .btn-lg {
-        width: 100%;
-    }
-
-    }
-</style>
 <h2 class="mb-4 text-center">➕ Add New Doctor</h2>
 
-@* Container for dynamic messages (Success/Error from AJAX response) *@
 <div id="messageContainer" class="mb-3">
-    @* Existing TempData messages (from initial page load/redirect) *@
     @if (TempData["SuccessMessage"] != null)
     {
+        @* Allow HTML in success message for bolding generated credentials *@
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
+            <strong>✔</strong> @Html.Raw(TempData["SuccessMessage"])
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["ErrorMessage"]
+            <strong>✖</strong> @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
@@ -128,63 +32,51 @@
     <div class="col-md-8">
         <div class="card shadow-sm p-4">
             <div class="card-body">
-                <form id="addDoctorForm" asp-action="Create" method="post">
-                    @* CRITICAL: method="post" is essential *@
-                    @Html.AntiForgeryToken() @* CRITICAL: Anti-Forgery Token for security *@
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    @* Display all validation errors, including those not tied to specific fields *@
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
-                    @* Placeholder for server-side validation errors (if any, after AJAX submission) *@
-                    <div id="validationSummary" class="text-danger mb-3" style="display: none;"></div>
+                    <h5 class="mb-3">General Doctor Details</h5>
 
                     <div class="form-group mb-3">
                         <label asp-for="Name" class="control-label">Doctor Name</label>
-                        <input asp-for="Name" class="form-control" id="doctorNameInput" placeholder="Enter doctor's full name" />
-                        <span id="nameError" class="text-danger"></span> @* Custom error span *@
+                        <input asp-for="Name" class="form-control" placeholder="Enter doctor's full name" required autofocus />
+                        <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
                         <label asp-for="Specialization" class="control-label">Specialization</label>
-                        <input asp-for="Specialization" class="form-control" placeholder="e.g., Cardiologist" />
-                        <span id="specializationError" class="text-danger"></span> @* Custom error span *@
+                        <input asp-for="Specialization" class="form-control" placeholder="e.g., Cardiology" required />
+                        <span asp-validation-for="Specialization" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label asp-for="Description" class="control-label">Description</label>
+                        <label asp-for="Description" class="control-label">Description (Optional)</label>
                         <textarea asp-for="Description" class="form-control" rows="3" placeholder="Experience or qualifications"></textarea>
-                        <span id="descriptionError" class="text-danger"></span> @* Custom error span *@
+                        <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
                         <label asp-for="Contact" class="control-label">Contact Email/Phone</label>
-                        <input asp-for="Contact" class="form-control" placeholder="Email or phone number" />
-                        <span id="contactError" class="text-danger"></span> @* Custom error span *@
+                        <input asp-for="Contact" class="form-control" placeholder="Email or phone number" required />
+                        <span asp-validation-for="Contact" class="text-danger"></span>
                     </div>
 
-                    <div class="form-group mb-3">
+                    <div class="form-group mb-4">
                         <label asp-for="Location" class="control-label">Location</label>
-                        <input asp-for="Location" class="form-control" placeholder="e.g., Building A, Room 101" />
-                        <span id="locationError" class="text-danger"></span> @* Custom error span *@
+                        <input asp-for="Location" class="form-control" placeholder="e.g., Building A, Room 101" required />
+                        <span asp-validation-for="Location" class="text-danger"></span>
                     </div>
 
                     <hr class="my-4" />
 
-                    <h5 class="mb-3 text-info">Login Account Details (Auto-generated)</h5>
-                    <div class="form-group mb-3">
-                        <label class="control-label">Username:</label>
-                        <input type="text" id="generatedUsernameDisplay" class="form-control-plaintext" readonly value="Enter Doctor Name to auto-generate" />
-                        <input type="hidden" id="usernameInput" name="username" /> @* Hidden input for username *@
-                        <span id="usernameError" class="text-danger"></span> @* Custom error span *@
-                    </div>
-
-                    <div class="form-group mb-3">
-                        <label class="control-label">Password:</label>
-                        <input type="password" id="generatedPasswordDisplay" class="form-control-plaintext" readonly value="Auto-generated after name input" />
-                        <input type="hidden" id="passwordInput" name="password" /> @* Hidden input for password *@
-                        <small class="form-text text-muted" id="passwordFeedback">The password will be automatically generated and visible after entering doctor's name.</small>
-                        <span id="passwordError" class="text-danger"></span> @* Custom error span *@
-                    </div>
+                    <h5 class="mb-3">Login Account Details</h5>
+                    <p class="text-muted">Username and Password will be automatically generated and provided upon successful creation.</p>
+                    @* Removed explicit Username and Password input fields here *@
 
                     <div class="form-group d-grid mt-4">
-                        <button type="submit" class="btn btn-success btn-lg"><i class="fas fa-plus-circle me-2"></i> Add Doctor</button>
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-plus-circle me-2"></i> Add Doctor</button>
                     </div>
                 </form>
             </div>
@@ -193,189 +85,16 @@
 </div>
 
 <div class="text-center mt-3">
-    <a asp-action="Manage" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i> Back to Doctor List</a>
+    <a asp-action="Manage" asp-controller="Doctor" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i> Back to Manage Doctors</a>
 </div>
 
 @section Scripts {
-    @* Using CDNs for jQuery and Font Awesome for reliability *@
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <!-- Font Awesome for icons -->
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
-
-    <script>
-        $(document).ready(function () {
-            const doctorNameInput = $('#doctorNameInput');
-            const usernameInput = $('#usernameInput');
-            const generatedUsernameDisplay = $('#generatedUsernameDisplay');
-            const passwordInput = $('#passwordInput');
-            const generatedPasswordDisplay = $('#generatedPasswordDisplay');
-            const passwordFeedback = $('#passwordFeedback');
-            const addDoctorForm = $('#addDoctorForm');
-            const validationSummary = $('#validationSummary');
-            const messageContainer = $('#messageContainer');
-
-            // --- Function to generate Username and Password ---
-            function generateLoginDetails() {
-                const doctorName = doctorNameInput.val().trim();
-                if (doctorName) {
-                    const generatedUsername = 'dr.' + doctorName.toLowerCase().replace(/\s/g, '').replace(/\./g, '');
-                    usernameInput.val(generatedUsername);
-                    generatedUsernameDisplay.val(generatedUsername);
-
-                    const generatedPassword = generatedUsername;
-                    passwordInput.val(generatedPassword);
-                    generatedPasswordDisplay.val(generatedPassword);
-
-                    passwordFeedback.text("The password is automatically set to be the same as the username.");
-
-                } else {
-                    usernameInput.val('');
-                    generatedUsernameDisplay.val('Enter Doctor Name to auto-generate');
-                    passwordInput.val('');
-                    generatedPasswordDisplay.val('Auto-generated after name input');
-
-                    passwordFeedback.text("The password will be automatically generated and visible after entering doctor's name.");
-                }
-            }
-
-            // --- Function to display messages (success/danger alerts) ---
-            function displayMessage(type, message) {
-                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-                const html = `
-                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-                messageContainer.html(html);
-            }
-
-            // --- Function to clear all custom error spans and general validation summary ---
-            function clearErrors() {
-                // Clear errors on individual fields
-                $('#nameError').text('');
-                $('#specializationError').text('');
-                $('#descriptionError').text('');
-                $('#contactError').text('');
-                $('#locationError').text('');
-                $('#usernameError').text('');
-                $('#passwordError').text('');
-
-                // Clear and hide the general validation summary
-                validationSummary.hide().empty();
-            }
-
-            // --- AJAX Form Submission Handler ---
-            addDoctorForm.on('submit', function (e) {
-                e.preventDefault(); // Prevent default form submission
-                clearErrors(); // Clear previous errors and messages
-
-                const formData = {
-                    Name: $('[name="Name"]').val(),
-                    Specialization: $('[name="Specialization"]').val(),
-                    Description: $('[name="Description"]').val(),
-                    Contact: $('[name="Contact"]').val(),
-                    Location: $('[name="Location"]').val(),
-                    username: usernameInput.val(), // From hidden field
-                    password: passwordInput.val()   // From hidden field
-                };
-
-                // Get the anti-forgery token from the hidden input generated by @Html.AntiForgeryToken()
-                const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
-
-                $.ajax({
-                    url: addDoctorForm.attr('action'), // Uses 'Create' from asp-action
-                    type: addDoctorForm.attr('method'),   // Uses 'post' from method="post"
-                    data: formData,
-                    headers: {
-                        'RequestVerificationToken': antiForgeryToken // Send the anti-forgery token in headers
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            displayMessage('success', response.message || 'Doctor added successfully!');
-                            addDoctorForm[0].reset(); // Clears form fields
-                            generateLoginDetails(); // Regenerate for next entry
-                            // Redirect after a short delay to allow user to see success message
-                            setTimeout(function() {
-                                window.location.href = response.redirectToUrl || '@Url.Action("Manage", "Doctor")';
-                            }, 1500); // Redirect after 1.5 seconds
-                        } else {
-                            displayMessage('danger', response.message || 'An error occurred.');
-                            if (response.errors) { // If controller sends back specific validation errors
-                                let errorList = '<ul>';
-                                for (const key in response.errors) {
-                                    if (response.errors.hasOwnProperty(key)) {
-                                        const errorMessages = response.errors[key];
-                                        errorMessages.forEach(msg => {
-                                            // Determine the correct span ID to display the error
-                                            // For model properties (Name, Specialization, etc.), the key might be just "Name"
-                                            // For manually bound parameters (username, password), the key will be "Username", "Password"
-                                            const fieldNameLower = key.toLowerCase();
-                                            const fieldErrorSpan = $(`#${fieldNameLower}Error`);
-
-                                            if (fieldErrorSpan.length) {
-                                                fieldErrorSpan.text(msg);
-                                            } else {
-                                                // If no specific span found, add to general summary
-                                                errorList += `<li>${msg}</li>`;
-                                            }
-                                        });
-                                    }
-                                }
-                                errorList += '</ul>';
-                                if (errorList !== '<ul></ul>') {
-                                    validationSummary.html(errorList).show(); // Show general errors
-                                }
-                            }
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("AJAX Error:", status, error, xhr);
-                        let errorMessage = "An unexpected error occurred.";
-
-                        if (xhr.status === 400 && xhr.responseJSON) {
-                            // If it's a Bad Request (e.g., from ModelState validation) and JSON response
-                            errorMessage = xhr.responseJSON.message || "Invalid input provided.";
-                            if (xhr.responseJSON.errors) {
-                                let errorList = '<ul>';
-                                for (const key in xhr.responseJSON.errors) {
-                                    if (xhr.responseJSON.errors.hasOwnProperty(key)) {
-                                        const fieldErrors = xhr.responseJSON.errors[key];
-                                        fieldErrors.forEach(msg => {
-                                            // Ensure fieldName matches span IDs (lowercase)
-                                            const fieldNameLower = key.split('.').pop().toLowerCase();
-                                            const fieldErrorSpan = $(`#${fieldNameLower}Error`);
-                                            if (fieldErrorSpan.length) {
-                                                fieldErrorSpan.text(msg);
-                                            } else {
-                                                errorList += `<li>${msg}</li>`;
-                                            }
-                                        });
-                                    }
-                                }
-                                errorList += '</ul>';
-                                if (errorList !== '<ul></ul>') {
-                                    validationSummary.html(errorList).show();
-                                }
-                            }
-                        } else if (xhr.status === 403) {
-                            errorMessage = "Access Denied: You do not have permission to perform this action.";
-                        } else if (xhr.responseText) {
-                            try {
-                                const responseJson = JSON.parse(xhr.responseText);
-                                errorMessage = responseJson.message || responseJson.errors || xhr.responseText;
-                            } catch (e) {
-                                errorMessage = xhr.responseText;
-                            }
-                        }
-                        displayMessage('danger', errorMessage);
-                    }
-                });
-            });
-
-            // Initial generation and event listener for doctor name input
-            generateLoginDetails();
-            doctorNameInput.on('input', generateLoginDetails);
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 }

@@ -1,34 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// Models/Doctor.cs
+using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema; // Needed for [NotMapped] and [ForeignKey]
 
 namespace HospitalManagementSystem.Models
 {
     public class Doctor
     {
         [Key]
-        public int Id { get; set; } // Primary key for Doctor
+        public int Id { get; set; }
 
-        [Required]
-        [StringLength(100)]
+        [Required(ErrorMessage = "Doctor Name is required.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters.")]
         public string Name { get; set; }
 
-        [Required]
-        [StringLength(100)]
+        [Required(ErrorMessage = "Specialization is required.")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Specialization must be between 3 and 100 characters.")]
         public string Specialization { get; set; }
 
-        [StringLength(500)]
-        public string? Description { get; set; }
+        [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
+        public string Description { get; set; } // Optional
 
-        [StringLength(50)]
-        [Display(Name = "Contact Info")]
-        public string? Contact { get; set; } // Phone or Email
+        [Required(ErrorMessage = "Contact information is required.")]
+        [StringLength(100, ErrorMessage = "Contact information cannot exceed 100 characters.")]
+        public string Contact { get; set; } // e.g., email or phone
 
-        [StringLength(100)]
-        public string? Location { get; set; } // Clinic location or hospital wing
+        [Required(ErrorMessage = "Location is required.")]
+        [StringLength(100, ErrorMessage = "Location cannot exceed 100 characters.")]
+        public string Location { get; set; }
 
-        // Navigation properties
+        // Foreign Key to the User account associated with this doctor
+
         public ICollection<DoctorSchedule>? Schedules { get; set; } // Doctor can have multiple schedules
         public ICollection<DoctorReview>? Reviews { get; set; } // Optional: If you have a DoctorReview model
         public ICollection<Appointment>? Appointments { get; set; } // Optional: If you have an Appointment model
@@ -36,23 +38,17 @@ namespace HospitalManagementSystem.Models
         // NEW: Navigation property for Bills
         // This links Doctor to the bills they create or are associated with.
         public ICollection<Bill> Bills { get; set; } = new List<Bill>(); // Initialize to prevent null reference
+        public int? UserId { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; } // Navigation property to the User model
 
-        [Required(ErrorMessage = "Username is required.")]
-        [StringLength(50, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 50 characters.")]
-        [ConcurrencyCheck] // Add ConcurrencyCheck for optimistic concurrency on username
-        public string Username { get; set; } = string.Empty;
+        // This property is ONLY for the UI form (MyInfo) to capture a new password.
+        // It is NOT mapped to a database column in the Doctor table.
+        [NotMapped] // Important: Tells Entity Framework NOT to map this to a database column
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "New password must be at least 6 characters long.")]
+        public string NewPassword { get; set; } // Used for password input in MyInfo view
 
-        [Required(ErrorMessage = "Password hash is required.")]
-        [StringLength(128)] // SHA256 produces 64 hex characters (256 bits), 128 for safety/future hashes
-        public string PasswordHash { get; set; } = string.Empty;
-
-        // NotMapped property for password input (not stored in DB directly)
-        [NotMapped]
-        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters long.")]
-        [DataType(DataType.Password)]
-        [Display(Name = "New Password")]
-        // This is used for input only, not stored.
-        // It's nullable because the user might not always change their password on edit.
-        public string? NewPassword { get; set; }
+        // IMPORTANT: DO NOT include Username or PasswordHash properties directly in Doctor.cs.
+        // They belong solely to the User.cs model.
     }
 }

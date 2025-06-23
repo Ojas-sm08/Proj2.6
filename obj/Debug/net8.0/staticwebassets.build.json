@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "lar6CfGqunlDq80SPUisT4BousjWbjDiK2VyIeM/HXg=",
+  "Hash": "Jo08pi39a9j/2jpw85u78gLzTeC5hKyunrAJbSRQBoc=",
   "Source": "Hospital Management System",
   "BasePath": "_content/Hospital Management System",
   "Mode": "Default",
@@ -162,6 +162,27 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\images\\patitentbackground.jpg"
+    },
+    {
+      "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\images\\v987-18a.jpg",
+      "SourceId": "Hospital Management System",
+      "SourceType": "Discovered",
+      "ContentRoot": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\",
+      "BasePath": "_content/Hospital Management System",
+      "RelativePath": "images/v987-18a#[.{fingerprint}]?.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "Fingerprint": "auj8wehei3",
+      "Integrity": "cr6kgoGWGSUcv2NiWz7WJJBnZcJY+GX5OYRTa/3zFzI=",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\images\\v987-18a.jpg"
     },
     {
       "Identity": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\js\\site.js",
@@ -1954,6 +1975,88 @@
         {
           "Name": "integrity",
           "Value": "sha256-ENf8BxM6er47TLYyeEX6gaxySzC1eu4KKATTV3ZbqK8="
+        }
+      ]
+    },
+    {
+      "Route": "images/v987-18a.auj8wehei3.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\images\\v987-18a.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "2044111"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"cr6kgoGWGSUcv2NiWz7WJJBnZcJY+GX5OYRTa/3zFzI=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Mon, 23 Jun 2025 08:55:16 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=31536000, immutable"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "fingerprint",
+          "Value": "auj8wehei3"
+        },
+        {
+          "Name": "label",
+          "Value": "images/v987-18a.jpg"
+        },
+        {
+          "Name": "integrity",
+          "Value": "sha256-cr6kgoGWGSUcv2NiWz7WJJBnZcJY+GX5OYRTa/3zFzI="
+        }
+      ]
+    },
+    {
+      "Route": "images/v987-18a.jpg",
+      "AssetFile": "C:\\Users\\2406634\\OneDrive - Cognizant\\Desktop\\Project2.1\\Proj2.6\\wwwroot\\images\\v987-18a.jpg",
+      "Selectors": [],
+      "ResponseHeaders": [
+        {
+          "Name": "Accept-Ranges",
+          "Value": "bytes"
+        },
+        {
+          "Name": "Content-Length",
+          "Value": "2044111"
+        },
+        {
+          "Name": "Content-Type",
+          "Value": "image/jpeg"
+        },
+        {
+          "Name": "ETag",
+          "Value": "\"cr6kgoGWGSUcv2NiWz7WJJBnZcJY+GX5OYRTa/3zFzI=\""
+        },
+        {
+          "Name": "Last-Modified",
+          "Value": "Mon, 23 Jun 2025 08:55:16 GMT"
+        },
+        {
+          "Name": "Cache-Control",
+          "Value": "max-age=3600, must-revalidate"
+        }
+      ],
+      "EndpointProperties": [
+        {
+          "Name": "integrity",
+          "Value": "sha256-cr6kgoGWGSUcv2NiWz7WJJBnZcJY+GX5OYRTa/3zFzI="
         }
       ]
     },

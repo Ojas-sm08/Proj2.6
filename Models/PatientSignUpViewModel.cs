@@ -1,4 +1,5 @@
-﻿using System;
+﻿// Models/PatientSignUpViewModel.cs
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace HospitalManagementSystem.Models
@@ -6,8 +7,8 @@ namespace HospitalManagementSystem.Models
     public class PatientSignUpViewModel
     {
         [Required(ErrorMessage = "Full Name is required.")]
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "Full Name must be between 3 and 100 characters.")]
-        [RegularExpression(@"^[a-zA-Z\s.]+$", ErrorMessage = "Full Name can only contain letters, spaces, and periods.")]
+        [StringLength(100, MinimumLength = 2, ErrorMessage = "Full Name must be between 2 and 100 characters.")]
+        [RegularExpression(@"^[a-zA-Z\s\.]+$", ErrorMessage = "Name can only contain letters, spaces, and periods.")]
         public string Name { get; set; }
 
         [Required(ErrorMessage = "Date of Birth is required.")]
@@ -19,19 +20,20 @@ namespace HospitalManagementSystem.Models
         public string Gender { get; set; }
 
         [Required(ErrorMessage = "Contact Number is required.")]
-        [Phone(ErrorMessage = "Invalid Contact Number.")]
-        [StringLength(15, MinimumLength = 10, ErrorMessage = "Contact Number must be between 10 and 15 digits.")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Contact Number must be exactly 10 digits.")]
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "Contact Number must be exactly 10 digits (digits only).")]
+        [DataType(DataType.PhoneNumber)]
         public string ContactNumber { get; set; }
 
-        [Required(ErrorMessage = "Email is required.")]
+        [Required(ErrorMessage = "Email address is required.")]
         [EmailAddress(ErrorMessage = "Invalid Email Address.")]
-        [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
         public string Email { get; set; }
 
         [Required(ErrorMessage = "Address is required.")]
-        [StringLength(200, ErrorMessage = "Address cannot exceed 200 characters.")]
+        [StringLength(200, MinimumLength = 5, ErrorMessage = "Address must be between 5 and 200 characters.")]
         public string Address { get; set; }
 
-        public string MedicalHistory { get; set; } = "No significant history."; // Default value
+        // Added as per your AccountController's usage
+        public string MedicalHistory { get; set; }
     }
 }

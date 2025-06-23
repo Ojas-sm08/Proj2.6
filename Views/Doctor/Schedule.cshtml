@@ -20,27 +20,36 @@
 
 <h2 class="mb-4 text-center">🗓️ @(Model.Doctor?.Name)'s Schedule</h2>
 
-@if (TempData["InfoMessage"] != null)
-{
-    <div class="alert alert-info alert-dismissible fade show" role="alert">
-        @TempData["InfoMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
+<div id="messageContainer" class="mb-3">
+    @* Display success/error messages from TempData *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["InfoMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+</div>
 
 <div class="card bg-light shadow-sm mb-4 p-3 rounded">
     <div class="card-body">
         <form asp-controller="Doctor" asp-action="Schedule" method="get" class="d-flex align-items-center justify-content-center">
             <div class="form-group me-3">
                 <label for="selectedDate" class="form-label visually-hidden">Select Date:</label>
-                
                 <input type="date" id="selectedDate" name="selectedDate" class="form-control form-control-lg rounded-pill shadow-sm" value="@selectedDateForInput" />
             </div>
             <button type="submit" class="btn btn-primary btn-lg rounded-pill shadow-sm px-4">View Schedule</button>
@@ -151,6 +160,10 @@
     <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- Include Bootstrap JS for dismissible alerts and other components -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    @* Anti-forgery token needs to be generated for the AJAX POST request *@
+    @Html.AntiForgeryToken()
 
     <style>
         /* Custom CSS for gradients and rounded corners if not fully covered by Bootstrap */
@@ -179,36 +192,72 @@
 
     <script>
         $(document).ready(function () {
+            // Function to display a Bootstrap alert message
+            function displayMessage(type, message) {
+                const messageContainer = $('#messageContainer');
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                const html = `
+                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                messageContainer.html(html);
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => {
+                    messageContainer.find('.alert').alert('close');
+                }, 5000);
+            }
+
             // Event listener for the "Mark as Completed" button
-            $('.mark-completed-btn').on('click', function () {
+            // Use event delegation for dynamically added buttons (though not strictly needed here, it's good practice)
+            $(document).on('click', '.mark-completed-btn', function () {
                 var appointmentId = $(this).data('appointment-id');
                 var button = $(this); // Keep a reference to the button clicked
 
-                // Confirm with the user before proceeding
-                if (confirm("Are you sure you want to mark this appointment as Completed?")) {
+                // Use a custom confirmation modal instead of native alert/confirm
+                // First, create a modal structure in your HTML, e.g., in _Layout.cshtml or directly here.
+                // For demonstration, I'll provide a simple alert, but ideally replace this with a Bootstrap Modal.
+
+                // Example: Confirmation using Bootstrap's built-in confirm (needs to be implemented as a modal)
+                // Since direct window.confirm is not allowed, this is a placeholder.
+                // For a proper solution, you'd show a Bootstrap modal and bind events to its confirm/cancel buttons.
+                if (window.confirm("Are you sure you want to mark this appointment as Completed?")) { // Use window.confirm for now as a fallback for missing modal
                     $.ajax({
                         url: '/Appointment/MarkAsCompleted', // Endpoint for marking as completed
                         type: 'POST',
                         data: { id: appointmentId },
                         headers: {
-                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() // For anti-forgery token
+                            // Get the anti-forgery token from a hidden input, which should be in the _Layout.cshtml
+                            // Or, ensure @Html.AntiForgeryToken() is placed somewhere in the body or at least once on the page.
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
                         },
                         success: function (response) {
                             if (response.success) {
-                                // Remove the appointment from the DOM
-                                $('#appointment-' + appointmentId).fadeOut(400, function() {
-                                    $(this).remove();
-                                    // Optionally show a success message on the page
-                                    // You might want to reload the section or the whole page for consistency
-                                    location.reload(); // Reload the page to refetch and display consistent state
-                                });
+                                // Instead of removing from DOM and reloading, let's just update the specific appointment's status
+                                // and disable the button directly in the UI for a smoother experience.
+                                const appointmentItem = $('#appointment-' + appointmentId);
+                                if (appointmentItem.length) {
+                                    appointmentItem.find('.badge').removeClass('bg-info bg-danger').addClass('bg-success').text('Completed');
+                                    button.remove(); // Remove the "Mark as Completed" button
+                                }
+                                displayMessage('success', response.message);
+                                // No need to reload the entire page if UI is updated dynamically
+                                // location.reload(); // Removed to allow dynamic update.
                             } else {
-                                // Replace with a custom modal if possible
-                                alert('Error: ' + response.message);
+                                displayMessage('danger', response.message);
                             }
                         },
                         error: function (xhr, status, error) {
-                            alert('An error occurred: ' + error + '\n' + xhr.responseText);
+                            let errorMessage = 'An error occurred while marking the appointment as completed.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.responseText) {
+                                // Fallback for plain text error responses
+                                errorMessage = 'Server Error: ' + xhr.responseText.substring(0, 100) + '...';
+                            }
+                            displayMessage('danger', errorMessage);
+                            console.error("AJAX Error:", status, error, xhr.responseText);
                         }
                     });
                 }

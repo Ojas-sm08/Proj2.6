@@ -43,7 +43,7 @@ namespace HospitalManagementSystem.Controllers
 
         // GET: Bill/Index (For Admin/Doctor to view all bills or their own)
         [HttpGet]
-        public async Task<IActionResult> Index(string searchString) // Added searchString parameter
+        public async Task<IActionResult> Index(string searchString, string statusFilter) // Added statusFilter parameter
         {
             if (!IsLoggedIn() || (!IsAdmin() && !IsDoctor()))
             {
@@ -78,7 +78,7 @@ namespace HospitalManagementSystem.Controllers
                 ViewData["Title"] = "All Hospital Bills"; // Admin's view is "All Hospital Bills"
             }
 
-            // Apply search filter (added for Index action)
+            // Apply search filter
             if (!string.IsNullOrEmpty(searchString))
             {
                 bills = bills.Where(b =>
@@ -88,14 +88,22 @@ namespace HospitalManagementSystem.Controllers
                     b.BillId.ToString().Contains(searchString) ||
                     (b.Notes != null && b.Notes.Contains(searchString)));
             }
+
+            // Apply status filter if provided and not "All"
+            if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "All")
+            {
+                bills = bills.Where(b => b.Status == statusFilter);
+            }
+
             ViewData["CurrentFilter"] = searchString; // Store current filter for view
+            ViewData["CurrentStatusFilter"] = statusFilter; // Store current status filter for view
 
             return View(await bills.OrderByDescending(b => b.BillDate).ToListAsync());
         }
 
         // GET: Bill/MyBills (For Patient to view their own bills)
         [HttpGet]
-        public async Task<IActionResult> MyBills(string searchString) // Added searchString parameter
+        public async Task<IActionResult> MyBills(string searchString, string statusFilter) // Added searchString and statusFilter parameters
         {
             if (!IsLoggedIn() || !IsPatient())
             {
@@ -129,7 +137,14 @@ namespace HospitalManagementSystem.Controllers
                     b.BillId.ToString().Contains(searchString) ||
                     (b.Notes != null && b.Notes.Contains(searchString)));
             }
+
+            // Apply status filter if provided and not "All"
+            if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "All")
+            {
+                bills = bills.Where(b => b.Status == statusFilter);
+            }
             ViewData["CurrentFilter"] = searchString; // Store current filter for view
+            ViewData["CurrentStatusFilter"] = statusFilter; // Store current status filter for view
 
             ViewData["Title"] = "My Bills";
             return View(await bills.OrderByDescending(b => b.BillDate).ToListAsync());
@@ -522,14 +537,18 @@ namespace HospitalManagementSystem.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (id != bill.BillId) return NotFound();
+            if (id != bill.BillId)
+            {
+                TempData["ErrorMessage"] = "Bill ID mismatch.";
+                return NotFound();
+            }
 
             var existingBill = await _context.Bills
                                              .Include(b => b.BillItems) // Include existing items to manage them
                                              .Include(b => b.Appointment)
-                                                 .ThenInclude(a => a.Patient) // Include Appointment's Patient
-                                             .Include(b => b.Appointment) // Start a new chain from Bill to Appointment
-                                                 .ThenInclude(a => a.Doctor)    // Include Appointment's Doctor
+                                                 .ThenInclude(a => a.Patient)
+                                             .Include(b => b.Appointment)
+                                                 .ThenInclude(a => a.Doctor)
                                              .FirstOrDefaultAsync(b => b.BillId == id);
 
             if (existingBill == null)
@@ -550,6 +569,7 @@ namespace HospitalManagementSystem.Controllers
             existingBill.BillDate = bill.BillDate;
             existingBill.Status = bill.Status;
             existingBill.Notes = bill.Notes;
+            existingBill.AppointmentId = bill.AppointmentId; // Allow changing associated appointment if admin
 
             // DoctorId update logic
             if (IsAdmin())
@@ -558,143 +578,152 @@ namespace HospitalManagementSystem.Controllers
             }
             else if (IsDoctor())
             {
+                // If a doctor is editing, ensure DoctorId remains theirs
                 existingBill.DoctorId = GetDoctorIdFromSession();
             }
 
+            // Manually handle BillItems: Delete old, add new, update existing
+            // Create a temporary list of incoming items to manage them
+            var incomingItems = new List<BillItem>();
+            decimal calculatedTotalAmount = 0;
 
-            // Handle BillItems: Delete old, add new, update existing
-            if (existingBill.BillItems == null)
-            {
-                existingBill.BillItems = new List<BillItem>();
-            }
-
-            var currentItemIds = new HashSet<int>(existingBill.BillItems.Select(bi => bi.BillItemId));
-            var incomingItemIds = new HashSet<int>(billItemIds?.Where(x => x != 0) ?? Enumerable.Empty<int>());
-
-            // Remove items that are no longer in the form
-            foreach (var existingItem in existingBill.BillItems.ToList())
-            {
-                if (!incomingItemIds.Contains(existingItem.BillItemId))
-                {
-                    _context.BillItems.Remove(existingItem);
-                }
-            }
-
-            decimal totalAmount = 0;
             if (itemNames != null && quantities != null && unitPrices != null && billItemIds != null &&
                 itemNames.Length == quantities.Length && itemNames.Length == unitPrices.Length && itemNames.Length == billItemIds.Length)
             {
                 for (int i = 0; i < itemNames.Length; i++)
                 {
-                    if (!string.IsNullOrWhiteSpace(itemNames[i]) && quantities[i] > 0 && unitPrices[i] >= 0)
+                    // Basic validation for each item
+                    if (string.IsNullOrWhiteSpace(itemNames[i]))
                     {
-                        decimal itemAmount = quantities[i] * unitPrices[i];
-                        if (billItemIds[i] != 0 && currentItemIds.Contains(billItemIds[i]))
+                        ModelState.AddModelError($"BillItems[{i}].ItemName", "Item name is required.");
+                        continue;
+                    }
+                    if (quantities[i] <= 0)
+                    {
+                        ModelState.AddModelError($"BillItems[{i}].Quantity", "Quantity must be greater than 0.");
+                        continue;
+                    }
+                    if (unitPrices[i] < 0)
+                    {
+                        ModelState.AddModelError($"BillItems[{i}].UnitPrice", "Unit price cannot be negative.");
+                        continue;
+                    }
+
+                    decimal itemAmount = quantities[i] * unitPrices[i];
+                    incomingItems.Add(new BillItem
+                    {
+                        BillItemId = billItemIds[i], // 0 for new, actual ID for existing
+                        BillId = existingBill.BillId,
+                        ItemName = itemNames[i].Trim(),
+                        Quantity = quantities[i],
+                        UnitPrice = unitPrices[i],
+                        Amount = itemAmount
+                    });
+                    calculatedTotalAmount += itemAmount;
+                }
+            }
+
+            // Validate that at least one valid bill item was processed
+            if (!incomingItems.Any() && ModelState.IsValid) // Don't add if already has errors
+            {
+                ModelState.AddModelError("BillItems", "At least one bill item is required to update the bill.");
+            }
+
+            existingBill.TotalAmount = calculatedTotalAmount; // Update total amount based on re-calculated items
+
+            // Re-populate ViewBags for dropdowns and selected appointment if returning to view due to validation errors
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name }).ToListAsync();
+                ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name }).ToListAsync();
+                // Load existingBill's appointment details for ViewBag if it was valid
+                if (existingBill.AppointmentId > 0)
+                {
+                    existingBill.Appointment = await _context.Appointments
+                                                             .Include(a => a.Patient)
+                                                             .Include(a => a.Doctor)
+                                                             .FirstOrDefaultAsync(a => a.Id == existingBill.AppointmentId);
+                }
+                ViewBag.SelectedAppointment = existingBill.Appointment;
+                ViewData["Title"] = "Edit Bill";
+                // Pass back the model with populated BillItems from incoming data for display
+                bill.BillItems = incomingItems; // So the form reflects what user tried to submit
+                return View(bill);
+            }
+
+            // If ModelState is valid, proceed with database operations
+            try
+            {
+                // Remove items that are no longer in the form
+                var incomingItemIdsSet = new HashSet<int>(incomingItems.Select(bi => bi.BillItemId).Where(id => id != 0)); // Only consider existing IDs from incoming
+                foreach (var existingItem in existingBill.BillItems.ToList()) // .ToList() to avoid modifying collection while iterating
+                {
+                    if (!incomingItemIdsSet.Contains(existingItem.BillItemId))
+                    {
+                        _context.BillItems.Remove(existingItem);
+                    }
+                }
+
+                // Add or update items
+                foreach (var incomingItem in incomingItems)
+                {
+                    if (incomingItem.BillItemId == 0) // New item
+                    {
+                        existingBill.BillItems.Add(incomingItem);
+                    }
+                    else // Existing item
+                    {
+                        var itemToUpdate = existingBill.BillItems.FirstOrDefault(bi => bi.BillItemId == incomingItem.BillItemId);
+                        if (itemToUpdate != null)
                         {
-                            // Update existing item
-                            var itemToUpdate = existingBill.BillItems.FirstOrDefault(bi => bi.BillItemId == billItemIds[i]);
-                            if (itemToUpdate != null)
-                            {
-                                itemToUpdate.ItemName = itemNames[i].Trim();
-                                itemToUpdate.Quantity = quantities[i];
-                                itemToUpdate.UnitPrice = unitPrices[i];
-                                itemToUpdate.Amount = itemAmount;
-                                _context.Entry(itemToUpdate).State = EntityState.Modified;
-                            }
+                            _context.Entry(itemToUpdate).CurrentValues.SetValues(incomingItem); // Update properties
                         }
-                        else // billItemIds[i] is 0 or not found in current items (meaning it's a new item)
-                        {
-                            // Add new item
-                            existingBill.BillItems.Add(new BillItem
-                            {
-                                BillId = existingBill.BillId, // Associate with the current bill
-                                ItemName = itemNames[i].Trim(),
-                                Quantity = quantities[i],
-                                UnitPrice = unitPrices[i],
-                                Amount = itemAmount
-                            });
-                        }
-                        totalAmount += itemAmount;
-                    }
-                    else
-                    {
-                        ModelState.AddModelError($"itemNames[{i}]", "Item name is required, quantity must be greater than 0, and unit price must be non-negative.");
-                        Debug.WriteLine($"Validation error for item {i}: Id={billItemIds[i]}, Name='{itemNames[i]}', Qty={quantities[i]}, Price={unitPrices[i]}");
                     }
                 }
-            }
-            else
-            {
-                ModelState.AddModelError("BillItems", "Invalid bill item data submitted. Please ensure all fields are filled and consistent.");
-            }
 
-            existingBill.TotalAmount = totalAmount;
-
-            // Validate that at least one valid bill item was added
-            if (!existingBill.BillItems.Any())
-            {
-                ModelState.AddModelError("BillItems", "At least one bill item is required to generate a bill.");
-                Debug.WriteLine("Validation Error: No valid bill items were processed after Edit.");
+                _context.Update(existingBill);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Bill updated successfully!";
+                return Json(new { success = true, message = "Bill updated successfully!", redirectToUrl = Url.Action(nameof(Details), new { id = existingBill.BillId }) });
             }
-
-            if (ModelState.IsValid)
+            catch (DbUpdateConcurrencyException)
             {
-                try
+                if (!BillExists(bill.BillId))
                 {
-                    _context.Update(existingBill); // Use Update for the main Bill entity
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Bill updated successfully!";
-                    return RedirectToAction("Index", "Bill"); // Redirect after successful update
+                    TempData["ErrorMessage"] = "The bill was deleted by another user. Cannot save changes.";
+                    return NotFound();
                 }
-                catch (DbUpdateConcurrencyException)
+                else
                 {
-                    if (!BillExists(existingBill.BillId)) // Changed AppointmentExists to BillExists
-                    {
-                        TempData["ErrorMessage"] = "The bill was deleted by another user. Cannot save changes.";
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw; // Re-throw if a real concurrency issue
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error updating bill: {ex.Message}");
-                    if (ex.InnerException != null)
-                    {
-                        Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
-                    }
-                    TempData["ErrorMessage"] = $"An error occurred while updating the bill: {ex.Message}. Please check server logs for details.";
-                    // Re-populate ViewBags on error
-                    ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name }).ToListAsync();
-                    ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name }).ToListAsync();
-                    ViewBag.SelectedAppointment = existingBill.Appointment;
-                    ViewData["Title"] = "Edit Bill";
-                    return View(bill); // Return the incoming bill, not the existing one
+                    throw; // Re-throw if a real concurrency issue
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Debug.WriteLine("Model state is invalid during Bill Edit POST:");
-                foreach (var state in ModelState)
+                Debug.WriteLine($"Error updating bill: {ex.Message}");
+                if (ex.InnerException != null)
                 {
-                    foreach (var error in state.Value.Errors)
-                    {
-                        Debug.WriteLine($"  {state.Key}: {error.ErrorMessage}");
-                    }
+                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                 }
+                TempData["ErrorMessage"] = $"An error occurred while updating the bill: {ex.Message}";
+                // Re-populate ViewBags and return view with submitted data on error
+                ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name }).ToListAsync();
+                ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name }).ToListAsync();
+                if (existingBill.AppointmentId > 0)
+                {
+                    existingBill.Appointment = await _context.Appointments
+                                                             .Include(a => a.Patient)
+                                                             .Include(a => a.Doctor)
+                                                             .FirstOrDefaultAsync(a => a.Id == existingBill.AppointmentId);
+                }
+                ViewBag.SelectedAppointment = existingBill.Appointment;
+                ViewData["Title"] = "Edit Bill";
+                bill.BillItems = incomingItems; // Pass back the incoming items to populate the form
+                return View(bill);
             }
-
-            // If ModelState is invalid, re-populate ViewBags and return to view
-            ViewBag.Patients = await _context.Patients.OrderBy(p => p.Name).Select(p => new { Value = p.PatientId, Text = p.Name }).ToListAsync();
-            ViewBag.Doctors = await _context.Doctors.OrderBy(d => d.Name).Select(d => new { Value = d.Id, Text = d.Name }).ToListAsync();
-            ViewBag.SelectedAppointment = existingBill.Appointment; // Re-populate based on existing
-            ViewData["Title"] = "Edit Bill";
-            return View(bill);
         }
 
-        private bool BillExists(int id) // Corrected method name
+        private bool BillExists(int id)
         {
             return _context.Bills.Any(e => e.BillId == id);
         }
@@ -814,62 +843,49 @@ namespace HospitalManagementSystem.Controllers
             }
         }
 
-        // New AJAX Action: GetAppointmentInfo
-        // This action will provide details of a selected appointment to the frontend.
-        [HttpGet]
-        public async Task<IActionResult> GetAppointmentInfo(int appointmentId)
+        // NEW: Action to handle marking a bill as paid
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsPaid(int id)
         {
-            Debug.WriteLine($"GetAppointmentInfo called for AppointmentId: {appointmentId}");
-
-            if (appointmentId <= 0)
+            // Only Admin should be able to mark bills as paid
+            if (!IsLoggedIn() || !IsAdmin())
             {
-                Debug.WriteLine("Invalid AppointmentId provided for GetAppointmentInfo.");
-                // Return a JSON error object
-                return Json(new { success = false, message = "Invalid appointment ID." });
+                return Json(new { success = false, message = "You are not authorized to mark bills as paid." });
             }
 
-            try
+            var bill = await _context.Bills.FirstOrDefaultAsync(b => b.BillId == id);
+
+            if (bill == null)
             {
-                var appointment = await _context.Appointments
-                                                .Include(a => a.Patient)
-                                                .Include(a => a.Doctor)
-                                                .Where(a => a.Id == appointmentId)
-                                                .Select(a => new
-                                                {
-                                                    a.Id,
-                                                    a.AppointmentDateTime,
-                                                    a.Reason,
-                                                    a.Status,
-                                                    PatientId = a.Patient.PatientId,
-                                                    PatientName = a.Patient.Name,
-                                                    DoctorId = a.Doctor.Id,
-                                                    DoctorName = a.Doctor.Name,
-                                                    DoctorSpecialization = a.Doctor.Specialization
-                                                })
-                                                .FirstOrDefaultAsync();
-
-                if (appointment == null)
-                {
-                    Debug.WriteLine($"Appointment with ID {appointmentId} not found.");
-                    return Json(new { success = false, message = "Appointment details not found." });
-                }
-
-                Debug.WriteLine($"Found appointment: {appointment.PatientName} with {appointment.DoctorName} on {appointment.AppointmentDateTime}");
-                return Json(new { success = true, data = appointment });
+                return Json(new { success = false, message = "Bill not found." });
             }
-            catch (Exception ex)
+
+            // Only mark as paid if the status is Pending or Partially Paid
+            if (bill.Status == "Pending" || bill.Status == "Partially Paid")
             {
-                Debug.WriteLine($"Error in GetAppointmentInfo: {ex.Message}");
-                if (ex.InnerException != null)
+                bill.Status = "Paid";
+                // No change to TotalAmount needed as it's just a status update
+                try
                 {
-                    Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    _context.Update(bill);
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Bill marked as paid successfully!";
+                    return Json(new { success = true, message = "Bill marked as paid successfully!" });
                 }
-                Response.StatusCode = 500; // Internal Server Error
-                return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error marking bill {id} as paid: {ex.Message}");
+                    return Json(new { success = false, message = $"An error occurred while marking the bill as paid: {ex.Message}" });
+                }
+            }
+            else
+            {
+                return Json(new { success = false, message = $"Bill status is already '{bill.Status}'. Cannot mark as paid." });
             }
         }
 
-        // NEW STRIPE INTEGRATION ACTIONS:
+        // EXISTING STRIPE INTEGRATION ACTIONS:
 
         // POST: Bill/CreateCheckoutSession
         // This action creates a Stripe Checkout Session and returns its ID to the frontend.
@@ -1008,7 +1024,7 @@ namespace HospitalManagementSystem.Controllers
             {
                 bill.Status = "Paid";
                 // Optionally add a PaidDate field to your Bill model and set it here:
-                // bill.PaidDate = DateTime.Now; 
+                // bill.PaidDate = DateTime.Now;
                 _context.Update(bill);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = $"Bill #{bill.BillId} successfully marked as Paid!";

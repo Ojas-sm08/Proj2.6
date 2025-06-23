@@ -2,6 +2,7 @@
 using HospitalManagementSystem.Models;
 using System;
 using System.Collections.Generic;
+using HospitalManagementSystem.Utility; // REQUIRED for PasswordHasher
 
 namespace HospitalManagementSystem.Data
 {
@@ -72,21 +73,22 @@ namespace HospitalManagementSystem.Data
                 .HasForeignKey(pf => pf.PatientId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // User-Patient Relationship (assuming User has a PatientId FK)
+            // User-Patient Relationship (One-to-One Optional: FK on User)
             modelBuilder.Entity<User>()
-                .HasOne<Patient>() // A User may be associated with one Patient
-                .WithOne() // A Patient may have one User account
-                .HasForeignKey<User>(u => u.PatientId) // User has PatientId as FK
+                .HasOne(u => u.Patient) // A User has one (optional) Patient
+                .WithOne() // Patient has one (optional) User
+                .HasForeignKey<User>(u => u.PatientId) // PatientId is the FK on the User entity
                 .IsRequired(false) // PatientId can be null for Admin/Doctor users
-                .OnDelete(DeleteBehavior.Restrict); // Prevent deleting patient if user account exists (optional, adjust as needed)
+                .OnDelete(DeleteBehavior.Restrict); // Adjust as per your desired cascade behavior
 
-            // --- CORRECTED RELATIONSHIP: Appointment to Bill (One-to-Many) ---
-            // An Appointment has many Bills, and a Bill belongs to one Appointment.
-            modelBuilder.Entity<Appointment>()
-                .HasMany(a => a.Bills)       // An Appointment has many Bills
-                .WithOne(b => b.Appointment) // A Bill belongs to one Appointment
-                .HasForeignKey(b => b.AppointmentId) // AppointmentId is the foreign key in Bill
-                .OnDelete(DeleteBehavior.Cascade); // If an Appointment is deleted, its associated Bills (and their BillItems due to BillItem's cascade) are also deleted.
+            // User-Doctor Relationship (One-to-One Optional: FK on User)
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Doctor) // A User has one (optional) Doctor
+                .WithOne() // Doctor has one (optional) User
+                .HasForeignKey<User>(u => u.DoctorId) // DoctorId is the FK on the User entity
+                .IsRequired(false) // DoctorId can be null for Admin/Patient users
+                .OnDelete(DeleteBehavior.Restrict); // Adjust as per your desired cascade behavior
+
 
             // BillItem Relationship (many-to-one to Bill)
             modelBuilder.Entity<BillItem>()
@@ -105,19 +107,43 @@ namespace HospitalManagementSystem.Data
 
             // Configure composite key for DoctorSchedule
             modelBuilder.Entity<DoctorSchedule>()
-                .HasKey(ds => ds.Id); // Assuming Id is now the primary key, as in your DoctorSchedule model (if available)
+                .HasKey(ds => ds.Id); // Assuming Id is now the primary key
 
-            // --- Seed Data ---
+            // --- Seed Data (Using Static Dates) ---
 
-            // Seed data for Users - UPDATED with PatientId for patient accounts
+            // Seed data for Users - All passwords are now hashed
             modelBuilder.Entity<User>().HasData(
-                new User { Id = 1, Username = "admin", PasswordHash = "admin123", Role = "Admin", PatientId = null },
-                new User { Id = 2, Username = "doctor1", PasswordHash = "doc123", Role = "Doctor", PatientId = null },
-                new User { Id = 3, Username = "patient1", PasswordHash = "pat123", Role = "Patient", PatientId = 1 }, // Link patient1 user to Patient with PatientId = 1 (Alice)
-                new User { Id = 4, Username = "patient2", PasswordHash = "pat234", Role = "Patient", PatientId = 2 }  // Link patient2 user to Patient with PatientId = 2 (Bob)
+                new User { Id = 1, Username = "admin", PasswordHash = PasswordHasher.HashPassword("admin@123"), Role = "Admin", DoctorId = null, PatientId = null, CreatedAt = new DateTime(2023, 1, 1, 10, 0, 0), LastLogin = new DateTime(2023, 1, 1, 10, 0, 0) },
+                new User { Id = 2, Username = "doctor1", PasswordHash = PasswordHasher.HashPassword("doc@123"), Role = "Doctor", DoctorId = 1, PatientId = null, CreatedAt = new DateTime(2023, 2, 1, 11, 0, 0), LastLogin = new DateTime(2023, 2, 1, 11, 0, 0) }, // Link to Doctor with Id 1
+                new User { Id = 3, Username = "patient1", PasswordHash = PasswordHasher.HashPassword("pat@123"), Role = "Patient", DoctorId = null, PatientId = 1, CreatedAt = new DateTime(2023, 3, 1, 12, 0, 0), LastLogin = new DateTime(2023, 3, 1, 12, 0, 0) }, // Link to Patient with PatientId 1
+                new User { Id = 4, Username = "patient2", PasswordHash = PasswordHasher.HashPassword("pat@234"), Role = "Patient", DoctorId = null, PatientId = 2, CreatedAt = new DateTime(2023, 4, 1, 13, 0, 0), LastLogin = new DateTime(2023, 4, 1, 13, 0, 0) }
             );
 
-            // Seed data for Patients - UPDATED with descriptive names
+            // Seed data for Doctors
+            modelBuilder.Entity<Doctor>().HasData(
+                new Doctor
+                {
+                    Id = 1, // Primary Key for Doctor
+                    Name = "Dr. Smith",
+                    Specialization = "Cardiology",
+                    Description = "Expert in heart conditions.",
+                    Contact = "smith@example.com",
+                    Location = "Cardio Wing A101",
+                    UserId = 2 // Link to User with Id 2 ("doctor1")
+                },
+                new Doctor
+                {
+                    Id = 2, // Primary Key for Doctor
+                    Name = "Dr. Jones",
+                    Specialization = "Pediatrics",
+                    Description = "Specializes in child health.",
+                    Contact = "jones@example.com",
+                    Location = "Pediatric Ward C303",
+                    UserId = null // Dr. Jones currently has no linked user account in seed (optional, change if needed)
+                }
+            );
+
+            // Seed data for Patients
             modelBuilder.Entity<Patient>().HasData(
                 new Patient
                 {
@@ -154,28 +180,6 @@ namespace HospitalManagementSystem.Data
                 }
             );
 
-            // Seed data for Doctors - CORRECTED to match current Doctor model properties
-            modelBuilder.Entity<Doctor>().HasData(
-                new Doctor
-                {
-                    Id = 1, // Primary Key for Doctor
-                    Name = "Dr. Smith",
-                    Specialization = "Cardiology",
-                    Description = "Expert in heart conditions.",
-                    Contact = "smith@example.com",
-                    Location = "Cardio Wing A101"
-                },
-                new Doctor
-                {
-                    Id = 2, // Primary Key for Doctor
-                    Name = "Dr. Jones",
-                    Specialization = "Pediatrics",
-                    Description = "Specializes in child health.",
-                    Contact = "jones@example.com",
-                    Location = "Pediatric Ward C303"
-                }
-            );
-
             // Seed data for Appointments (STATIC DATES)
             modelBuilder.Entity<Appointment>().HasData(
                 new Appointment
@@ -183,34 +187,34 @@ namespace HospitalManagementSystem.Data
                     Id = 1,
                     PatientId = 1,
                     DoctorId = 1,
-                    AppointmentDateTime = new DateTime(2025, 6, 13, 10, 0, 0),
+                    AppointmentDateTime = new DateTime(2025, 6, 13, 10, 0, 0), // Future date, but static for seed
                     Location = "Room 101",
                     Reason = "Annual Checkup",
-                    Status = "Completed" // Set to Completed for potential billing
+                    Status = "Completed"
                 },
                 new Appointment
                 {
                     Id = 2,
                     PatientId = 2,
                     DoctorId = 2,
-                    AppointmentDateTime = new DateTime(2025, 6, 16, 14, 30, 0),
+                    AppointmentDateTime = new DateTime(2025, 6, 16, 14, 30, 0), // Future date, but static for seed
                     Location = "Room 202",
                     Reason = "Pediatric Consultation",
                     Status = "Scheduled"
                 },
-                 new Appointment
-                 {
-                     Id = 3,
-                     PatientId = 3,
-                     DoctorId = 1,
-                     AppointmentDateTime = new DateTime(2025, 6, 12, 11, 0, 0),
-                     Location = "Room 101",
-                     Reason = "Follow-up",
-                     Status = "Completed" // Set to Completed for potential billing
-                 }
+                new Appointment
+                {
+                    Id = 3,
+                    PatientId = 3,
+                    DoctorId = 1,
+                    AppointmentDateTime = new DateTime(2025, 6, 12, 11, 0, 0), // Past date, static for seed
+                    Location = "Room 101",
+                    Reason = "Follow-up",
+                    Status = "Completed"
+                }
             );
 
-            
+            // Seed data for DoctorReviews
             modelBuilder.Entity<DoctorReview>().HasData(
                 new DoctorReview
                 {
@@ -219,7 +223,7 @@ namespace HospitalManagementSystem.Data
                     PatientId = 1,
                     Rating = 5,
                     Comment = "Excellent care from Dr. Smith!",
-                    ReviewDate = new DateTime(2025, 6, 1),
+                    ReviewDate = new DateTime(2025, 6, 1), // Future date, but static for seed
                 },
                 new DoctorReview
                 {
@@ -228,70 +232,64 @@ namespace HospitalManagementSystem.Data
                     PatientId = 2,
                     Rating = 4,
                     Comment = "Dr. Jones was very good with my child.",
-                    ReviewDate = new DateTime(2025, 6, 4),
+                    ReviewDate = new DateTime(2025, 6, 4), // Future date, but static for seed
                 }
             );
 
-            
+            // Seed data for DoctorSchedules
             modelBuilder.Entity<DoctorSchedule>().HasData(
                 new DoctorSchedule
                 {
-                    Id = 1, // Assuming Id is the PK, or use composite key if applicable
+                    Id = 1,
                     DoctorId = 1,
-                    Date = new DateTime(2025, 6, 7),
+                    Date = new DateTime(2025, 6, 7), // Future date, but static for seed
                     StartTime = new TimeSpan(9, 0, 0),
                     EndTime = new TimeSpan(13, 0, 0),
                     Location = "Office A101"
                 },
                 new DoctorSchedule
                 {
-                    Id = 2, // Assuming Id is the PK
+                    Id = 2,
                     DoctorId = 2,
-                    Date = new DateTime(2025, 6, 8),
+                    Date = new DateTime(2025, 6, 8), // Future date, but static for seed
                     StartTime = new TimeSpan(10, 0, 0),
                     EndTime = new TimeSpan(16, 0, 0),
                     Location = "Clinic C303"
                 }
             );
 
-            // Seed data for Bills (NEW)
+            // Seed data for Bills
             modelBuilder.Entity<Bill>().HasData(
                 new Bill
                 {
                     BillId = 1,
-                    AppointmentId = 1, // Linked to Alice's "Annual Checkup"
-                    PatientId = 1,     // Alice
-                    DoctorId = 1,      // Dr. Smith
-                    BillDate = new DateTime(2025, 6, 13),
-                    TotalAmount = 75.00m, // Will be overridden by items later
+                    AppointmentId = 1,
+                    PatientId = 1,
+                    DoctorId = 1,
+                    BillDate = new DateTime(2025, 6, 13), // Future date, but static for seed
+                    TotalAmount = 75.00m,
                     Status = "Paid",
                     Notes = "Routine checkup and basic tests."
                 },
                 new Bill
                 {
                     BillId = 2,
-                    AppointmentId = 3, // Linked to Charlie's "Follow-up"
-                    PatientId = 3,     // Charlie
-                    DoctorId = 1,      // Dr. Smith
-                    BillDate = new DateTime(2025, 6, 12),
-                    TotalAmount = 50.00m, // Will be overridden by items later
+                    AppointmentId = 3,
+                    PatientId = 3,
+                    DoctorId = 1,
+                    BillDate = new DateTime(2025, 6, 12), // Past date, static for seed
+                    TotalAmount = 50.00m,
                     Status = "Pending",
                     Notes = "Follow-up consultation."
                 }
             );
 
-            // Seed data for BillItems (NEW)
+            // Seed data for BillItems
             modelBuilder.Entity<BillItem>().HasData(
                 new BillItem { BillItemId = 1, BillId = 1, ItemName = "Consultation Fee", Quantity = 1, UnitPrice = 50.00m, Amount = 50.00m },
                 new BillItem { BillItemId = 2, BillId = 1, ItemName = "Basic Blood Work", Quantity = 1, UnitPrice = 25.00m, Amount = 25.00m },
                 new BillItem { BillItemId = 3, BillId = 2, ItemName = "Consultation Fee", Quantity = 1, UnitPrice = 50.00m, Amount = 50.00m }
             );
-
-            // IMPORTANT: If you have a separate UserAccount model, replace User with UserAccount if that's what you're using for auth.
-            // public DbSet<UserAccount> UserAccounts { get; set; }
-            // If you used UserAccount, change the User relationships and seed data accordingly.
-            // I'm using "User" as per your provided context, but previously used "UserAccount".
-            // Make sure the User model (or UserAccount model) matches the one you actually use.
         }
     }
 }

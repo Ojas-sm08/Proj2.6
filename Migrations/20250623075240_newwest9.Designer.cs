@@ -4,6 +4,7 @@ using HospitalManagementSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hospital_Management_System.Migrations
 {
     [DbContext(typeof(HospitalDbContext))]
-    partial class HospitalDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250623075240_newwest9")]
+    partial class newwest9
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -637,8 +640,8 @@ namespace Hospital_Management_System.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2023, 1, 1, 10, 0, 0, 0, DateTimeKind.Unspecified),
-                            LastLogin = new DateTime(2023, 1, 1, 10, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 6, 23, 13, 22, 40, 254, DateTimeKind.Local).AddTicks(8339),
+                            LastLogin = new DateTime(2025, 6, 23, 13, 22, 40, 265, DateTimeKind.Local).AddTicks(9996),
                             PasswordHash = "7676aaafb027c825bd9abab78b234070e702752f625b752e55e55b48e607e358",
                             Role = "Admin",
                             Username = "admin"
@@ -646,9 +649,9 @@ namespace Hospital_Management_System.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2023, 2, 1, 11, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 6, 23, 13, 22, 40, 266, DateTimeKind.Local).AddTicks(1257),
                             DoctorId = 1,
-                            LastLogin = new DateTime(2023, 2, 1, 11, 0, 0, 0, DateTimeKind.Unspecified),
+                            LastLogin = new DateTime(2025, 6, 23, 13, 22, 40, 266, DateTimeKind.Local).AddTicks(1262),
                             PasswordHash = "05da31d4724854c42409e55c4e7f8e3eb3de79f08535851012a518aca15e8cc5",
                             Role = "Doctor",
                             Username = "doctor1"
@@ -656,8 +659,8 @@ namespace Hospital_Management_System.Migrations
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2023, 3, 1, 12, 0, 0, 0, DateTimeKind.Unspecified),
-                            LastLogin = new DateTime(2023, 3, 1, 12, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 6, 23, 13, 22, 40, 266, DateTimeKind.Local).AddTicks(1294),
+                            LastLogin = new DateTime(2025, 6, 23, 13, 22, 40, 266, DateTimeKind.Local).AddTicks(1295),
                             PasswordHash = "573c5fe3730f043b0c85d0c8fa87aacd5c3e4bef144d96a4cb5863e2d879fb33",
                             PatientId = 1,
                             Role = "Patient",
@@ -666,8 +669,8 @@ namespace Hospital_Management_System.Migrations
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2023, 4, 1, 13, 0, 0, 0, DateTimeKind.Unspecified),
-                            LastLogin = new DateTime(2023, 4, 1, 13, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2025, 6, 23, 13, 22, 40, 266, DateTimeKind.Local).AddTicks(1312),
+                            LastLogin = new DateTime(2025, 6, 23, 13, 22, 40, 266, DateTimeKind.Local).AddTicks(1313),
                             PasswordHash = "a186de47b182db884fe11191bcd0e95624f2a008266705841d0892c3195a3436",
                             PatientId = 2,
                             Role = "Patient",

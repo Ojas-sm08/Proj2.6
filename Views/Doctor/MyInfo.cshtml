@@ -3,108 +3,88 @@
 
 @{
     ViewData["Title"] = "My Profile";
-
-    // Get the user's role from session
-    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
-
-    // Dynamically set the layout based on the user's role
-    // Assuming a Doctor layout exists, otherwise default to shared layout
-    if (role == "Doctor")
-    {
-        Layout = "~/Views/Shared/_Layout.Doctor.cshtml"; // Ensure you have this layout
-    }
-    else // Default for Admin, Patient, or unauthenticated users
-    {
-        Layout = "~/Views/Shared/_Layout.cshtml";
-    }
+    Layout = "~/Views/Shared/_Layout.Doctor.cshtml"; // Doctor's specific layout
 }
 
-<h2 class="mb-4 text-center">👨‍⚕️ My Profile</h2>
+<h2 class="mb-4 text-center">🩺 My Profile Details</h2>
 
-@* Container for dynamic messages (Success/Error from AJAX response) *@
 <div id="messageContainer" class="mb-3">
-    @* Existing TempData messages (from initial page load/redirect) *@
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
+            <strong>✔</strong> @TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["ErrorMessage"]
+            <strong>✖</strong> @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-10">
         <div class="card shadow-sm p-4">
             <div class="card-body">
-                @* IMPORTANT: Form setup for AJAX submission *@
-                <form id="editMyInfoForm" asp-action="EditMyInfo" method="post">
+                <form asp-action="EditMyInfo" method="post">
                     @Html.AntiForgeryToken()
-                    <input type="hidden" asp-for="Id" /> @* Hidden field for Doctor ID *
-                    @* Username is bound via the model, but displayed as plaintext.
-                       If you need to allow editing username, change type to "text" and remove readonly. *@
-                    <input type="hidden" asp-for="Username" />
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div> @* Display all validation errors *@
+                    <input type="hidden" asp-for="Id" />
 
-                    @* Placeholder for server-side validation errors (if any, after AJAX submission) *@
-                    <div id="validationSummary" class="text-danger mb-3" style="display: none;"></div>
-
+                    @* Doctor's General Details *@
                     <div class="form-group mb-3">
                         <label asp-for="Name" class="control-label">Doctor Name</label>
                         <input asp-for="Name" class="form-control" />
-                        <span id="nameError" class="text-danger"></span> @* Custom error span *@
+                        <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label asp-for="Specialization" class="control-label">Specialization</label>
+                        <label asp-for="Specialization" class="control-label"></label>
                         <input asp-for="Specialization" class="form-control" />
-                        <span id="specializationError" class="text-danger"></span> @* Custom error span *@
+                        <span asp-validation-for="Specialization" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label asp-for="Description" class="control-label">Description</label>
+                        <label asp-for="Description" class="control-label"></label>
                         <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-                        <span id="descriptionError" class="text-danger"></span> @* Custom error span *@
+                        <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
                         <label asp-for="Contact" class="control-label">Contact Email/Phone</label>
                         <input asp-for="Contact" class="form-control" />
-                        <span id="contactError" class="text-danger"></span> @* Custom error span *@
+                        <span asp-validation-for="Contact" class="text-danger"></span>
                     </div>
 
                     <div class="form-group mb-3">
-                        <label asp-for="Location" class="control-label">Location</label>
+                        <label asp-for="Location" class="control-label"></label>
                         <input asp-for="Location" class="form-control" />
-                        <span id="locationError" class="text-danger"></span> @* Custom error span *@
+                        <span asp-validation-for="Location" class="text-danger"></span>
                     </div>
 
                     <hr class="my-4" />
 
-                    <h5 class="mb-3 text-info">Login Credentials</h5>
+                    <h5 class="mb-3">Login Account Details</h5>
                     <div class="form-group mb-3">
-                        <label class="control-label">Username:</label>
-                        <input type="text" value="@Model.Username" class="form-control-plaintext" readonly />
-                        <span id="usernameError" class="text-danger"></span> @* Added for consistency *
+                        <label for="username" class="control-label">Username</label>
+                        @* Value is set from ViewBag.Username, which comes from originalDoctor.User.Username *@
+                        <input type="text" id="username" name="username" class="form-control" value="@ViewBag.Username" required />
+                        <span class="text-danger" data-valmsg-for="username"></span>
                     </div>
 
-                    @* RE-ADDED: Change Password field and its related elements *@
-                        <div class="form-group mb-3">
-                            <label asp-for="NewPassword" class="control-label">Change Password</label>
-                            <input asp-for="NewPassword" type="password" class="form-control" id="newPasswordInput" placeholder="Leave blank to keep current password" />
-                            <small class="form-text text-muted">Leave this field blank if you don't want to change your password.</small>
-                            <span id="newpasswordError" class="text-danger"></span> @* Custom error span for NewPassword *@
-                        </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="NewPassword" class="control-label">New Password (leave blank to keep current)</label>
+                        @* asp-for="NewPassword" binds to the [NotMapped] property on Doctor model for form input *@
+                        <input type="password" asp-for="NewPassword" class="form-control" placeholder="Only enter if you want to change password" />
+                        <span class="text-danger" data-valmsg-for="NewPassword"></span>
+                    </div>
 
-                        <div class="form-group d-grid mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> Save Changes</button>
-                        </div>
+                    <div class="form-group d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> Save Changes</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -116,156 +96,12 @@
 </div>
 
 @section Scripts {
-    @* IMPORTANT: Direct CDN loads for jQuery, Bootstrap JS, and jQuery Validation to ensure they are available *@
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation/1.19.3/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
-    <!-- Font Awesome for icons -->
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
-
-    <script>
-        $(document).ready(function () {
-            const editMyInfoForm = $('#editMyInfoForm');
-            const validationSummary = $('#validationSummary');
-            const messageContainer = $('#messageContainer');
-
-            // --- Function to display messages (success/danger alerts) ---
-            function displayMessage(type, message) {
-                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-                const html = `
-                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                `;
-                messageContainer.html(html);
-            }
-
-            // --- Function to clear all custom error spans and general validation summary ---
-            function clearErrors() {
-                // Clear errors on individual fields (using their IDs)
-                $('#nameError').text('');
-                $('#specializationError').text('');
-                $('#descriptionError').text('');
-                $('#contactError').text('');
-                $('#locationError').text('');
-                $('#usernameError').text(''); // Even if readonly, keeps consistency
-                $('#newpasswordError').text('');
-
-                // Clear and hide the general validation summary
-                validationSummary.hide().empty();
-            }
-
-            // --- AJAX Form Submission Handler for Save Changes ---
-            editMyInfoForm.on('submit', function (e) {
-                e.preventDefault(); // Prevent default form submission
-                clearErrors(); // Clear previous errors and messages
-
-                const formData = {
-                    Id: $('[name="Id"]').val(),
-                    Name: $('[name="Name"]').val(),
-                    Specialization: $('[name="Specialization"]').val(),
-                    Description: $('[name="Description"]').val(),
-                    Contact: $('[name="Contact"]').val(),
-                    Location: $('[name="Location"]').val(),
-                    Username: $('[name="Username"]').val(), // Ensure original username is sent
-                    NewPassword: $('#newPasswordInput').val() // Get the new password if entered
-                };
-
-                // Get the anti-forgery token from the hidden input generated by @Html.AntiForgeryToken()
-                const antiForgeryToken = $('input[name="__RequestVerificationToken"]').val();
-
-                $.ajax({
-                    url: editMyInfoForm.attr('action'), // Uses 'EditMyInfo' from asp-action
-                    type: editMyInfoForm.attr('method'),   // Uses 'post' from method="post"
-                    data: formData,
-                    headers: {
-                        'RequestVerificationToken': antiForgeryToken // Send the anti-forgery token in headers
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            displayMessage('success', response.message || 'Profile updated successfully!');
-                            // Optional: Clear new password field after successful update
-                            $('#newPasswordInput').val('');
-                            // Optional: If username/name changes, update display or redirect
-                            if (response.redirectToUrl) {
-                                setTimeout(function() {
-                                    window.location.href = response.redirectToUrl;
-                                }, 1500); // Redirect after 1.5 seconds
-                            }
-                        } else {
-                            // This block handles responses where success is explicitly false (e.g., validation errors)
-                            // Even if status is 200, but server indicates logical failure
-                            displayMessage('danger', response.message || 'An error occurred.');
-                            if (response.errors) { // If controller sends back specific validation errors
-                                let errorList = '<ul>';
-                                for (const key in response.errors) {
-                                    if (response.errors.hasOwnProperty(key)) {
-                                        const errorMessages = response.errors[key];
-                                        errorMessages.forEach(msg => {
-                                            // The key comes directly from ModelState (e.g., "Name", "NewPassword")
-                                            // Make it lowercase to match your span IDs (e.g., "Name" -> "#nameError")
-                                            const fieldNameLower = key.toLowerCase();
-                                            const fieldErrorSpan = $(`#${fieldNameLower}Error`);
-
-                                            if (fieldErrorSpan.length) {
-                                                fieldErrorSpan.text(msg);
-                                            } else {
-                                                // Add to general summary if no specific span found
-                                                errorList += `<li>${msg}</li>`;
-                                            }
-                                        });
-                                    }
-                                }
-                                errorList += '</ul>';
-                                if (errorList !== '<ul></ul>') {
-                                    validationSummary.html(errorList).show(); // Show general errors
-                                }
-                            }
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        // This block handles HTTP errors (like 400 Bad Request, 500 Internal Server Error)
-                        console.error("AJAX Error:", status, error, xhr);
-                        console.error("Response Text:", xhr.responseText); // Log the raw response text
-
-                        let errorMessage = "An unexpected error occurred during save. Please check console for details.";
-
-                        try {
-                            const errorResponse = JSON.parse(xhr.responseText);
-                            if (errorResponse && errorResponse.message) {
-                                errorMessage = errorResponse.message;
-                            }
-                            if (errorResponse && errorResponse.errors) {
-                                let errorList = '<ul>';
-                                for (const key in errorResponse.errors) {
-                                    if (errorResponse.errors.hasOwnProperty(key)) {
-                                        const fieldErrors = errorResponse.errors[key];
-                                        fieldErrors.forEach(msg => {
-                                            const fieldNameLower = key.toLowerCase();
-                                            const fieldErrorSpan = $(`#${fieldNameLower}Error`);
-                                            if (fieldErrorSpan.length) {
-                                                fieldErrorSpan.text(msg);
-                                            } else {
-                                                errorList += `<li>${msg}</li>`;
-                                            }
-                                        });
-                                    }
-                                }
-                                errorList += '</ul>';
-                                if (errorList !== '<ul></ul>') {
-                                    validationSummary.html(errorList).show();
-                                }
-                            }
-                        } catch (e) {
-                            console.error("Failed to parse error response JSON:", e);
-                            errorMessage = `An error occurred (HTTP Status: ${xhr.status}). Raw response: ${xhr.responseText.substring(0, 200)}...`; // Show partial raw text
-                        }
-                        displayMessage('danger', errorMessage);
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 }

@@ -1,20 +1,44 @@
 ﻿@model HospitalManagementSystem.Models.Doctor
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Edit Doctor";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
+    var isAdmin = (role == "Admin");
+
+    // Set Layout based on role
+    Layout = isAdmin ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_Layout.cshtml"; // Adjust Admin layout if needed
 }
 
 <h2 class="mb-4 text-center">✏️ Edit Doctor Details</h2>
+
+<div id="messageContainer" class="mb-3">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+</div>
 
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card shadow-sm p-4">
             <div class="card-body">
-                <form asp-action="Edit">
-                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="All" class="text-danger mb-3"></div> @* Display all validation errors *@
                     <input type="hidden" asp-for="Id" />
 
+                    @* Doctor's General Details *@
                     <div class="form-group mb-3">
                         <label asp-for="Name" class="control-label">Doctor Name</label>
                         <input asp-for="Name" class="form-control" />
@@ -45,21 +69,6 @@
                         <span asp-validation-for="Location" class="text-danger"></span>
                     </div>
 
-                    <hr class="my-4" />
-
-                    <h5 class="mb-3">Login Account Details</h5>
-                    <div class="form-group mb-3">
-                        <label for="username" class="control-label">Username</label>
-                        <input type="text" id="username" name="username" class="form-control" value="@ViewBag.Username" required />
-                        <span class="text-danger" data-valmsg-for="username" data-valmsg-replace="true"></span>
-                    </div>
-
-                    <div class="form-group mb-3">
-                        <label for="password" class="control-label">New Password (leave blank to keep current)</label>
-                        <input type="password" id="password" name="password" class="form-control" placeholder="Only enter if you want to change password" />
-                        <span class="text-danger" data-valmsg-for="password" data-valmsg-replace="true"></span>
-                    </div>
-
                     <div class="form-group d-grid mt-4">
                         <button type="submit" class="btn btn-primary btn-lg"><i class="fas fa-save me-2"></i> Save Changes</button>
                     </div>
@@ -70,13 +79,30 @@
 </div>
 
 <div class="text-center mt-3">
-    <a asp-action="Manage" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i> Back to Doctor List</a>
+    @{
+        string backAction = "";
+        string backController = "";
+        if (isAdmin)
+        {
+            backAction = "Manage"; // Admin goes back to general doctor list
+            backController = "Doctor";
+        }
+        else
+        {
+            backAction = "Index"; // Fallback
+            backController = "Home";
+        }
+    }
+    <a asp-action="@backAction" asp-controller="@backController" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-2"></i> Back</a>
 </div>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 }

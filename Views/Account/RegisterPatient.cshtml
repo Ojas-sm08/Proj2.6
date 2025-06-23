@@ -28,11 +28,11 @@
         .register-wrapper {
             display: flex;
             width: 90%;
-            max-width: 750px; /* Adjusted: Slightly larger to accommodate more form fields */
+            max-width: 750px;
             border-radius: 1.5rem;
             overflow: hidden;
             box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.15);
-            min-height: 550px; /* Adjusted: Increased height for more fields */
+            min-height: 550px;
         }
 
         .left-panel {
@@ -69,7 +69,7 @@
         .right-panel {
             flex: 1;
             background-color: white;
-            padding: 2.5rem; /* Sufficient padding for the form */
+            padding: 2.5rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -78,7 +78,7 @@
         }
 
         .register-form-content {
-            max-width: 350px; /* Limit form width */
+            max-width: 350px;
             width: 100%;
         }
 
@@ -124,7 +124,7 @@
             }
 
         .btn-lg {
-            padding: 0.6rem 1.2rem; /* Adjusted for register button */
+            padding: 0.6rem 1.2rem;
             font-size: 1.1rem;
             border-radius: 2rem;
         }
@@ -232,6 +232,9 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 }
+                @* Changed to All to show all summary errors (like duplicate email/contact) *@
+                <div asp-validation-summary="All" class="text-danger d-block mb-3 text-start"></div>
+
 
                 <h3 class="form-title">Patient Sign Up</h3>
 
@@ -274,7 +277,7 @@
                         <label asp-for="ContactNumber" class="form-label visually-hidden">Contact Number</label>
                         <div class="input-group rounded-pill">
                             <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                            <input asp-for="ContactNumber" type="tel" class="form-control rounded-end-pill" placeholder="Contact Number" required />
+                            <input asp-for="ContactNumber" type="tel" class="form-control rounded-end-pill" placeholder="Contact Number (10 digits)" pattern="\d{10}" maxlength="10" required />
                         </div>
                         <span asp-validation-for="ContactNumber" class="text-danger d-block mt-1 text-start"></span>
                     </div>
@@ -295,6 +298,15 @@
                             <textarea asp-for="Address" class="form-control rounded-end-pill" placeholder="Full Address" rows="2" required></textarea>
                         </div>
                         <span asp-validation-for="Address" class="text-danger d-block mt-1 text-start"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="MedicalHistory" class="form-label visually-hidden">Medical History</label>
+                        <div class="input-group rounded-pill">
+                            <span class="input-group-text"><i class="fas fa-notes-medical"></i></span>
+                            <textarea asp-for="MedicalHistory" class="form-control rounded-end-pill" placeholder="Any relevant medical history (optional)" rows="2"></textarea>
+                        </div>
+                        <span asp-validation-for="MedicalHistory" class="text-danger d-block mt-1 text-start"></span>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100 btn-lg rounded-pill fw-bold">Sign Up</button>

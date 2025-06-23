@@ -43,7 +43,7 @@
 <div class="card shadow-sm p-4">
     <div class="card-body">
         <p>
-            @if (isAdmin || isDoctor)
+            @if (isAdmin)
             {
                 <a asp-controller="Bill" asp-action="Create" class="btn btn-success"><i class="fas fa-plus-circle me-1"></i> Create New Bill</a>
             }

@@ -1,4 +1,5 @@
-﻿@inject IHttpContextAccessor HttpContextAccessor
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     string portalBrand = "MediCare";
@@ -30,6 +31,8 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" />
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
         body {
@@ -102,24 +105,26 @@
 
         /* Slide-in animation */
         @@keyframes slideInUp {
-            0%
+            0% {
+                opacity: 0;
+                transform: translateY(40px);
+            }
 
-        {
-            opacity: 0;
-            transform: translateY(40px);
-        }
-
-        100% {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .animate-slide-in {
             animation: slideInUp 1s ease-out forwards;
             opacity: 0;
         }
+        /* Custom styling for rounded logout button (if needed, otherwise Bootstrap's rounded-pill is sufficient) */
+        /* .btn-rounded-logout {
+                    border-radius: 50rem !important;
+                    padding: .25rem .75rem;
+                } */
     </style>
 </head>
 <body>
@@ -127,7 +132,7 @@
         <nav class="navbar navbar-expand-sm navbar-dark border-bottom shadow-sm">
             <div class="container-fluid">
                 <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Admin" asp-action="Index">
-                    <img src="https://placehold.co/30x30/6f42c1/ffffff?text=💊" alt="MediCare Logo" class="me-2 rounded-circle">
+                    <img src="/images/v987-18a.jpg" alt="MediCare Logo" class="me-2 rounded-circle" width="50" height="50" onerror="this.onerror=null; this.src='https://placehold.co/50x50/cccccc/000000?text=Logo';" />
                     <strong>MediCare</strong>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -207,9 +212,12 @@
                             }
 
                             <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="d-inline">
+                                <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="d-inline-block">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-link text-danger ms-2">Logout (@username)</button>
+                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill shadow-sm">
+                                        @* Added rounded-pill and shadow-sm *@
+                                        <i class="fas fa-sign-out-alt me-2"></i> Logout (@username)
+                                    </button>
                                 </form>
                             </li>
                         }
@@ -229,7 +237,7 @@
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @TempData["SuccessMessage"]
+                    @Html.Raw(TempData["SuccessMessage"]) @* Changed to Html.Raw for auto-generated credentials if applicable *@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
