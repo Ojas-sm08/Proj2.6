@@ -11,5 +11,6 @@ namespace HospitalManagementSystem.Models
         public DateTime SelectedDate { get; set; } // The date chosen by the user
         public List<TimeSpan> AvailableSlots { get; set; } = new List<TimeSpan>(); // List of available time slots
         public Doctor SelectedDoctorDetails { get; set; } // Details of the selected doctor
+        public DoctorSchedule? DoctorSchedule { get; set; }
     }
 }

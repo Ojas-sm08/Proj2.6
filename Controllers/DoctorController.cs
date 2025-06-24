@@ -12,6 +12,11 @@ using System.Globalization;
 using HospitalManagementSystem.Utility; // Import the PasswordHasher utility
 using System.Text.Json; // Added for JsonSerializerOptions
 using System.Text.RegularExpressions; // Added for Regex.IsMatch
+using System.Security.Cryptography; // Added for RandomNumberGenerator
+using System.Text; // Added for StringBuilder
+using Microsoft.EntityFrameworkCore.Storage; // Added for IDbContextTransaction.BeginTransactionAsync()
+using Microsoft.Data.SqlClient; // ADDED THIS USING DIRECTIVE FOR SQLCLIENT
+
 
 namespace HospitalManagementSystem.Controllers
 {
@@ -39,9 +44,10 @@ namespace HospitalManagementSystem.Controllers
             var username = HttpContext.Session.GetString("Username");
             var role = HttpContext.Session.GetString("Role");
 
-            if (string.IsNullOrEmpty(username) || role != "Doctor")
+            // Allow both Doctor and Admin to access dashboard
+            if (!IsLoggedIn() || (!IsDoctor() && !IsAdmin()))
             {
-                TempData["ErrorMessage"] = "You must be logged in as a doctor to access the dashboard.";
+                TempData["ErrorMessage"] = "You must be logged in as a Doctor or Admin to access the dashboard.";
                 return RedirectToAction("Login", "Account");
             }
 
@@ -62,12 +68,13 @@ namespace HospitalManagementSystem.Controllers
             }
 
             ViewData["Title"] = "Manage Doctors";
-            IQueryable<Doctor> doctors = _context.Doctors;
+            IQueryable<Doctor> doctors = _context.Doctors.Include(d => d.User); // Include User for search and display
 
             if (!string.IsNullOrEmpty(searchString))
             {
-                // Search based on Doctor's Name or Contact. Username is now on User model.
-                doctors = doctors.Where(d => d.Name.Contains(searchString) || d.Contact.Contains(searchString));
+                doctors = doctors.Where(d => d.Name.Contains(searchString) ||
+                                             d.Contact.Contains(searchString) ||
+                                             (d.User != null && d.User.Username.Contains(searchString))); // Search by username too
             }
 
             if (!string.IsNullOrEmpty(specialization))
@@ -104,26 +111,38 @@ namespace HospitalManagementSystem.Controllers
         // POST: Doctor/Create (Admin)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        // Removed 'username' and 'password' parameters. They will be generated internally.
         public async Task<IActionResult> Create(
             [Bind("Name,Specialization,Description,Contact,Location")] Doctor doctor)
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                return BadRequest(new { success = false, message = "Unauthorized: You are not authorized to add new doctors." });
+                TempData["ErrorMessage"] = "Unauthorized: You are not authorized to add new doctors.";
+                return RedirectToAction("Login", "Account");
             }
-
-            // Clear ModelState to ensure re-validation after manual checks
-            ModelState.Clear();
 
             // --- Manual Validation for Doctor's General Info (from Doctor Model) ---
             if (string.IsNullOrWhiteSpace(doctor.Name)) ModelState.AddModelError("Name", "Doctor Name is required.");
             if (string.IsNullOrWhiteSpace(doctor.Specialization)) ModelState.AddModelError("Specialization", "Specialization is required.");
             if (string.IsNullOrWhiteSpace(doctor.Contact)) ModelState.AddModelError("Contact", "Contact information is required.");
             if (string.IsNullOrWhiteSpace(doctor.Location)) ModelState.AddModelError("Location", "Location is required.");
-            if (string.IsNullOrEmpty(doctor.Description)) doctor.Description = null; // Allow null or empty for optional Description
+            if (string.IsNullOrEmpty(doctor.Description)) doctor.Description = null; // Description is optional, allow null
 
-            // If initial doctor details fail validation, return early
+            // NEW: Explicitly remove validation errors for User and NewPassword fields
+            ModelState.Remove("User");
+            ModelState.Remove("NewPassword");
+
+            // Log all ModelState errors before checking IsValid
+            Debug.WriteLine("--- ModelState Errors for Doctor/Create (POST) ---");
+            foreach (var modelStateEntry in ModelState.Where(e => e.Value.Errors.Any()))
+            {
+                foreach (var error in modelStateEntry.Value.Errors)
+                {
+                    Debug.WriteLine($"  Key: {modelStateEntry.Key}, Error: {error.ErrorMessage}");
+                }
+            }
+            Debug.WriteLine("--- End ModelState Errors ---");
+
+
             if (!ModelState.IsValid)
             {
                 var errors = new Dictionary<string, List<string>>();
@@ -135,32 +154,29 @@ namespace HospitalManagementSystem.Controllers
                     }
                 }
                 Debug.WriteLine($"DoctorController.Create: Model state invalid for Doctor details. Errors: {JsonSerializer.Serialize(errors)}");
-                TempData["ErrorMessage"] = "Please correct the errors in the form."; // General error for UI
-                return View(doctor); // Return the view with the Doctor model to re-display form and errors
+                TempData["ErrorMessage"] = "Please correct the errors in the form.";
+                return View(doctor);
             }
 
-            // --- AUTO-GENERATION OF USERNAME AND PASSWORD ---
+            // --- AUTO-GENERATION OF USERNAME ---
             string baseUsername = "doc." + doctor.Name.ToLower()
-                                                        .Replace(" ", "")
-                                                        .Replace(".", "")
-                                                        .Replace("-", "")
-                                                        .Trim();
+                                     .Replace(" ", "")
+                                     .Replace(".", "")
+                                     .Replace("-", "")
+                                     .Trim();
             string generatedUsername = baseUsername;
             int counter = 1;
-            int maxUsernameLength = 50; // Ensure this matches your User.Username max length
+            int maxUsernameLength = 50;
 
-            // Ensure baseUsername fits within maxUsernameLength, leaving room for counter
-            if (baseUsername.Length > maxUsernameLength - 5) // Leave room for "_999" suffix
+            if (baseUsername.Length > maxUsernameLength - 5)
             {
                 baseUsername = baseUsername.Substring(0, maxUsernameLength - 5);
             }
 
-            // Loop to ensure unique username
             generatedUsername = baseUsername;
             while (await _context.Users.AnyAsync(u => u.Username == generatedUsername))
             {
                 generatedUsername = $"{baseUsername}_{counter}";
-                // Re-check length if counter makes it too long
                 if (generatedUsername.Length > maxUsernameLength)
                 {
                     generatedUsername = $"{baseUsername.Substring(0, Math.Min(baseUsername.Length, maxUsernameLength - counter.ToString().Length - 1))}_{counter}";
@@ -168,52 +184,43 @@ namespace HospitalManagementSystem.Controllers
                 counter++;
             }
 
-            // Password generation: For simplicity, use a portion of the generated username or a default.
-            // For production, you'd want a more robust random password generation.
-            string generatedPasswordPlain = generatedUsername; // Using username as password, or a default strong one
-            if (generatedPasswordPlain.Length < 6) // Ensure minimum password length for hashing
-            {
-                generatedPasswordPlain += "P@ss1"; // Append to meet minimum length
-            }
-            else if (generatedPasswordPlain.Length > 100) // Truncate if too long
-            {
-                generatedPasswordPlain = generatedPasswordPlain.Substring(0, 100);
-            }
-
-            string generatedPasswordHash = PasswordHasher.HashPassword(generatedPasswordPlain);
-            Debug.WriteLine($"Generated Username: {generatedUsername}, Generated Password (plain - partially shown): {generatedPasswordPlain.Substring(0, Math.Min(generatedPasswordPlain.Length, 1))}***, Hashed Password: {generatedPasswordHash.Substring(0, 5)}..."); // Censor sensitive data in logs
-
+            // --- Transaction for saving Doctor and User ---
             try
             {
                 using (var transaction = await _context.Database.BeginTransactionAsync())
                 {
-                    // 1. Create the User account with generated credentials
+                    // 1. Save Doctor first to get its ID (if auto-generated)
+                    _context.Doctors.Add(doctor);
+                    await _context.SaveChangesAsync(); // This will populate doctor.Id
+
+                    // 2. The plain password is the generated username itself
+                    string generatedPasswordPlain = generatedUsername;
+                    string generatedPasswordHash = PasswordHasher.HashPassword(generatedPasswordPlain);
+
+                    // 3. Create the User account with generated credentials
                     var newUser = new User
                     {
                         Username = generatedUsername,
                         PasswordHash = generatedPasswordHash,
                         Role = "Doctor",
                         CreatedAt = DateTime.Now,
-                        LastLogin = DateTime.Now
+                        LastLogin = DateTime.Now,
+                        DoctorId = doctor.Id // Link the new User to the newly created doctor here
                     };
                     _context.Users.Add(newUser);
-                    await _context.SaveChangesAsync(); // Save user to get the generated User.Id
+                    await _context.SaveChangesAsync();
 
-                    // 2. Link the new User to the Doctor
-                    doctor.UserId = newUser.Id; // Set the foreign key
-                    _context.Doctors.Add(doctor);
-                    await _context.SaveChangesAsync(); // Save doctor
-
-                    // Also set the DoctorId on the User record for reverse navigation if needed
-                    newUser.DoctorId = doctor.Id;
-                    _context.Users.Update(newUser); // Update the user with the new DoctorId
-                    await _context.SaveChangesAsync(); // Save the updated user
+                    // 4. IMPORTANT: Link the Doctor back to the User's ID
+                    // This ensures the Doctor's UserId navigation property correctly points to the User.
+                    doctor.UserId = newUser.Id;
+                    _context.Doctors.Update(doctor);
+                    await _context.SaveChangesAsync(); // Save the Doctor's UserId now
 
                     await transaction.CommitAsync();
 
-                    // Display the generated username and password in the success message
-                    TempData["SuccessMessage"] = $"Doctor {doctor.Name} created successfully! Their Username is: <span class='fw-bold'>{newUser.Username}</span> and Password is: <span class='fw-bold'>{generatedPasswordPlain}</span>. Please save these credentials.";
-                    Debug.WriteLine($"Doctor {doctor.Name} and associated User '{newUser.Username}' added successfully!");
+                    // Display the generated username and password (which is the username) in the success message
+                    TempData["SuccessMessage"] = $"Doctor {doctor.Name} created successfully! Their Username is: <span class='fw-bold'>{newUser.Username}</span>";
+                    Debug.WriteLine($"Doctor {doctor.Name} and associated User '{newUser.Username}' added successfully. Password was auto-generated as username. Doctor UserId: {doctor.UserId}. New User's DoctorId: {newUser.DoctorId}.");
                     return RedirectToAction(nameof(Manage));
                 }
             }
@@ -228,6 +235,21 @@ namespace HospitalManagementSystem.Controllers
                 return View(doctor); // Return the view with the model to show errors
             }
         }
+
+        // Helper function to generate a unique username based on doctor's name
+        private string GenerateUniqueUsername(string doctorName)
+        {
+            string baseUsername = "doc." + Regex.Replace(doctorName.ToLower(), @"[^a-z0-9]", "");
+            if (baseUsername.Length > 45)
+            {
+                baseUsername = baseUsername.Substring(0, 45);
+            }
+            return baseUsername;
+        }
+
+        // Removed GenerateRandomPassword as it's no longer needed for new doctor creation
+        // private string GenerateRandomPassword(int length = 12) { ... }
+
 
         // GET: Doctor/Edit/5 (Admin Only for managing OTHER doctors' general details)
         [HttpGet]
@@ -412,7 +434,7 @@ namespace HospitalManagementSystem.Controllers
             {
                 Debug.WriteLine($"EditMyInfo: Original doctor (ID: {doctor.Id}) not found in DB.");
                 TempData["ErrorMessage"] = "Your doctor profile could not be found for update.";
-                return View(doctor);
+                return View(originalDoctor);
             }
 
             originalDoctor.Name = doctor.Name;
@@ -491,7 +513,7 @@ namespace HospitalManagementSystem.Controllers
                 return View(originalDoctor);
             }
 
-            Debug.WriteLine("EditMyInfo: ModelState is VALID. Attempting to save changes...");
+            Debug.WriteLine("ModelState is VALID for Admin Doctor Edit. Attempting to save changes...");
             try
             {
                 await _context.SaveChangesAsync();
@@ -508,14 +530,21 @@ namespace HospitalManagementSystem.Controllers
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                Debug.WriteLine($"EditMyInfo: Concurrency error updating doctor (ID: {doctor.Id}): {ex.Message}");
+                Debug.WriteLine($"DbUpdateConcurrencyException for Doctor ID {doctor.Id}: {ex.Message}");
                 TempData["ErrorMessage"] = "A concurrency error occurred. Your profile might have been updated by someone else. Please try again.";
-                ViewBag.Username = username;
-                return View(originalDoctor);
+                if (!DoctorExists(doctor.Id))
+                {
+                    Debug.WriteLine("Doctor no longer exists in DB after concurrency exception.");
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error updating doctor profile (ID: {doctor.Id}): {ex.Message}");
+                Debug.WriteLine($"General Exception during save for Doctor ID {doctor.Id}: {ex.Message}");
                 if (ex.InnerException != null)
                 {
                     Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
@@ -583,74 +612,151 @@ namespace HospitalManagementSystem.Controllers
         {
             if (!IsLoggedIn() || !IsAdmin())
             {
-                return BadRequest(new { success = false, message = "Unauthorized to delete doctors." });
+                TempData["ErrorMessage"] = "Unauthorized to delete doctors.";
+                return RedirectToAction(nameof(Manage));
             }
 
-            using (var transaction = _context.Database.BeginTransaction())
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 try
                 {
+                    // Fetch the doctor along with ALL directly related entities that might prevent deletion
                     var doctor = await _context.Doctors
-                                               .Include(d => d.User)
+                                               .Include(d => d.User) // Still include, but we'll robustly check below
+                                               .Include(d => d.Appointments)
+                                               .Include(d => d.Schedules)
+                                               .Include(d => d.Reviews)
+                                               .Include(d => d.Bills)
                                                .FirstOrDefaultAsync(d => d.Id == id);
+
                     if (doctor == null)
                     {
-                        return BadRequest(new { success = false, message = "Doctor not found." });
+                        TempData["ErrorMessage"] = "Doctor not found.";
+                        return RedirectToAction(nameof(Manage));
                     }
 
-                    var appointments = await _context.Appointments
-                                                     .Where(a => a.DoctorId == doctor.Id)
-                                                     .ToListAsync();
-                    if (appointments.Any())
+                    Debug.WriteLine($"[DEBUG] Deleting Doctor ID: {id}. Doctor.UserId: {(doctor.UserId.HasValue ? doctor.UserId.Value.ToString() : "NULL")}. Doctor.User navigation property is {(doctor.User == null ? "NULL" : "NOT NULL")}.");
+
+
+                    // --- CRITICAL BUSINESS LOGIC CHECK: Prevent deletion if doctor has ACTIVE appointments ---
+                    if (doctor.Appointments != null && doctor.Appointments.Any(a => a.Status != "Completed" && a.Status != "Cancelled"))
                     {
-                        transaction.Rollback();
-                        return BadRequest(new { success = false, message = $"Cannot delete doctor {doctor.Name}. There are {appointments.Count} existing appointments linked to this doctor. Please delete or reassign appointments first." });
+                        await transaction.RollbackAsync();
+                        TempData["ErrorMessage"] = $"Cannot delete doctor '{doctor.Name}': There are pending or scheduled appointments linked to this doctor. Please cancel or complete them first.";
+                        return RedirectToAction(nameof(Manage));
                     }
 
-                    var schedules = await _context.DoctorSchedules.Where(ds => ds.DoctorId == doctor.Id).ToListAsync();
-                    if (schedules.Any())
-                    {
-                        _context.DoctorSchedules.RemoveRange(schedules);
-                        await _context.SaveChangesAsync();
-                        Debug.WriteLine($"Deleted {schedules.Count} schedules for doctor ID: {id}");
-                    }
+                    // --- Step-by-step deletion/disassociation of associated entities to satisfy FK constraints ---
 
-                    var reviews = await _context.DoctorReviews.Where(dr => dr.DoctorId == doctor.Id).ToListAsync();
-                    if (reviews.Any())
-                    {
-                        _context.DoctorReviews.RemoveRange(reviews);
-                        await _context.SaveChangesAsync();
-                        Debug.WriteLine($"Deleted {reviews.Count} reviews for doctor ID: {id}");
-                    }
+                    // 1. Handle User (OnDelete(DeleteBehavior.Restrict) from Doctor to User)
+                    // Robustly find the associated User using the FK on the User table, rather than relying solely on navigation property
+                    User associatedUser = await _context.Users.FirstOrDefaultAsync(u => u.DoctorId == id);
 
-                    if (doctor.User != null)
+                    if (associatedUser != null)
                     {
-                        _context.Users.Remove(doctor.User);
-                        await _context.SaveChangesAsync();
-                        Debug.WriteLine($"Deleted associated user '{doctor.User.Username}' for doctor ID: {id}.");
+                        Debug.WriteLine($"[DEBUG] Found associated User: '{associatedUser.Username}' (ID: {associatedUser.Id}) for Doctor ID: {id}.");
+
+                        // Sever the foreign key link on the User side
+                        associatedUser.DoctorId = null;
+                        _context.Users.Update(associatedUser); // Mark for update
+                        await _context.SaveChangesAsync(); // Commit the update (nullification) *immediately* within the transaction
+                        Debug.WriteLine($"[DEBUG] Successfully disassociated User '{associatedUser.Username}' from Doctor ID: {id}. Now attempting to remove User.");
+
+                        _context.Users.Remove(associatedUser); // Mark user for deletion
+                        await _context.SaveChangesAsync(); // Commit the user deletion *immediately* within the transaction
+                        Debug.WriteLine($"[DEBUG] Successfully deleted User '{associatedUser.Username}'.");
                     }
                     else
                     {
-                        Debug.WriteLine($"No associated User record found for doctor ID: {id} or User navigation property is null.");
+                        Debug.WriteLine($"[DEBUG] No associated User record found with DoctorId = {id} in the Users table. Skipping explicit user disassociation and deletion.");
                     }
 
+
+                    // 2. Handle Appointments (OnDelete(DeleteBehavior.Restrict) from Doctor to Appointment)
+                    // Explicitly delete all appointments related to this doctor.
+                    if (doctor.Appointments != null && doctor.Appointments.Any())
+                    {
+                        Debug.WriteLine($"[DEBUG] Attempting to delete {doctor.Appointments.Count} appointments for Doctor ID: {id}...");
+                        _context.Appointments.RemoveRange(doctor.Appointments);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"[DEBUG] Successfully deleted {doctor.Appointments.Count} appointments.");
+                    }
+
+                    // 3. Handle Bills (OnDelete(DeleteBehavior.SetNull) from Doctor to Bill)
+                    if (doctor.Bills != null && doctor.Bills.Any())
+                    {
+                        Debug.WriteLine($"[DEBUG] Attempting to delete {doctor.Bills.Count} bills for Doctor ID: {id}...");
+                        _context.Bills.RemoveRange(doctor.Bills);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"[DEBUG] Successfully deleted {doctor.Bills.Count} bills.");
+                    }
+
+                    // 4. Handle DoctorSchedules (OnDelete(DeleteBehavior.Cascade))
+                    if (doctor.Schedules != null && doctor.Schedules.Any())
+                    {
+                        Debug.WriteLine($"[DEBUG] Attempting to delete {doctor.Schedules.Count} schedules for Doctor ID: {id}...");
+                        _context.DoctorSchedules.RemoveRange(doctor.Schedules);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"[DEBUG] Successfully deleted {doctor.Schedules.Count} schedules.");
+                    }
+
+                    // 5. Handle DoctorReviews (OnDelete(DeleteBehavior.Cascade))
+                    if (doctor.Reviews != null && doctor.Reviews.Any())
+                    {
+                        Debug.WriteLine($"[DEBUG] Attempting to delete {doctor.Reviews.Count} reviews for Doctor ID: {id}...");
+                        _context.DoctorReviews.RemoveRange(doctor.Reviews);
+                        await _context.SaveChangesAsync();
+                        Debug.WriteLine($"[DEBUG] Successfully deleted {doctor.Reviews.Count} reviews.");
+                    }
+
+                    // 6. Finally, delete the doctor itself
+                    Debug.WriteLine($"[DEBUG] Attempting to delete Doctor ID: {id}...");
                     _context.Doctors.Remove(doctor);
                     await _context.SaveChangesAsync();
+                    Debug.WriteLine($"[DEBUG] Successfully deleted Doctor ID: {id}.");
 
-                    transaction.Commit();
-                    return Json(new { success = true, message = $"Doctor {doctor.Name} and associated data deleted successfully!" });
+                    await transaction.CommitAsync();
+                    TempData["SuccessMessage"] = $"Doctor '{doctor.Name}' and all associated data deleted successfully!";
+                    return RedirectToAction(nameof(Manage));
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    await transaction.RollbackAsync();
+                    Debug.WriteLine($"[ERROR] DbUpdateException during doctor deletion (ID: {id}): {dbEx.Message}");
+                    if (dbEx.InnerException != null)
+                    {
+                        Debug.WriteLine($"[ERROR] Inner Exception: {dbEx.InnerException.Message}");
+                        if (dbEx.InnerException is SqlException sqlEx)
+                        {
+                            Debug.WriteLine($"[SQL ERROR] Number: {sqlEx.Number}, State: {sqlEx.State}, Class: {sqlEx.Class}");
+                            Debug.WriteLine($"[SQL ERROR] Message: {sqlEx.Message}");
+                            foreach (SqlError error in sqlEx.Errors)
+                            {
+                                Debug.WriteLine($"[SQL ERROR DETAILS] Source: {error.Source}, Message: {error.Message}, Line: {error.LineNumber}, Procedure: {error.Procedure}");
+                            }
+                        }
+                    }
+                    TempData["ErrorMessage"] = "Database error: Could not delete doctor due to remaining linked data. Please check **Visual Studio Output window** for detailed error logs.";
+                    return RedirectToAction(nameof(Manage));
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    Debug.WriteLine($"Error deleting doctor {id}: {ex.Message}");
+                    await transaction.RollbackAsync();
+                    Debug.WriteLine($"[ERROR] General error during doctor deletion (ID: {id}): {ex.Message}");
                     if (ex.InnerException != null)
                     {
-                        Debug.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                        Debug.WriteLine($"[ERROR] Inner Exception: {ex.InnerException.Message}");
                     }
-                    return BadRequest(new { success = false, message = $"Error deleting doctor: {ex.Message}. Check server logs for details. This might be due to remaining related data." });
+                    TempData["ErrorMessage"] = $"An unexpected error occurred during deletion: {ex.Message}. Please check **Visual Studio Output window** for detailed error logs.";
+                    return RedirectToAction(nameof(Manage));
                 }
             }
+        }
+
+        // THIS IS THE SINGLE, CORRECT DoctorExists METHOD
+        private bool DoctorExists(int id)
+        {
+            return _context.Doctors.Any(e => e.Id == id);
         }
 
         // GET: Doctor/Schedule (Doctor's Own Schedule with Date Filter)
@@ -793,11 +899,6 @@ namespace HospitalManagementSystem.Controllers
             }
             ViewData["Title"] = "Doctor Billing";
             return View();
-        }
-
-        private bool DoctorExists(int id)
-        {
-            return _context.Doctors.Any(e => e.Id == id);
         }
     }
 }

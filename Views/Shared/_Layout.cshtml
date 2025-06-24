@@ -28,9 +28,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - @portalBrand</title>
+    
+    <!-- Core CSS Libraries -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" /> @* Removed asp-append-version for debugging *
+    
+    <!-- IMPORTANT: If 'hospitalmanagementsystem.styles.css' causes a JavaScript 'SyntaxError', keep this line commented out. -->
+    <!-- This file is often auto-generated for CSS Isolation. If it's problematic, disable CSS isolation in your .csproj or keep this line commented. -->
+    @* <link rel="stylesheet" href="~/HospitalManagementSystem.styles.css" asp-append-version="true" /> *@
+    
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -120,11 +126,6 @@
             animation: slideInUp 1s ease-out forwards;
             opacity: 0;
         }
-        /* Custom styling for rounded logout button (if needed, otherwise Bootstrap's rounded-pill is sufficient) */
-        /* .btn-rounded-logout {
-                    border-radius: 50rem !important;
-                    padding: .25rem .75rem;
-                } */
     </style>
 </head>
 <body>
@@ -215,7 +216,6 @@
                                 <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="d-inline-block">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-danger btn-sm rounded-pill shadow-sm">
-                                        @* Added rounded-pill and shadow-sm *@
                                         <i class="fas fa-sign-out-alt me-2"></i> Logout (@username)
                                     </button>
                                 </form>
@@ -237,7 +237,7 @@
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @Html.Raw(TempData["SuccessMessage"]) @* Changed to Html.Raw for auto-generated credentials if applicable *@
+                    @Html.Raw(TempData["SuccessMessage"])
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             }
@@ -252,9 +252,10 @@
         </main>
     </div>
 
+    <!-- Core JavaScript Libraries -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/site.js"></script> @* Removed asp-append-version for debugging *@
     @await RenderSectionAsync("Scripts", required: false)
-</body>
+</body>s
 </html>

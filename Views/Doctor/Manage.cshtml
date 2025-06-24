@@ -5,7 +5,7 @@
     ViewData["Title"] = "Manage Doctors";
     var role = HttpContextAccessor.HttpContext?.Session.GetString("Role");
     var isAdmin = (role == "Admin");
-    Layout = isAdmin ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_Layout.cshtml";
+    // Layout = isAdmin ? "~/Views/Shared/_Layout.cshtml" : "~/Views/Shared/_Layout.cshtml"; // This line is redundant, just keep one if it's always the same
 }
 
 <h2 class="mb-4 text-center">👨‍⚕️ Manage Doctors</h2>
@@ -43,9 +43,12 @@
         <div class="input-group me-2" style="max-width: 250px;">
             <select name="specialization" class="form-select rounded-pill-start">
                 <option value="">-- All Specializations --</option>
-                @foreach (var spec in ViewBag.Specializations)
+                @if (ViewBag.Specializations != null)
                 {
-                    <option value="@spec" selected="@(spec == ViewBag.CurrentSpecialization)">@spec</option>
+                    foreach (var spec in ViewBag.Specializations)
+                    {
+                        <option value="@spec" selected="@(spec == ViewBag.CurrentSpecialization)">@spec</option>
+                    }
                 }
             </select>
             <div class="input-group-append">
@@ -96,9 +99,14 @@
                                 <td>
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm me-1" title="Edit Doctor"><i class="fas fa-edit"></i></a>
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info btn-sm me-1" title="View Details"><i class="fas fa-info-circle"></i></a>
-                                    <button type="button" class="btn btn-danger btn-sm delete-doctor-btn" data-id="@item.Id" data-name="@item.Name" title="Delete Doctor">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
+
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
+                                          onsubmit="return showDeleteConfirmation(this, '@item.Name', @item.Id);">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Delete Doctor">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         }
@@ -130,69 +138,44 @@
     </div>
 </div>
 
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <!-- Font Awesome is fine here, as it's CSS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    @* REMOVED: <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script> *@
+    @* REMOVED: <script src="~/lib/jquery/dist/jquery.min.js"></script> *@
+
     <script>
+        // Store the form element that triggered the modal
+        let currentDeleteForm = null;
+
+        // Function called when a delete button is clicked
+        function showDeleteConfirmation(form, doctorName, doctorId) {
+            currentDeleteForm = form; // Store the form element
+            $('#doctorIdToDelete').text(doctorId);
+            $('#doctorNameToDelete').text(doctorName);
+
+            // Show the modal
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+            deleteModal.show();
+
+            // Prevent the form from submitting immediately
+            return false; // Prevent the default form submission
+        }
+
         $(document).ready(function () {
-            // Delete modal logic
-            var doctorIdToDelete = 0;
-            var doctorNameToDelete = '';
-
-            $('.delete-doctor-btn').on('click', function () {
-                doctorIdToDelete = $(this).data('id');
-                doctorNameToDelete = $(this).data('name');
-                $('#doctorIdToDelete').text(doctorIdToDelete);
-                $('#doctorNameToDelete').text(doctorNameToDelete);
-                var deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
-                deleteModal.show();
-            });
-
+            // When the "Delete" button inside the modal is clicked
             $('#confirmDeleteBtn').on('click', function () {
-                $.ajax({
-                    url: '@Url.Action("Delete", "Doctor")', // POST to the Delete action
-                    type: 'POST',
-                    data: {
-                        id: doctorIdToDelete,
-                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // Include Anti-Forgery Token
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            // Display success message using TempData for reload
-                            window.location.href = '@Url.Action("Manage", "Doctor")?SuccessMessage=' + encodeURIComponent(response.message);
-                        } else {
-                            // Display error message using TempData for reload
-                            window.location.href = '@Url.Action("Manage", "Doctor")?ErrorMessage=' + encodeURIComponent(response.message);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        var errorMessage = "An unknown error occurred during deletion.";
-                        try {
-                            var jsonResponse = JSON.parse(xhr.responseText);
-                            if (jsonResponse && jsonResponse.message) {
-                                errorMessage = jsonResponse.message;
-                            } else if (xhr.responseJSON && xhr.responseJSON.message) { // Fallback for ASP.NET Core JSON error
-                                errorMessage = xhr.responseJSON.message;
-                            }
-                        } catch (e) {
-                            // Not a JSON response, use generic message
-                            console.error("Error parsing delete response:", e);
-                        }
-                        window.location.href = '@Url.Action("Manage", "Doctor")?ErrorMessage=' + encodeURIComponent(errorMessage);
-                    }
-                });
+                if (currentDeleteForm) {
+                    currentDeleteForm.submit(); // Submit the stored form
+                }
+                // Hide the modal
                 var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal'));
                 deleteModal.hide();
             });
-
-            // Handle showing success/error messages from TempData after redirect
-            // This is handled by the Razor section @if (TempData["SuccessMessage"] != null)
-            // No specific JS needed here for that.
         });
     </script>
     <style>
